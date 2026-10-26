@@ -1,0 +1,10 @@
+﻿user,role,department,allowed_zones,allowed_projects
+andini,IT Admin,IT,"corp-jkt;dmz-jkt;server-farm-jkt;branch-mks;hr-data;mgmt;finance;fleet","proyek-garuda;proyek-kenari;wms-upgrade;backup-review;fwaas-migration"
+ragil,Ops Manager Mks,Operations,"branch-mks;corp-jkt;server-farm-jkt","wms-upgrade;backup-review"
+sari,HR Staff,HR,"hr-data",""
+bimo,New Employee,Operations,"corp-jkt",""
+dewi,Finance Staff,Finance,"finance;fleet;corp-jkt",""
+citra,SOC Analyst,IT,"corp-jkt;dmz-jkt;server-farm-jkt;branch-mks;mgmt;finance;fleet","proyek-kenari;wms-upgrade;backup-review;fwaas-migration"
+damar,Contractor,External,"corp-jkt","fwaas-migration"
+eka,Team Lead,Operations,"corp-jkt;dmz-jkt;server-farm-jkt;branch-mks;finance;fleet","wms-upgrade;backup-review"
+indah,HR Manager,HR,"hr-data;corp-jkt","proyek-garuda"

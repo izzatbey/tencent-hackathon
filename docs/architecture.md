@@ -156,7 +156,8 @@ flowchart LR
 | `backend/` | Retrieval, guard, permission gate, API | Izzat |
 | `frontend/` | Chat UI | Rekan FE |
 | `skill/` | Instruksi Claude Skill | Izzat |
-| `docs/` | Desain sistem (file ini) | Semua |
+| `docs/` | Desain sistem (file ini), `specs/` per fase, memory WorkBuddy | Semua |
+| `adjusted_brief.md` | Brief proyek: rumusan masalah, S1–S6, 20 test case | Izzat |
 
 ## 6. Keputusan desain yang mengikat
 
