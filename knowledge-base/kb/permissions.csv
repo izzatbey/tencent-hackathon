@@ -1,0 +1,8 @@
+﻿user,role,dept,allowed_zones,max_risk_level,allowed_projects,note
+Andini Pratama,IT Admin,IT,common;restricted;it-admin;infra-all;management,critical,*,Pemilik topologi & SOP; akses penuh termasuk zona restricted
+Citra Kusuma,SOC Analyst,IT Security,common;security;infra-all;it-admin,high,,Pemilik controls; monitoring & kontrol keamanan
+Indah Permatasari,HR Manager,HR,common;hr;hr-read;management,high,,Pemilik data HR; ikut menangani aset terbatas
+Budi Santoso,Finance Officer,Finance,common;finance;hr-read,medium,,Butuh data HR untuk payroll; bukan data proyek terbatas
+Sari Anggraini,Finance Staff,Finance,common;finance,medium,,Staf finance
+Joko,Warehouse Supervisor,Warehouse,common;warehouse;ops-read,medium,,Operasional gudang Makassar
+Rina,Intern,Operations,common,low,,Magang; hanya materi umum

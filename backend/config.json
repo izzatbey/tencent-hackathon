@@ -1,0 +1,7 @@
+{
+  "injection_sensitivity": "high",
+  "mask_pii": true,
+  "permissions_csv_path": "kb/permissions.csv",
+  "skip_permission_gate": false,
+  "risk_gate": "flag"
+}
