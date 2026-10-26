@@ -33,9 +33,12 @@ def mask_email(email: str) -> str:
 
 # (regex, tipe, fungsi penyamar). Urutan penting: NIK/telepon sebelum IP,
 # supaya angka panjang tidak dipotong dulu oleh pola yang lebih umum.
+# NIK dan telepon sering ditulis berkelompok ("3175 0912 3456 7890",
+# "0812-3456-7890", "+62 812 3456 7890"), jadi pemisah spasi/titik/strip ikut cocok.
 PII_PATTERNS = [
-    (r"\b\d{16}\b", "NIK", lambda m: f"[NIK: ****{m.group(0)[-4:]}]"),
-    (r"(?:\+62|62|0)8\d{9,11}", "PHONE", lambda m: f"[PHONE: ****{m.group(0)[-4:]}]"),
+    (r"\b\d{4}([ .-]?)\d{4}\1\d{4}\1\d{4}\b", "NIK", lambda m: f"[NIK: ****{m.group(0)[-4:]}]"),
+    (r"(?:\+62|\b62|\b0)[ .-]?8(?:[ .-]?\d){8,11}(?!\d)", "PHONE",
+     lambda m: f"[PHONE: ****{m.group(0)[-4:]}]"),
     (r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", "EMAIL",
      lambda m: mask_email(m.group(0))),
     (r"\bNLP-\d{3}\b", "EMP-ID", lambda m: "[EMP-ID: NLP-***]"),
