@@ -382,17 +382,18 @@ def public_terms(docs):
     return terms
 
 
-def collect_restricted_triggers(docs):
+def collect_restricted_triggers(docs, unlocked=()):
     """Phrases that must never be answered about (from restricted metadata).
 
     Multi-word phrases always block. A single-word keyword blocks only when it
-    is exclusive to restricted metadata - see public_terms().
+    is exclusive to restricted metadata - see public_terms(). Docs in
+    `unlocked` (asker is on the project) contribute no triggers.
     """
     common = public_terms(docs)
     allow = load_never_block()
     triggers = set()
     for doc in docs:
-        if not is_restricted(doc["meta"]):
+        if not is_restricted(doc["meta"]) or doc["path"] in unlocked:
             continue
         meta = doc["meta"]
         for phrase in (as_list(meta.get("keywords")) + as_list(meta.get("aliases"))
@@ -459,7 +460,13 @@ def search(kb_root, query, top_k, permissions=None, use_gate=True, risk_mode=Non
     query_lower = raw_query_lower
     tokens = tokenize(query)
     docs = load_documents(kb_root)
-    triggers = collect_restricted_triggers(docs)
+    # Restricted docs open up only to askers listed on their project, and only
+    # while the gate is on. For everyone else they stay invisible.
+    unlocked = set()
+    if use_gate and permissions:
+        unlocked = {d["path"] for d in docs
+                    if is_restricted(d["meta"]) and perm.project_allowed(d["meta"], permissions)}
+    triggers = collect_restricted_triggers(docs, unlocked)
     query_lower, tokens, restricted_query = scrub_query(query_lower, tokens, triggers)
     idf, _ = compute_idf(docs)
     common = public_terms(docs)
@@ -469,7 +476,7 @@ def search(kb_root, query, top_k, permissions=None, use_gate=True, risk_mode=Non
         meta = doc["meta"]
         if str(meta.get("type", "")).lower() in META_TYPES:
             continue
-        if is_restricted(meta):
+        if is_restricted(meta) and doc["path"] not in unlocked:
             if restricted_touched(raw_query_lower, tokens, meta, triggers, common):
                 restricted_hits.append(meta.get("doc_id", doc["path"]))
             continue

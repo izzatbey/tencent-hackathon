@@ -258,6 +258,20 @@ def doc_zones(hit):
     return zones or [DEFAULT_ZONE]
 
 
+def project_allowed(meta, permissions):
+    """True bila dokumen restricted ini membuka diri untuk user.
+
+    Syarat: dokumen punya field `project`, dan `allowed_projects` user memuat
+    proyek itu (atau `*`). Dokumen tanpa `project` tidak pernah terbuka.
+    Zona tetap ditegakkan terpisah oleh filter_by_permissions().
+    """
+    projects = {p.lower() for p in split_multi(meta.get("project"))}
+    if not projects or not permissions:
+        return False
+    allowed = {p.lower() for p in split_multi(permissions.get("allowed_projects"))}
+    return "*" in allowed or bool(projects & allowed)
+
+
 def filter_by_permissions(hits, permissions, mode="flag"):
     """Saring hasil retrieval berdasarkan zona + (opsional) tingkat risiko.
 

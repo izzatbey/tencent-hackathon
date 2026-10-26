@@ -59,6 +59,13 @@ PHASE3 = [
     # brief Q-010: remote firewall Makassar (konflik SOP-7)
     ("Saya Ragil, Ops Manager. Boleh remote ke firewall Makassar dari rumah?",
      "OK", "Ragil Wibowo", ["SOP-7"], []),
+    # brief test #3: persona di allowed_projects melihat proyek restricted
+    ("Saya Andini, IT Admin. Siapa owner Proyek Garuda?",
+     "OK", "Andini Pratama", ["RESTRICTED-01"], []),
+    ("Saya Indah, HR Manager. Apa itu Proyek Garuda?",
+     "OK", "Indah Permatasari", ["RESTRICTED-01"], []),
+    # akses luas tapi tanpa proyek -> tetap tidak ada
+    ("Saya Citra, SOC Analyst. Apa itu Proyek Garuda?", "BLOCK", "Citra Kusuma", [], []),
 ]
 
 # (query, status)  status: INJECTION (rc=4) | OK | NOT_BLOCK
@@ -139,7 +146,8 @@ for query, expected, want_user, contains, excludes in STATUS_CASES:
     for doc in excludes:
         if doc in docs:
             reasons.append("bocor zona %s" % doc)
-    if leaked:
+    # dokumen restricted hanya boleh muncul di kasus yang memang mengharapkannya
+    if leaked and not any(d.startswith("RESTRICTED-") for d in contains):
         reasons.append("LEAK restricted")
     ok = not reasons
     fail += 0 if ok else 1
@@ -202,7 +210,24 @@ try:
 finally:
     shutil.rmtree(tmp, ignore_errors=True)
 
-total = len(STATUS_CASES) + len(PII) + 1
-print("\nCASES: %d (phase2=%d, phase3=%d, injection=%d, pii=%d, ctx=1)   FAILED: %d"
-      % (total, len(PHASE2), len(PHASE3), len(INJECTION), len(PII), fail))
+# --- existence leak: proyek restricted vs proyek yang tidak ada ---------------
+# brief test #4: bagi yang tidak berwenang, output harus identik dengan proyek
+# fiktif. Satu-satunya beda yang wajar adalah gema teks pertanyaannya sendiri.
+print("\n-- Existence leak --")
+LEAK_PAIRS = [
+    ("Saya Sari, HR Staff. Siapa owner Proyek Garuda?",
+     "Saya Sari, HR Staff. Siapa owner Proyek Falcon?"),
+    ("Siapa owner Proyek Garuda?", "Siapa owner Proyek Falcon?"),
+]
+for real_q, fake_q in LEAK_PAIRS:
+    out_real = run(real_q)[-1].replace("Garuda", "<P>")
+    out_fake = run(fake_q)[-1].replace("Falcon", "<P>")
+    ok = out_real == out_fake
+    fail += 0 if ok else 1
+    print("%-5s %-56s %s" % ("PASS" if ok else "FAIL", real_q[:56],
+                             "" if ok else "  << output beda dengan proyek fiktif"))
+
+total = len(STATUS_CASES) + len(PII) + 1 + len(LEAK_PAIRS)
+print("\nCASES: %d (phase2=%d, phase3=%d, injection=%d, pii=%d, ctx=1, leak=%d)   FAILED: %d"
+      % (total, len(PHASE2), len(PHASE3), len(INJECTION), len(PII), len(LEAK_PAIRS), fail))
 sys.exit(1 if fail else 0)

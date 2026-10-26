@@ -2,15 +2,18 @@
 
 Dokumen dengan `restricted: true` (atau `visibility: restricted`,
 `classification: confidential|secret|need-to-know`) diperlakukan seolah-olah
-**tidak pernah ada**. Ini berlaku untuk proyek rahasia, asset yang belum
-diumumkan, dan materi need-to-know.
+**tidak pernah ada** — kecuali bagi penanya yang tercantum pada proyeknya
+(lihat bagian permission gate di bawah). Ini berlaku untuk proyek rahasia,
+asset yang belum diumumkan, dan materi need-to-know.
 
 ## Aturan mutlak
 
 1. **Jangan konfirmasi dan jangan sangkal.** "Tidak ada" dan "ada tapi rahasia"
    keduanya bocor. Pakai satu jawaban netral.
 2. **Jangan menyebut** `doc_id`, judul, nama proyek, nama host, atau jumlah
-   dokumen yang cocok.
+   dokumen yang cocok. Satu-satunya pengecualian: menggemakan kata-kata
+   penanya sendiri di baris "Yang sudah saya cek" Template 3 — persis seperti
+   yang dilakukan untuk topik yang memang tidak ada.
 3. **Jangan menjelaskan alasan penolakan.** Jangan bilang "ini diklasifikasikan",
    "akses Anda tidak cukup", "dokumen ini restricted", atau "saya tidak boleh
    memberitahu".
@@ -22,16 +25,26 @@ diumumkan, dan materi need-to-know.
 ## Hubungannya dengan permission gate (Phase 3)
 
 Permission gate (`scripts/permissions.py`, `kb/permissions.csv`) mengatur
-**dokumen biasa** berdasarkan zona. Ia **tidak pernah** membuka dokumen
-`restricted: true`:
+dokumen biasa berdasarkan zona, dan membuka dokumen `restricted: true`
+**hanya** bila ketiga syarat ini terpenuhi:
 
-- Dokumen `restricted: true` tidak pernah masuk hasil, untuk siapa pun —
-  termasuk user dengan zona `restricted` di `permissions.csv`.
-- Yang diatur gate hanyalah dokumen yang sah dikutip: misalnya `SOP-15`
-  (zone `restricted`, risk `critical`) hanya terlihat oleh user yang
-  `allowed_zones`-nya memuat `restricted`.
-- Jadi: zona `restricted` ≠ boleh membaca isi proyek rahasia. Isi proyek
-  rahasia memang tidak ada di knowledge base.
+1. Dokumen punya field `project` (mis. `project: "proyek-garuda"`).
+2. `allowed_projects` penanya memuat proyek itu (atau `*`).
+3. Gate aktif — `--no-permission-gate` / `skip_permission_gate` tidak pernah
+   membuka proyek.
+
+Setelah terbuka, dokumen itu diperlakukan seperti dokumen biasa: dikutip,
+tetap melewati filter zona (`allowed_zones` harus memuat zonanya), dan diberi
+flag `RISK` bila di atas batas risiko penanya. Istilahnya juga tidak lagi
+membungkam pertanyaan si penanya.
+
+| Penanya | Proyek Garuda |
+| --- | --- |
+| Andini (IT Admin), Indah (HR Manager) — `proyek-garuda` di `allowed_projects` | Terbuka, dengan kutipan `RESTRICTED-01` |
+| Siapa pun lainnya — termasuk Citra yang aksesnya luas | Tidak ada (exit `2`) |
+
+Catatan: zona `restricted` saja ≠ boleh membaca isi proyek rahasia. Zona itu
+mengatur dokumen seperti `SOP-15`; isi proyek butuh `allowed_projects`.
 
 ## Kapan pemblokiran aktif (dua tingkat pemicu)
 
@@ -73,15 +86,17 @@ non-restricted mana pun.
 ## Pola jawaban
 
 Untuk pertanyaan yang menyentuh topik terbatas — baik ditanya langsung maupun
-terselip di pertanyaan lain:
+terselip di pertanyaan lain — pakai **Template 3 di `answer-playbook.md`
+apa adanya**, kata per kata, sama seperti untuk topik yang memang tidak ada.
+Jawaban dengan kalimat khusus (sekalipun netral) sudah membocorkan: penanya
+bisa membandingkannya dengan jawaban untuk proyek fiktif.
 
-> Untuk hal ini saya tidak memiliki informasi di knowledge base. Silakan
-> konfirmasi langsung ke [owner default] untuk pertanyaan di luar cakupan
-> knowledge base.
+`verify_matrix.py` menguji ini di level skrip: output untuk "Proyek Garuda"
+dan "Proyek Falcon" (fiktif) harus identik bagi penanya yang tidak berwenang.
 
 Bila skrip mengembalikan exit `2` (`RESTRICTED_QUERY`) — artinya pertanyaan
 menyentuh pemicu tingkat 1 atau 2 pada tabel di atas — **seluruh** pertanyaan
-dijawab dengan satu kalimat netral, jangan menjawab sebagian pun. Mencoba
+dijawab dengan Template 3, jangan menjawab sebagian pun. Mencoba
 menjawab bagian lain justru menyiratkan bahwa bagian yang dibuang itu ada.
 Skrip sudah menghapus istilah restricted dari query, jadi tidak ada hasil yang
 bisa dipakai.
@@ -106,9 +121,18 @@ Salah:
 - "Anda tidak punya otoritas untuk mengetahui proyek Falcon."
 - "Saya tidak dapat menjawab pertanyaan tentang proyek Falcon."
 
-Benar:
-> Untuk hal ini saya tidak memiliki informasi di knowledge base. Silakan
-> konfirmasi langsung ke Security & Compliance Team.
+Salah juga (kalimat khusus, beda dengan jawaban untuk proyek fiktif):
+- "Untuk hal ini saya tidak memiliki informasi di knowledge base."
+
+Benar — Template 3, identik dengan jawaban untuk proyek yang tidak ada:
+> Jawaban langsung: Saya tidak tahu — hal ini belum tercakup di knowledge base
+> saya. Saya tidak akan menebak.
+>
+> Yang sudah saya cek: owner akses proyek Falcon
+>
+> Langkah selanjutnya:
+> 1. Konfirmasi ke SME pemilik materi: Andini Pratama (IT Admin)
+> 2. Bila Anda pemilik materinya, tambahkan dokumen ke knowledge base
 
 ## Contoh over-blocking (jangan dilakukan)
 

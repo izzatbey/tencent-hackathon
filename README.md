@@ -67,7 +67,7 @@ Butuh Python 3.10+ (tanpa dependensi eksternal).
 # tanya knowledge base
 python backend/scripts/search_kb.py -q "Saya Andini, IT Admin. Boleh buka port 22 ke db-hr-jkt-01?"
 
-# 39 kasus regresi (wajib lulus sebelum merge)
+# 44 kasus regresi (wajib lulus sebelum merge)
 python backend/tests/verify_matrix.py
 
 # rakit paket Claude Skill -> dist/security-sahabat.skill
@@ -89,7 +89,7 @@ python tools/pack_skill.py
 | Mock dataset (§4) | ✅ | `knowledge-base/source/` |
 | S1 Intake & parser (LLM) | 🟡 | Belum ada; identitas diparse rule-based di permission gate |
 | S2 Permission gate | ✅ | Zona + risiko + anti existence-leak; 9 persona brief |
-| Garuda untuk persona berwenang (test #3) | 🟡 | `allowed_projects` belum dipakai gate |
+| Garuda untuk persona berwenang (test #3) | ✅ | Lewat `allowed_projects`; selain itu identik dengan proyek fiktif |
 | S3 Retrieval — controls, sops, topology | ✅ | `kb/` terpecah per dokumen |
 | S3 Retrieval — `cmdb.csv`, `chat_exports.jsonl` | 🟡 | Belum di-index backend |
 | Conflict flagging (SOP-7, SOP-9) | ✅ | Dari catatan di KB, belum dari chat export |

@@ -42,7 +42,8 @@ CRITICAL risk.
 | `effective_date` | tidak | Tanggal berlaku, dipakai deteksi konflik versi |
 | `supersedes` / `superseded_by` | tidak | ID dokumen lain; memicu flag konflik |
 | `topic` | tidak | Topik yang sama pada >1 dokumen memicu flag konflik |
-| `restricted` | tidak | `true` = proyek/asset rahasia. Dokumen tidak pernah ditampilkan |
+| `restricted` | tidak | `true` = proyek/asset rahasia. Tidak pernah ditampilkan, kecuali lewat `project` |
+| `project` | tidak | ID proyek dokumen restricted; terbuka bagi user yang `allowed_projects`-nya memuat ID ini |
 | `keywords` / `aliases` | tidak | Kata kunci pencocokan untuk dokumen `restricted` |
 | `zone` | tidak | Zona akses, bisa multi (`common;warehouse`). Kosong = `common` |
 | `risk_level` | tidak | `low` \| `medium` \| `high` \| `critical` (default `medium`) |
@@ -56,9 +57,10 @@ File `permissions.csv` di folder ini memetakan user → hak akses:
 luar `allowed_zones`. Identitas yang tidak dikenal → zona `common` saja.
 Lihat `../references/permission-gate.md`.
 
-Dokumen `restricted: true` hanya dicocokkan lewat `keywords` / `aliases` /
-`tags` — isinya tidak pernah masuk ke jawaban. Lihat
-`../references/restricted-handling.md`.
+Bagi penanya di luar proyeknya, dokumen `restricted: true` hanya dicocokkan
+lewat `keywords` / `aliases` / `tags` — isinya tidak pernah masuk ke jawaban.
+Penanya yang `allowed_projects`-nya memuat `project` dokumen itu bisa
+mengutipnya seperti dokumen biasa. Lihat `../../skill/references/restricted-handling.md`.
 
 ## Isi saat ini
 
@@ -67,14 +69,14 @@ Dokumen `restricted: true` hanya dicocokkan lewat `keywords` / `aliases` /
 | `controls/` | CTRL-01 … CTRL-14 | `controls.md` (CTRL-NLP-001, 2026-08-01) |
 | `sops/` | SOP-7, SOP-9, SOP-12, SOP-14, SOP-15 | `sops.md` (SOP-NLP-MAIN, 2026-03-15) |
 | `topology/` | TOPO-SEGMENTS … TOPO-BLAST-RADIUS | `topology.md` (TOPO-NLP-001, 2026-09-15) |
-| `restricted/` | satu entri (metadata saja) | `topology.md` §6 |
+| `restricted/` | RESTRICTED-01 Proyek Garuda (`project: proyek-garuda`) | `topology.md` §6 |
 
-Dokumen asli disimpan utuh di `/workspace/kb-source/`.
+Dokumen asli disimpan utuh di `../source/`.
 
 Dua penyesuaian yang dilakukan saat konversi (demi anti existence-leak):
 
-1. `topology.md` §6 dipisah menjadi dokumen `restricted` yang **hanya berisi
-   metadata**; isinya sengaja tidak disimpan di knowledge base.
+1. `topology.md` §6 dipisah menjadi dokumen `restricted` tersendiri, terbuka
+   hanya lewat `allowed_projects` (brief test #3).
 2. `SOP-15` menyebut nama proyek terbatas di baris "Restricted data (...)";
    nama itu diganti menjadi "assets marked Restricted" (field `redacted: true`).
 

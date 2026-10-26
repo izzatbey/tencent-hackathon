@@ -6,7 +6,7 @@
 | `scripts/permissions.py` | Permission gate: identitas, zona, risiko |
 | `scripts/injection_guard.py` | Deteksi prompt injection (query + evidence) |
 | `scripts/pii_masker.py` | Penyamaran NIK / telepon / email / EMP-ID / IP |
-| `tests/verify_matrix.py` | 39 kasus regresi |
+| `tests/verify_matrix.py` | 44 kasus regresi |
 | `config.json` | Parameter yang bisa di-tune (lihat `skill/SKILL.md` §Konfigurasi) |
 
 Lokasi KB: `--kb-root` → env `SECURITY_SAHABAT_KB` → `kb_root` di config →

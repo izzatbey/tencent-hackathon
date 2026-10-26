@@ -56,9 +56,9 @@ zona KB (`common`, `restricted`, `it-admin`, `ops-read`, `warehouse`, …):
 | Eka Putri | Team Lead | common;ops-read;warehouse;it-admin;finance;fleet | high |
 | Indah Permatasari | HR Manager | common;hr;restricted;management | high |
 
-`allowed_projects` (mis. `proyek-garuda` untuk Andini & Indah) sudah tercatat
-tapi **belum dipakai gate** — dokumen `restricted: true` tetap tersembunyi
-untuk semua orang.
+`allowed_projects` membuka dokumen `restricted: true` yang field `project`-nya
+cocok (mis. `proyek-garuda` untuk Andini & Indah). Untuk orang lain dokumen
+itu tetap tidak ada. Detail: `restricted-handling.md`.
 
 ## S4 — Aturan penyaringan
 
@@ -73,8 +73,8 @@ untuk semua orang.
    Mode juga bisa override per panggilan: `--risk-gate enforce`.
    Default `flag` dipilih supaya kebijakan yang sah tidak tiba-tiba hilang
    (over-blocking) — tingkatkan ke `enforce` hanya setelah yakin.
-3. **Dokumen `restricted: true` tidak pernah lolos**, berapapun zonanya.
-   Lihat `restricted-handling.md`.
+3. **Dokumen `restricted: true` hanya lolos lewat `allowed_projects`**,
+   berapapun zonanya, dan hanya saat gate aktif. Lihat `restricted-handling.md`.
 
 ## Cara membaca output skrip
 

@@ -7,8 +7,8 @@ Belum dimulai. Stack bebas dipilih oleh owner frontend.
 - Input pertanyaan (+ opsional identitas: nama / role).
 - Tampilan jawaban sesuai `status` dari API:
   - `OK` → jawaban, daftar kutipan (`doc_id`, judul, quote verbatim, owner), badge flag.
-  - `RESTRICTED_SILENCED` → satu kalimat netral saja. Jangan beri petunjuk apa pun.
-  - `NO_MATCH` → "Tidak tahu" + nama SME untuk eskalasi.
+  - `NO_MATCH` → "Tidak tahu" + nama SME untuk eskalasi. Status ini juga
+    dipakai untuk topik restricted — frontend tidak boleh bisa membedakannya.
   - `INJECTION_DETECTED` → minta pengguna memparafrasekan pertanyaan.
 
 ## Kontrak

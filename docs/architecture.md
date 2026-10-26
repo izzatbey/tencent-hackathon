@@ -125,9 +125,21 @@ Response (hanya field ini yang boleh keluar ke browser):
 | `status` | `rc` | Yang ditampilkan frontend |
 | --- | --- | --- |
 | `OK` | 0 | jawaban + daftar kutipan + flag (badge) |
-| `RESTRICTED_SILENCED` | 2 | satu kalimat netral — **tanpa** petunjuk apa pun |
-| `NO_MATCH` | 3 | "Tidak tahu" + nama SME |
+| `NO_MATCH` | 3 | "Tidak tahu" (Template 3) + nama SME |
 | `INJECTION_DETECTED` | 4 | permintaan parafrase |
+
+**Existence leak:** API wajib mengirim `RESTRICTED_SILENCED` (rc 2) ke frontend
+sebagai `NO_MATCH` dengan payload yang identik — status `RESTRICTED_SILENCED`
+tidak boleh pernah sampai ke browser, karena status yang berbeda saja sudah
+membedakan "dirahasiakan" dari "tidak ada". Proyek restricted terbuka hanya
+bagi user yang `allowed_projects`-nya memuat `project` dokumen itu.
+
+| Status internal | Status ke frontend |
+| --- | --- |
+| `OK` | `OK` |
+| `RESTRICTED_SILENCED` | `NO_MATCH` |
+| `NO_MATCH` | `NO_MATCH` |
+| `INJECTION_DETECTED` | `INJECTION_DETECTED` |
 
 **Wajib disaring di API (jangan pernah dikirim ke frontend):**
 
@@ -165,4 +177,4 @@ flowchart LR
 2. **Restricted = tidak ada.** Tidak dikonfirmasi maupun disangkal, termasuk di UI, log, dan pesan error.
 3. **Kutipan verbatim** — PII hanya disamarkan di pertanyaan, tidak di kutipan.
 4. **Ragu → tidak boleh**, lalu eskalasi ke owner dokumen.
-5. Regresi `backend/tests/verify_matrix.py` (39 kasus) wajib lulus sebelum merge.
+5. Regresi `backend/tests/verify_matrix.py` (44 kasus) wajib lulus sebelum merge.
