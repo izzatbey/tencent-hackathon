@@ -49,6 +49,7 @@ kantor Jakarta (WIB), Makassar (WITA), Jayapura (WIT).
 
 ```
 adjusted_brief.md   Brief proyek — rumusan masalah, arsitektur S1–S6, test matrix
+MEMORY.md           Konteks & keputusan tim (dibaca otomatis Claude Code lewat CLAUDE.md)
 knowledge-base/     source/ (dokumen & data mock asli) · kb/ (dokumen terpecah + permissions.csv)
 backend/            scripts/ (retrieval, guard, permission gate) · tests/ · config.json
 frontend/           Chat UI (belum dimulai)
