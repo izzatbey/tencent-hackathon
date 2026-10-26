@@ -52,7 +52,7 @@ adjusted_brief.md   Brief proyek — rumusan masalah, arsitektur S1–S6, test m
 MEMORY.md           Konteks & keputusan tim (dibaca otomatis Claude Code lewat CLAUDE.md)
 knowledge-base/     source/ (dokumen & data mock asli) · kb/ (dokumen terpecah + permissions.csv)
 backend/            scripts/ (retrieval, guard, permission gate) · tests/ · config.json
-frontend/           Chat UI (belum dimulai)
+frontend/           Chat UI (Vite + Svelte + TS)
 skill/              SKILL.md + references/ — instruksi Claude Skill
 docs/               architecture.md · specs/ (spesifikasi per fase) · workbuddy-memory/
 tools/              pack_skill.py — rakit dist/security-sahabat.skill
@@ -68,8 +68,13 @@ Butuh Python 3.10+ (tanpa dependensi eksternal).
 # tanya knowledge base
 python backend/scripts/search_kb.py -q "Saya Andini, IT Admin. Boleh buka port 22 ke db-hr-jkt-01?"
 
-# 44 kasus regresi (wajib lulus sebelum merge)
+# 44 kasus regresi (wajib lulus sebelum merge) + tes core/API
 python backend/tests/verify_matrix.py
+python -m unittest discover -s backend/tests
+
+# API + UI dalam satu proses (lihat frontend/README.md)
+cd frontend && npm ci --ignore-scripts && npm run build && cd ..
+python backend/api/server.py --static frontend/dist
 
 # rakit paket Claude Skill -> dist/security-sahabat.skill
 python tools/pack_skill.py
@@ -80,7 +85,7 @@ python tools/pack_skill.py
 | Area | Owner |
 | --- | --- |
 | `backend/`, `skill/`, sistem | Izzat |
-| `frontend/` | Rekan FE |
+| `frontend/`, tes UI/UX | Farrez |
 | `knowledge-base/` | Tim, perubahan lewat PR |
 
 ## Status terhadap brief (S1–S6)
@@ -99,5 +104,8 @@ python tools/pack_skill.py
 | Klarifikasi dua Budi (test #9) | 🟡 | `contacts.csv` belum dipakai |
 | S5 Approval gate | 🟡 | |
 | S6 Audit log | 🟡 | |
-| HTTP API (`POST /api/ask`) | 🟡 | |
-| Frontend chat UI | 🟡 | |
+| HTTP API (`POST /api/ask`) | ✅ | `backend/api/server.py`, stdlib; `answer` null sampai S4 |
+| Audit log per pertanyaan | 🟡 | JSONL ber-`q_id` dari API; belum ada replay |
+| Frontend chat UI | ✅ | Svelte, `frontend/` |
+| Existence leak lewat beda respons | ❌ | "Project Garuda" vs "Project Falcon", [ADR 0002](docs/decisions/0002-existence-leak-differential.md) |
+| Status test matrix | | [docs/testing.md](docs/testing.md) |

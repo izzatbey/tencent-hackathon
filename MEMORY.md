@@ -12,8 +12,8 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
   Workplace Brain). Submission **1 Nov 2026**, Demo Day **27 Nov 2026**.
 - **Acuan utama:** [adjusted_brief.md](adjusted_brief.md) (S1–S6, 20 test
   case, demo script) · desain: [docs/architecture.md](docs/architecture.md).
-- **Tim:** Muhammad Izzat (izzatbey) — backend, skill, sistem. Rekan — frontend
-  (belum diundang ke repo per 26 Okt). Komunikasi dalam Bahasa Indonesia.
+- **Tim:** Muhammad Izzat (izzatbey): backend, skill, sistem. Farrez: frontend
+  dan test case UI/UX + core. Wafi: anggota tim. Komunikasi dalam Bahasa Indonesia.
 - **Repo:** `izzatbey/tencent-hackathon`, **harus tetap private** —
   `knowledge-base/source/topology.md` §6 berisi teks restricted asli.
 
@@ -69,18 +69,32 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
 
 - `python backend/tests/verify_matrix.py` — **44 kasus, wajib 0 gagal**
   sebelum commit (phase2 13, phase3 14, injection 10, pii 4, ctx 1, leak 2).
+- `python -m unittest discover -s backend/tests` — core + API. Kegagalan yang
+  diketahui ditulis `@unittest.expectedFailure` (existence leak versi Inggris,
+  tes #7 SLA crane). Status matriks brief: `docs/testing.md`.
+- Frontend: `npm run check`, `npm test`, `npm run e2e` di `frontend/`.
 - Di Windows set `PYTHONUTF8=1` dan `PYTHONIOENCODING=utf-8` dulu, kalau tidak
   output berhuruf non-ASCII rusak.
 
-## Belum dikerjakan (per 26 Okt)
+## Keputusan 27 Okt (Farrez)
 
-- HTTP API `POST /api/ask` + mapping status di atas (kontrak draf:
-  `docs/architecture.md` §4).
+- Frontend Vite + Svelte 5 + TS, API tipis stdlib di `backend/api/`, tes core
+  pakai `unittest` (`docs/decisions/0001`).
+- `answer` bernilai `null` untuk `OK` sampai S4 ada; UI tidak menyimpulkan.
+- Injection guard menormalkan Unicode (NFKC + buang karakter Cf) sebelum
+  memindai; PII masker mengenali NIK/HP berspasi, bertitik, bertanda hubung.
+
+## Belum dikerjakan (per 27 Okt)
+
+- **Existence leak lewat beda respons** ("Project Garuda" dibungkam, "Project
+  Falcon" dijawab): opsi di `docs/decisions/0002`, menunggu Izzat + Farrez.
+- Tes #7: pertanyaan di luar data tetap mendapat bukti tak relevan (butuh
+  ambang relevansi atau S4).
 - S1 parser LLM, S4 answer synthesizer untuk web app, S5 approval gate,
-  S6 audit log.
+  replay audit log (log JSONL per `q_id` sudah ditulis API).
 - Indexing `cmdb.csv`, `chat_exports.jsonl`; klarifikasi "dua Budi"
   (`contacts.csv`, brief test #9).
-- Frontend chat UI.
+- Autentikasi: API mempercayai `user`/`role` dari request (pemilih persona demo).
 
 ## Catatan / jebakan
 

@@ -10,13 +10,13 @@ Legenda status: **✅ sudah ada** · **🟡 direncanakan** (belum ada kodenya).
 flowchart LR
     U([Karyawan])
 
-    subgraph FE["frontend/ — 🟡 Rekan (Frontend)"]
+    subgraph FE["frontend/ — ✅ Farrez (Svelte)"]
         UI[Chat UI<br/>pertanyaan + identitas]
         RV[Render jawaban<br/>kutipan, flag, eskalasi]
     end
 
     subgraph BE["backend/ — Izzat (Backend & Sistem)"]
-        API["🟡 HTTP API<br/>POST /api/ask"]
+        API["✅ HTTP API<br/>POST /api/ask"]
         PQ["✅ process_query()<br/>scripts/search_kb.py"]
         LLM["🟡 Answer composer<br/>LLM + answer-playbook"]
         CFG[("✅ config.json")]
@@ -103,24 +103,38 @@ sequenceDiagram
   "user": null, "role": null }
 ```
 
-Response (hanya field ini yang boleh keluar ke browser):
+Response (hanya field ini yang boleh keluar ke browser; diterapkan di
+`backend/api/server.py`, diuji `backend/tests/test_api.py`):
 
 ```json
 {
+  "q_id": "Q-0091a2d7fa37",
   "status": "OK",
   "rc": 0,
-  "answer": "Tidak boleh. ...",
+  "answer": null,
   "citations": [
     { "doc_id": "CTRL-09", "title": "A.8.20 Networks security",
-      "section": "SSH exposure", "quote": "SSH (port 22) from the internet ...",
-      "owner": "Citra Kusuma (SOC Analyst)" }
+      "section": "A.8.20 Networks security", "quote": "SSH (port 22) from the internet ...",
+      "owner": "Citra Kusuma (SOC Analyst)", "effective_date": "2026-08-01",
+      "status": "active", "risk_level": "critical" }
   ],
-  "flags": [ { "type": "CONFLICT", "detail": "..." } ],
+  "flags": [ { "type": "REVIEW", "doc": "SOP-9", "detail": "..." } ],
+  "escalation": "Citra Kusuma (SOC Analyst)",
+  "question_masked": "Boleh buka port 22 ke db-hr-jkt-01?",
   "identity": { "user": "Andini Pratama", "role": "IT Admin" },
-  "pii_masked": "NIK x1",
-  "escalation": "Andini Pratama (IT Admin)"
+  "pii_masked": "NIK x1"
 }
 ```
+
+- `q_id`: nomor catatan audit log; sama dengan baris di `backend/logs/audit.jsonl`.
+- `answer`: `null` untuk `OK` sampai answer composer (S4) ada. Untuk `NO_MATCH`
+  dan `INJECTION_DETECTED` berisi kalimat tetap.
+- `question_masked`: pertanyaan setelah penyamaran PII; `null` untuk injection.
+  Frontend menampilkan ini, bukan teks yang diketik.
+- `identity`: `null`/`null` bila penanya tidak dikenali.
+- Galat: `{"error": {"code", "message"}}` dengan HTTP 400 (validasi, maks 2000
+  karakter), 413 (body > 16 KB), 415 (bukan JSON), 404, 405, 500. Pesan galat
+  tidak pernah menggemakan masukan.
 
 | `status` | `rc` | Yang ditampilkan frontend |
 | --- | --- | --- |
@@ -140,6 +154,10 @@ bagi user yang `allowed_projects`-nya memuat `project` dokumen itu.
 | `RESTRICTED_SILENCED` | `NO_MATCH` |
 | `NO_MATCH` | `NO_MATCH` |
 | `INJECTION_DETECTED` | `INJECTION_DETECTED` |
+
+**Celah yang diketahui:** pemetaan status saja belum cukup. "Who owns Project
+Garuda?" dibungkam, "Who owns Project Falcon?" dijawab; selisih itu membocorkan
+keberadaan Garuda. Lihat [decisions/0002](decisions/0002-existence-leak-differential.md).
 
 **Wajib disaring di API (jangan pernah dikirim ke frontend):**
 
