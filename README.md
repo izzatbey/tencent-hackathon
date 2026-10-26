@@ -88,7 +88,8 @@ python tools/pack_skill.py
 | --- | --- | --- |
 | Mock dataset (§4) | ✅ | `knowledge-base/source/` |
 | S1 Intake & parser (LLM) | 🟡 | Belum ada; identitas diparse rule-based di permission gate |
-| S2 Permission gate | ✅ | Zona + risiko + anti existence-leak |
+| S2 Permission gate | ✅ | Zona + risiko + anti existence-leak; 9 persona brief |
+| Garuda untuk persona berwenang (test #3) | 🟡 | `allowed_projects` belum dipakai gate |
 | S3 Retrieval — controls, sops, topology | ✅ | `kb/` terpecah per dokumen |
 | S3 Retrieval — `cmdb.csv`, `chat_exports.jsonl` | 🟡 | Belum di-index backend |
 | Conflict flagging (SOP-7, SOP-9) | ✅ | Dari catatan di KB, belum dari chat export |

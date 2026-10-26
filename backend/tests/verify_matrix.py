@@ -43,20 +43,22 @@ PHASE2 = [
 PHASE3 = [
     ("Saya Andini, IT Admin. Boleh remote ke firewall Makassar?",
      "OK", "Andini Pratama", ["SOP-7"], []),
-    ("Saya Budi, Finance. Boleh buka port 22 ke HR DB?",
-     "OK", "Budi Santoso", ["CTRL-09"], ["SOP-15"]),
-    ("Saya Rina, Intern. Siapa owner Proyek Garuda?", "BLOCK", "Rina", [], []),
+    ("Saya Dewi, Finance. Boleh buka port 22 ke HR DB?",
+     "OK", "Dewi Anggraini", ["CTRL-09"], ["SOP-15"]),
+    # brief test #4: Garuda ditanya persona HR tanpa akses proyek
+    ("Saya Sari, HR Staff. Siapa owner Proyek Garuda?", "BLOCK", "Sari Lestari", [], []),
     ("Boleh buka port 22 ke HR DB?", "OK", "unauthenticated", ["CTRL-09"], ["SOP-15"]),
-    ("Saya Joko, Warehouse Sup. Boleh install Chrome?", "OK", "Joko", ["CTRL-08"], []),
-    ("Saya Budi dari Finance, boleh akses data HR?", "OK", "Budi Santoso", [], []),
+    ("Saya Bimo, New Employee. Boleh install Chrome?", "OK", "Bimo Nugroho", ["CTRL-08"], []),
+    ("Saya Dewi dari Finance, boleh akses data HR?", "OK", "Dewi Anggraini", [], []),
     ("IT Admin Andini, boleh remote ke firewall?", "OK", "Andini Pratama", [], []),
     ("Saya Citra, SOC Analyst. Siapa owner kontrol akses?", "OK", "Citra Kusuma", [], []),
-    ("Saya Rina, Intern. Boleh share data ke vendor eksternal?",
-     "NOT_BLOCK", "Rina", [], ["SOP-15"]),
+    ("Saya Damar, Contractor. Boleh share data ke vendor eksternal?",
+     "NOT_BLOCK", "Damar Saputra", [], ["SOP-15"]),
     ("Saya Andini, IT Admin. Boleh share data ke vendor eksternal?",
      "OK", "Andini Pratama", ["SOP-15"], []),
-    ("Saya Rina, Intern. Boleh remote ke firewall Makassar dari rumah?",
-     "OK", "Rina", [], []),
+    # brief Q-010: remote firewall Makassar (konflik SOP-7)
+    ("Saya Ragil, Ops Manager. Boleh remote ke firewall Makassar dari rumah?",
+     "OK", "Ragil Wibowo", ["SOP-7"], []),
 ]
 
 # (query, status)  status: INJECTION (rc=4) | OK | NOT_BLOCK

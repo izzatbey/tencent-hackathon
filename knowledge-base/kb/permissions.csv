@@ -1,8 +1,10 @@
 ﻿user,role,dept,allowed_zones,max_risk_level,allowed_projects,note
-Andini Pratama,IT Admin,IT,common;restricted;it-admin;infra-all;management,critical,*,Pemilik topologi & SOP; akses penuh termasuk zona restricted
-Citra Kusuma,SOC Analyst,IT Security,common;security;infra-all;it-admin,high,,Pemilik controls; monitoring & kontrol keamanan
-Indah Permatasari,HR Manager,HR,common;hr;hr-read;management,high,,Pemilik data HR; ikut menangani aset terbatas
-Budi Santoso,Finance Officer,Finance,common;finance;hr-read,medium,,Butuh data HR untuk payroll; bukan data proyek terbatas
-Sari Anggraini,Finance Staff,Finance,common;finance,medium,,Staf finance
-Joko,Warehouse Supervisor,Warehouse,common;warehouse;ops-read,medium,,Operasional gudang Makassar
-Rina,Intern,Operations,common,low,,Magang; hanya materi umum
+Andini Pratama,IT Admin,IT,common;restricted;it-admin;infra-all;ops-read;warehouse;security;hr;finance;fleet;management,critical,proyek-garuda;proyek-kenari;wms-upgrade;backup-review;fwaas-migration,Semua zona; pemilik topologi & SOP; satu dari dua persona Proyek Garuda
+Ragil Wibowo,Ops Manager Mks,Operations,common;ops-read;warehouse,high,wms-upgrade;backup-review,Infrastruktur cabang Makassar
+Sari Lestari,HR Staff,HR,common;hr,medium,,Zona HR saja
+Bimo Nugroho,New Employee,Operations,common,low,,Karyawan baru gudang Makassar; hampir tanpa akses
+Dewi Anggraini,Finance Staff,Finance,common;finance;fleet,medium,,Finance + fleet
+Citra Kusuma,SOC Analyst,IT Security,common;security;infra-all;it-admin;ops-read;warehouse;finance;fleet,high,proyek-kenari;wms-upgrade;backup-review;fwaas-migration,Semua zona kecuali HR dan restricted; pemilik controls
+Damar Saputra,Contractor,External,common,low,fwaas-migration,Kontraktor app support; satu aplikasi saja
+Eka Putri,Team Lead,Operations,common;ops-read;warehouse;it-admin;finance;fleet,high,wms-upgrade;backup-review,Akses luas tapi bukan HR dan restricted
+Indah Permatasari,HR Manager,HR,common;hr;restricted;management,high,proyek-garuda,Pemilik data HR; satu dari dua persona Proyek Garuda

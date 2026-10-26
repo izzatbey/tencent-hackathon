@@ -20,7 +20,7 @@ Pola yang dikenali (nama orang **harus** berhuruf kapital):
 | Pola | Contoh | Hasil |
 | --- | --- | --- |
 | `Saya [Nama], [Role]` | "Saya Andini, IT Admin" | name=Andini, role=IT Admin |
-| `Saya [Nama] dari [Dept]` | "Saya Budi dari Finance" | name=Budi, dept=Finance |
+| `Saya [Nama] dari [Dept]` | "Saya Dewi dari Finance" | name=Dewi, dept=Finance |
 | `[Nama] di sini, [Role]` | "Andini di sini, IT Admin" | name=Andini, role=IT Admin |
 | `[Role] [Nama]` (role harus ada di permissions.csv) | "IT Admin Andini" | role=IT Admin, name=Andini |
 
@@ -41,17 +41,24 @@ Kolom: `user, role, dept, allowed_zones, max_risk_level, allowed_projects, note`
 nama/role dicocokkan dua arah, jadi "Warehouse Sup" cocok dengan
 "Warehouse Supervisor".
 
-Baris bawaan (sesuaikan dengan organisasi Anda):
+Baris bawaan = 9 persona dari brief (§4.2), zona dipetakan ke kosakata
+zona KB (`common`, `restricted`, `it-admin`, `ops-read`, `warehouse`, …):
 
 | User | Role | Zona | Maks. risiko |
 | --- | --- | --- | --- |
-| Andini Pratama | IT Admin | common;restricted;it-admin;infra-all;management | critical |
-| Citra Kusuma | SOC Analyst | common;security;infra-all;it-admin | high |
-| Indah Permatasari | HR Manager | common;hr;hr-read;management | high |
-| Budi Santoso | Finance Officer | common;finance;hr-read | medium |
-| Sari Anggraini | Finance Staff | common;finance | medium |
-| Joko | Warehouse Supervisor | common;warehouse;ops-read | medium |
-| Rina | Intern | common | low |
+| Andini Pratama | IT Admin | semua zona, termasuk restricted | critical |
+| Ragil Wibowo | Ops Manager Mks | common;ops-read;warehouse | high |
+| Sari Lestari | HR Staff | common;hr | medium |
+| Bimo Nugroho | New Employee | common | low |
+| Dewi Anggraini | Finance Staff | common;finance;fleet | medium |
+| Citra Kusuma | SOC Analyst | semua kecuali hr & restricted | high |
+| Damar Saputra | Contractor | common | low |
+| Eka Putri | Team Lead | common;ops-read;warehouse;it-admin;finance;fleet | high |
+| Indah Permatasari | HR Manager | common;hr;restricted;management | high |
+
+`allowed_projects` (mis. `proyek-garuda` untuk Andini & Indah) sudah tercatat
+tapi **belum dipakai gate** — dokumen `restricted: true` tetap tersembunyi
+untuk semua orang.
 
 ## S4 — Aturan penyaringan
 
@@ -72,8 +79,8 @@ Baris bawaan (sesuaikan dengan organisasi Anda):
 ## Cara membaca output skrip
 
 ```
-IDENTITY: Budi Santoso (Finance Officer, Finance) | matched_by=explicit
-ACCESS: zones=common;finance;hr-read | max_risk=medium | source=permissions.csv
+IDENTITY: Dewi Anggraini (Finance Staff, Finance) | matched_by=explicit
+ACCESS: zones=common;finance;fleet | max_risk=medium | source=permissions.csv
 PERMISSION_FILTERED: 1 hasil dibuang (di luar zona/risiko akses Anda): SOP-15[zone]
 ```
 
