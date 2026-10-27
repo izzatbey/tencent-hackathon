@@ -2,6 +2,9 @@
 
 Acuan bersama tim. Diagram di bawah memakai Mermaid (ter-render otomatis di GitHub).
 
+Diagram arsitektur untuk submission (komponen, batas kepercayaan, trade-off,
+termasuk Pra-CAB): [architecture-diagram.svg](architecture-diagram.svg).
+
 Legenda status: **✅ sudah ada** · **🟡 direncanakan** (belum ada kodenya).
 
 ## 1. Gambaran sistem
