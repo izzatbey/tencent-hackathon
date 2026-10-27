@@ -1,21 +1,129 @@
 # Project Memory — SecuritySahabat
 
-Konteks kerja untuk sesi Claude Code berikutnya. Isi dari diskusi pembentukan
-repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
+Konteks kerja untuk sesi Claude Code berikutnya. Dibuat 26 Okt 2026, terakhir
+diperbarui 27 Okt 2026 (policy register v0). Perbarui file ini bila ada
+keputusan baru atau item "belum dikerjakan" selesai.
 
 ## Ringkas
 
-- **Apa:** agent Q&A security & compliance "boleh atau tidak?" dengan kutipan
-  wajib, permission-aware, "tidak tahu" bila tak ada bukti, topik restricted
-  = tidak ada. Studi kasus fiktif PT Nusantara Logistik Prima.
+- **Apa:** dua jalur di atas satu inti penjaga yang sama.
+  1. **Tanya-jawab** (`/api/ask`): agent Q&A security & compliance "boleh atau
+     tidak?" dengan kutipan wajib, permission-aware, "tidak tahu" bila tak ada
+     bukti, topik restricted = tidak ada.
+  2. **Pra-CAB** (`/api/requests`, `/api/policies`): change request / permintaan
+     akses dicek terhadap policy perusahaan, diberi risiko + allowance
+     (boleh / tidak / dengan syarat) + approver, lalu ditahan sampai approver
+     yang benar menyetujui. Ini **fitur utama dan arah produk** (lihat
+     "Arah produk").
+  Studi kasus fiktif PT Nusantara Logistik Prima.
 - **Untuk:** Tencent Cloud Hackathon Indonesia 2026, Challenge A (The
   Workplace Brain). Submission **1 Nov 2026**, Demo Day **27 Nov 2026**.
+  20 tes Challenge A tetap dilaporkan walau fokus bergeser ke Pra-CAB.
 - **Acuan utama:** [adjusted_brief.md](adjusted_brief.md) (S1–S6, 20 test
-  case, demo script) · desain: [docs/architecture.md](docs/architecture.md).
+  case, demo script) · desain: [docs/architecture.md](docs/architecture.md) +
+  [docs/architecture-diagram.svg](docs/architecture-diagram.svg) · visi &
+  roadmap: [docs/vision-v2.md](docs/vision-v2.md) · kontrak Pra-CAB:
+  [docs/pracab-api.md](docs/pracab-api.md) · ADR: `docs/decisions/0001–0004`.
+
+## Arah produk (proyeksi)
+
+Tujuan akhir bukan chatbot, melainkan **"CAB decision brain"**: satu otak
+kepatuhan per perusahaan yang deterministik dan bisa diaudit.
+
+- Perusahaan memasukkan KB-nya sendiri (SOP, memo, CMDB, topologi). Di
+  bawahnya ada KB global (ISO 27001, NIST CSF / SP 800-53, GDPR, UU PDP) yang
+  berlaku bila perusahaan belum punya aturan. Perusahaan > standar; lebih
+  baru > lebih lama; konflik ditampilkan, tidak dirata-ratakan.
+- User mengajukan tiket bebas → LLM menyalin ke field → engine menilai dengan
+  aturan → risiko + allowance + approver + kutipan + tingkat kepastian
+  (`basis`) → manusia menyetujui → eksekusi (mock) → semua tercatat.
+- **Nilai jual = policy register:** aturan adalah data, bukan kode. Dokumen
+  masuk → LLM mengusulkan aturan berkutipan → **pemilik dokumen** mengesahkan
+  → keputusan berikutnya berubah, keputusan lama tetap, semuanya di audit log.
+- LLM tidak pernah memutus izin, risiko, approver, atau verdict. Tiga peran
+  LLM: intake tiket, ekstraksi usulan aturan, (rencana) penilaian fallback
+  RAG yang dilabel "pendapat" dan tidak pernah `READY` tanpa manusia.
+- Roadmap (detail di `docs/vision-v2.md` §7): 0 Pra-CAB ✅ · 2a policy
+  register v0 ✅ · 1 UI Pra-CAB & register (Farrez), video, accountability
+  sheet → 1 Nov · 2b migrasi cek built-in ke register → Demo Day · 3 upload KB
+  (chunking, metadata dikonfirmasi, default restricted) · 4 ekstraksi aturan +
+  "suntingan manusia → usulan aturan" · 5 retrieval hybrid + KB global lengkap
+  · 6 konektor nyata + SSO.
+- Keputusan desain yang sudah diambil untuk v2: aturan = data; default
+  **restricted** untuk dokumen unggahan sampai owner mengisi metadata; teks ISO
+  berhak cipta → hanya ID kontrol + parafrase (pola `CTRL-xx`); NIST/GDPR/UU
+  PDP boleh dikutip; dokumen berinstruksi ke AI dikarantina, tidak dikirim ke
+  LLM; dependensi baru (embedding) baru setelah 1 Nov.
+
+## Status per 27 Okt (handoff)
+
+Sudah ada dan teruji (main):
+
+- Tanya-jawab: pipeline `process_query`, non-interference (ADR 0002),
+  identitas dari persona, audit fail-closed, `--replay` (Farrez).
+- Pra-CAB (ADR 0003): intake LLM → normalisasi + PII mask → scan injection →
+  precheck (`cab_rules.py` + policy register) → state machine + approval per
+  slot (SoD, rapat CAB dulu) → mock dispatch + undo 60 dtk → audit.
+- Policy register v0 (ADR 0004): 16 aturan seed, siklus hidup draft → active
+  → superseded/retired, hanya pemilik dokumen yang mengesahkan, ekstraksi
+  aturan dari memo oleh LLM (diuji dengan FakeProvider).
+- Audit log berantai hash bersama untuk semua jalur (`audit_chain.py`).
+- Demo end-to-end tanpa UI: `python tools/demo_pracab.py` (16 langkah).
+- Tes: 153 unit test (8 `expectedFailure` disengaja), 46 regresi.
+
+Belum diverifikasi: ekstraksi aturan dengan Claude sungguhan (`pip install
+anthropic` + `ANTHROPIC_API_KEY`, lalu `SECURITY_SAHABAT_LLM=claude` dan
+`demo_pracab.py --llm`). Provider WorkBuddy masih stub karena API-nya belum
+diketahui.
+
+Prioritas berikutnya, urut:
+
+1. UI Pra-CAB + register (Farrez) dari `docs/pracab-api.md`; tombol dari
+   `allowed_actions`, label `basis` dibedakan.
+2. Uji ekstraksi aturan dengan Claude sungguhan, catat hasilnya.
+3. Materi submission: accountability sheet, test results (termasuk Pra-CAB),
+   demo video, deskripsi proyek dari `docs/vision-v2.md`.
+4. Migrasi cek built-in berikutnya ke register (fase 2b).
+5. Repo private vs syarat handbook "source code public atau ekspor workflow
+   WorkBuddy": putuskan sebelum submit (lihat bagian Repo di bawah).
+
+## Peta backend
+
+| Modul | Peran |
+| --- | --- |
+| `backend/scripts/search_kb.py` | `process_query()` tanya-jawab (retrieval + gate + guard) |
+| `backend/scripts/permissions.py` · `injection_guard.py` · `pii_masker.py` | penjaga bersama |
+| `backend/scripts/audit_chain.py` | log append-only berantai hash, `verify()` |
+| `backend/scripts/llm.py` | adapter LLM: `off` (default) · `claude` · `workbuddy` (stub) · `fake` |
+| `backend/scripts/kb_facts.py` | CMDB, direktori, kutipan terverifikasi (`cite`, `cite_cmdb`, `cite_chat`) |
+| `backend/scripts/cab_rules.py` | precheck Pra-CAB: cek built-in + panggil policy engine |
+| `backend/scripts/policy_register.py` | skema aturan, engine, `PolicyStore` (seed + event `policy.*`) |
+| `backend/scripts/cab_request.py` | model CR, state machine, `CabStore` (memegang `PolicyStore`) |
+| `backend/scripts/cab_intake.py` · `policy_intake.py` | LLM: tiket → field draft · memo → usulan aturan |
+| `backend/api/server.py` · `cab_api.py` | HTTP stdlib; `--demo` membuka `POST /api/demo/clock` |
+| `knowledge-base/kb/_policies.json` | seed register (awalan `_` = tidak diindeks retrieval) |
+
+## Menjalankan & demo
+
+```
+cd frontend && npm ci --ignore-scripts && npm run build && cd ..
+python backend/api/server.py --static frontend/dist --demo     # http://127.0.0.1:8787
+python tools/demo_pracab.py                                    # terminal kedua
+python backend/scripts/audit_chain.py --verify backend/logs/audit.jsonl
+```
+
+Jangan jalankan dua server ke file audit yang sama: kunci audit chain hanya
+berlaku dalam satu proses.
 - **Tim:** Muhammad Izzat (izzatbey): backend, skill, sistem. Farrez: frontend
   dan test case UI/UX + core. Wafi: anggota tim. Komunikasi dalam Bahasa Indonesia.
 - **Repo:** `izzatbey/tencent-hackathon`, **harus tetap private** —
   `knowledge-base/source/topology.md` §6 berisi teks restricted asli.
+  Handbook meminta source code public **atau** ekspor workflow WorkBuddy
+  dengan bukti pemakaian: belum diputuskan jalur mana.
+- **Alur git:** Farrez kerja di branch `farrez/...` + PR; Izzat kadang langsung
+  ke `main`. Selalu `git fetch` dan cek file yang disentuh kedua sisi sebelum
+  push; selesaikan conflict dengan mempertahankan perubahan kedua pihak, lalu
+  jalankan semua tes.
 
 ## Asal-usul kode
 
@@ -80,8 +188,13 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
 - `python backend/tests/verify_matrix.py` — **46 kasus, wajib 0 gagal**
   sebelum commit (phase2 13, phase3 14, injection 10, pii 4, ctx 1, leak 4).
 - `python -m unittest discover -s backend/tests` — core + API + Pra-CAB
-  (`test_pracab.py`). Kegagalan yang diketahui ditulis `@unittest.expectedFailure`
-  (tes #7 SLA crane). Status matriks brief dan katalog edge case: `docs/testing.md`.
+  (`test_pracab.py`) + policy register (`test_policy.py`); 153 tes per 27 Okt.
+  Kegagalan yang diketahui ditulis `@unittest.expectedFailure` (tes #7 SLA
+  crane, spesifikasi `test_brief_pending.py`). Status matriks brief dan
+  katalog edge case: `docs/testing.md`.
+- `test_api` kasus `DELETE` kadang `ConnectionAbortedError` saat suite penuh
+  berjalan di Windows; lulus bila dijalankan sendiri. Ulang dulu sebelum
+  menganggapnya regresi.
 - Frontend: `npm run check`, `npm test`, `npm run e2e` di `frontend/`.
 - Di Windows set `PYTHONUTF8=1` dan `PYTHONIOENCODING=utf-8` dulu, kalau tidak
   output berhuruf non-ASCII rusak.
@@ -104,8 +217,9 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
   nanti WorkBuddy.
 - State CR = putar ulang audit log berantai hash (`audit_chain.py`). Jangan
   menulis state di luar `CabStore._emit`.
-- Setiap cek punya `basis` (`sop`/`interpretasi`/`sistem`); interpretasi wajib
-  diberi label, bukan disamarkan sebagai bunyi SOP.
+- Setiap cek punya `basis` (`sop`/`standar`/`interpretasi`/`sistem`);
+  interpretasi wajib diberi label, bukan disamarkan sebagai bunyi SOP. Daftar
+  interpretasi yang perlu disahkan owner ada di ADR 0003.
 - `kb/cmdb.csv` dan `kb/directory.csv` (tanpa email/telepon) ditambahkan ke KB.
 - **Tujuan akhir = CAB decision brain** (`docs/vision-v2.md`): KB perusahaan di
   atas KB global (ISO/NIST/GDPR), aturan jadi data (policy register), LLM
