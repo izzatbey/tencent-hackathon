@@ -41,8 +41,8 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
 - `process_query()` di `backend/scripts/search_kb.py` = satu-satunya pintu
   masuk. Urutan tidak boleh ditukar: injection guard → PII mask → identitas +
   permission gate → retrieval → karantina context injection → flag konflik.
-- Status/rc: `OK` 0 · `RESTRICTED_SILENCED` 2 · `NO_MATCH` 3 ·
-  `INJECTION_DETECTED` 4.
+- Status/rc: `OK` 0 · `NO_MATCH` 3 · `INJECTION_DETECTED` 4. Tidak ada
+  status khusus untuk topik restricted (sejak 27 Okt, ADR 0002).
 
 ## Keputusan yang mengikat
 
@@ -56,22 +56,27 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
 - **Proyek restricted** (`restricted: true`) terbuka hanya bila dokumen punya
   `project`, `allowed_projects` user memuatnya (atau `*`), DAN gate aktif.
   Saat ini: Proyek Garuda (`RESTRICTED-01`) → hanya Andini & Indah.
-- **Existence leak:** bagi yang tidak berwenang, jawaban harus identik dengan
-  proyek fiktif. Di skill: Template 3 kata per kata (bukan kalimat khusus).
-  Di API: `RESTRICTED_SILENCED` wajib dikirim ke frontend sebagai `NO_MATCH`.
-  `verify_matrix` menguji Garuda vs "Proyek Falcon".
+- **Existence leak = non-interference** (ADR 0002, diputuskan Farrez 27 Okt):
+  dokumen yang tidak boleh dibaca penanya (restricted tanpa project yang cocok,
+  zona di luar akses) dilewati SEBELUM penilaian dan tidak ikut idf, jadi
+  keluarannya sama persis dengan bila dokumen itu tidak ada. Jangan kembalikan
+  pembungkaman berbasis kata kunci: "Project Garuda" vs "Project Falcon" dulu
+  bocor karena itu. Diuji `NonInterferenceTest` + kasus `HIDDEN` di verify_matrix.
+- **Identitas API** hanya dari `user` yang persis terdaftar; klaim di teks
+  pertanyaan diabaikan (`identity_from_text=False`). Mode skill tetap membaca
+  identitas dari teks karena tidak punya sumber lain.
 - **Field yang tidak boleh keluar ke frontend:** `kb_root`,
-  `permission_gate.dropped`, isi `quarantined`, `restricted_matches`,
-  `mask_log`, `injection_check`, `permissions.allowed_projects`.
+  `permission_gate` (termasuk `readable_ids`), isi `quarantined`, `mask_log`,
+  `injection_check`, `permissions.allowed_projects`.
 - Kutipan selalu verbatim; PII hanya disamarkan di pertanyaan.
 
 ## Tes
 
-- `python backend/tests/verify_matrix.py` — **44 kasus, wajib 0 gagal**
-  sebelum commit (phase2 13, phase3 14, injection 10, pii 4, ctx 1, leak 2).
+- `python backend/tests/verify_matrix.py` — **46 kasus, wajib 0 gagal**
+  sebelum commit (phase2 13, phase3 14, injection 10, pii 4, ctx 1, leak 4).
 - `python -m unittest discover -s backend/tests` — core + API. Kegagalan yang
-  diketahui ditulis `@unittest.expectedFailure` (existence leak versi Inggris,
-  tes #7 SLA crane). Status matriks brief: `docs/testing.md`.
+  diketahui ditulis `@unittest.expectedFailure` (tes #7 SLA crane). Status
+  matriks brief dan katalog edge case: `docs/testing.md`.
 - Frontend: `npm run check`, `npm test`, `npm run e2e` di `frontend/`.
 - Di Windows set `PYTHONUTF8=1` dan `PYTHONIOENCODING=utf-8` dulu, kalau tidak
   output berhuruf non-ASCII rusak.
@@ -86,21 +91,19 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
 
 ## Belum dikerjakan (per 27 Okt)
 
-- **Existence leak lewat beda respons** ("Project Garuda" dibungkam, "Project
-  Falcon" dijawab): opsi di `docs/decisions/0002`, menunggu Izzat + Farrez.
 - Tes #7: pertanyaan di luar data tetap mendapat bukti tak relevan (butuh
   ambang relevansi atau S4).
 - S1 parser LLM, S4 answer synthesizer untuk web app, S5 approval gate,
   replay audit log (log JSONL per `q_id` sudah ditulis API).
 - Indexing `cmdb.csv`, `chat_exports.jsonl`; klarifikasi "dua Budi"
   (`contacts.csv`, brief test #9).
-- Autentikasi: API mempercayai `user`/`role` dari request (pemilih persona demo).
+- Autentikasi: API mempercayai `user` dari request (pemilih persona demo).
 
 ## Catatan / jebakan
 
-- Bagi penanya tak berwenang, kata "proyek" saja sudah membungkam pertanyaan
-  (kata itu eksklusif di metadata restricted). Menguntungkan untuk anti-leak,
-  tapi pertanyaan sah seperti "share dokumen proyek ke vendor" ikut bisu.
+- Karena tidak ada lagi pembungkaman, "Siapa owner Proyek Garuda?" dari Sari
+  bisa mendapat bukti lemah yang tak relevan (SOP-14), persis seperti untuk
+  proyek fiktif. Itu bukan kebocoran; itu masalah ambang relevansi (tes #7).
 - `allowed_projects` berisi nama proyek restricted — jangan pernah
   ditampilkan di UI atau log yang bisa dibaca user lain.
 - Pencocokan identitas: nama (3) > role (2) > dept (1). "Saya Budi dari

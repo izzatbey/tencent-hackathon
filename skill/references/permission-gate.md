@@ -81,13 +81,19 @@ itu tetap tidak ada. Detail: `restricted-handling.md`.
 ```
 IDENTITY: Dewi Anggraini (Finance Staff, Finance) | matched_by=explicit
 ACCESS: zones=common;finance;fleet | max_risk=medium | source=permissions.csv
-PERMISSION_FILTERED: 1 hasil dibuang (di luar zona/risiko akses Anda): SOP-15[zone]
 ```
 
-- `matched_by=none` + `unauthenticated` → balas seperti biasa, tapi dokumen
-  non-common tidak ikut; kalau hasil kosong → Template 3 "tidak tahu".
-- Ada `PERMISSION_FILTERED` → jangan sebut doc_id yang dibuang. Cukup:
-  "Untuk bagian ini saya tidak punya informasi yang bisa saya bagikan."
+Zona disaring **sebelum** pencarian: dokumen di luar `allowed_zones` tidak
+dinilai dan tidak ikut menghitung bobot istilah, jadi tidak ada baris "dibuang"
+untuk zona. Alasannya sama dengan proyek restricted: mencari dulu lalu
+membuang meninggalkan jejak (daftar yang dibuang, kalimat "di luar akses
+Anda", urutan hasil yang bergeser). Lihat docs/decisions/0002.
+
+- `matched_by=none` + `unauthenticated` → balas seperti biasa dari dokumen
+  zona `common`; kalau hasil kosong → Template 3 "tidak tahu".
+- `PERMISSION_FILTERED` hanya muncul untuk `risk_gate: enforce` (dokumen di
+  atas batas risiko). Jangan sebut doc_id-nya dan jangan bilang ada yang
+  disaring; perlakukan seperti tidak ada.
 - Flag `RISK` → tambahkan satu baris "konfirmasi ke [owner] sebelum eksekusi".
 
 ## Menambah user baru

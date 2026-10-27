@@ -7,7 +7,7 @@
 | `scripts/injection_guard.py` | Deteksi prompt injection (query + evidence) |
 | `scripts/pii_masker.py` | Penyamaran NIK / telepon / email / EMP-ID / IP |
 | `api/server.py` | HTTP API tipis (stdlib): `POST /api/ask`, `GET /api/personas`, audit log JSONL |
-| `tests/verify_matrix.py` | 44 kasus regresi |
+| `tests/verify_matrix.py` | 46 kasus regresi |
 | `tests/test_accountability.py` | Edge case per 5 aturan akuntabilitas (unittest) |
 | `tests/test_api.py` | DTO, audit log, validasi, HTTP |
 | `config.json` | Parameter yang bisa di-tune (lihat `skill/SKILL.md` §Konfigurasi) |
@@ -38,4 +38,4 @@ publik, `doc_id` yang dikutip, dan hash jawaban; tidak pernah teks mentah atau
 
 - Answer composer (LLM) yang mengikuti `skill/references/answer-playbook.md`;
   sampai itu ada, `answer` bernilai `null` untuk status `OK`.
-- Existence leak lewat perbedaan respons: [docs/decisions/0002](../docs/decisions/0002-existence-leak-differential.md).
+- Ambang relevansi (tes #7): pertanyaan di luar data masih mendapat bukti lemah.

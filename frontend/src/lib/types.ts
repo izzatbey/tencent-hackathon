@@ -1,5 +1,6 @@
 // Kontrak POST /api/ask (docs/architecture.md §4). Hanya field ini yang
-// dikirim backend; RESTRICTED_SILENCED sudah dipetakan ke NO_MATCH di server.
+// dikirim backend. Topik restricted tidak punya status sendiri: bagi yang tidak
+// berwenang hasilnya sama persis dengan topik yang tidak ada.
 
 export type Status = 'OK' | 'NO_MATCH' | 'INJECTION_DETECTED'
 

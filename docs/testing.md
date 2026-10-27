@@ -4,8 +4,8 @@ Empat lapis, dari yang paling murah:
 
 | Suite | Perintah | Isi |
 | --- | --- | --- |
-| Regresi CLI | `python backend/tests/verify_matrix.py` | 44 kasus lama (wajib 0 gagal) |
-| Core + API | `python -m unittest discover -s backend/tests -v` | `test_accountability.py` (5 aturan, edge case), `test_api.py` (DTO, log, validasi, HTTP) |
+| Regresi CLI | `python backend/tests/verify_matrix.py` | 46 kasus (wajib 0 gagal) |
+| Core + API | `python -m unittest discover -s backend/tests -v` | `test_accountability.py` (5 aturan, non-interference, edge case), `test_api.py` (DTO, identitas, log, validasi, HTTP). Sekitar 100 detik karena hypertest. |
 | Komponen UI | `cd frontend && npm test` | Vitest + Testing Library, jsdom |
 | End-to-end | `cd frontend && npm run e2e` | Playwright, build produksi + API Python asli, desktop dan Pixel 7, axe WCAG 2.2 AA |
 
@@ -14,15 +14,42 @@ Di Windows set `PYTHONUTF8=1` dan `PYTHONIOENCODING=utf-8` dulu. E2E butuh
 
 ## Rancangan
 
+Prosedur: `~/.claude/references/merancang-tes.md` dan bagian "Tes" di standar
+Coderoach (uji mutasi untuk setiap penjaga keamanan, jangan assert detail
+implementasi, uji lewat HTTP sungguhan untuk perilaku lapisan request).
+
 | Bagian | Isi |
 | --- | --- |
-| Kontrak | Pertanyaan + persona masuk, keluar jawaban berkutipan verbatim hanya dari dokumen yang boleh dilihat penanya, "tidak tahu" bila tak ada bukti, setiap pertanyaan tercatat. |
-| Risiko terbesar | Existence leak topik restricted (pelanggaran kritis handbook), field internal bocor ke browser, PII di layar atau log. |
-| Teknik | Partisi per status (OK, NO_MATCH, RESTRICTED, INJECTION), tabel keputusan persona x proyek, nilai batas panjang pertanyaan (0, 1, 2000, 2001), transisi status izin (cabut, beri, cabut), skenario demo end-to-end, tebak galat dari probe. |
-| Edge case dari katalog | Unicode zero-width dan fullwidth, soft hyphen, emoji, RTL, NUL; NIK/HP berspasi, bertitik, bertanda hubung, +62; tanggal mustahil (31 Februari); klik ganda; IME Enter; timeout 30 detik; koneksi putus; 500 non-JSON; path traversal; body raksasa; permintaan bersamaan; XSS di kutipan. |
-| Oracle | Teks dokumen di disk (kutipan harus substring verbatim), pasangan proyek nyata vs fiktif (relasi metamorfik: hasil harus identik), konstanta tertulis untuk masking dan tanggal. |
-| Kualitas tes | Setiap tambalan dan pengaman dirusak sementara (normalisasi Unicode, regex NIK, pemetaan status, penyaring field, traversal, teks mentah saat menunggu, `{@html}`, pencegah klik ganda); semua tes terkait merah, lalu dikembalikan. |
-| Tidak bisa dites di sini | Agent WorkBuddy, voice note, answer composer LLM (S4), approval gate (S5), klarifikasi dua Budi: belum dibangun. |
+| Kontrak | Pertanyaan + persona masuk, keluar jawaban berkutipan verbatim hanya dari dokumen yang boleh dibaca penanya, "tidak tahu" bila tak ada bukti, setiap pertanyaan tercatat. |
+| Risiko terbesar | Existence leak (pelanggaran kritis handbook), field internal bocor ke browser, identitas palsu, PII di layar atau log. |
+| Teknik | Hypertest non-interference (dua eksekusi, input rahasia beda, keluaran harus sama), relasi metamorfik nama nyata vs fiktif, partisi per status, tabel keputusan persona x proyek x zona, nilai batas panjang (0, 1, 2000, 2001, 2000 emoji), transisi izin (cabut, beri, cabut), skenario demo end-to-end. |
+| Oracle | Teks dokumen di disk (kutipan harus substring verbatim). Untuk kebocoran: KB yang dipangkas dari dokumen tak terbaca, dihitung dari frontmatter dan permissions.csv tanpa memakai logika izin engine. |
+| Kualitas tes | Setiap penjaga dirusak sementara (`python tools/mutate_guards.py`): 10 mutan untuk perubahan ADR 0002 dan API, plus mutan tahap sebelumnya. Semua menjadi merah. |
+| Tidak bisa dites di sini | Agent WorkBuddy, voice note, answer composer LLM (S4), approval gate (S5), klarifikasi dua Budi, latensi sebagai side channel (tidak diukur; semua dokumen tetap dimuat per request). |
+
+## Katalog edge case kebocoran (ADR 0002)
+
+| Kanal | Kasus yang diuji | Rujukan |
+| --- | --- | --- |
+| Status dan isi jawaban | Garuda vs Falcon dalam bahasa Indonesia, Inggris, nama polos, nama ditempel ke pertanyaan sah, untuk 7 persona + tamu | handbook Challenge A, contoh tes 1 |
+| Seluruh keluaran engine | Korpus 18 pertanyaan resmi + 27 probe, KB lengkap vs KB tanpa dokumen tak terbaca, 7 persona + tamu | Pasqua dkk., Hypertesting, ICSE 2024 |
+| Dokumen restricted baru | Kata kunci sengaja beririsan dengan kosakata publik (firewall Makassar, backup, port 22, vendor) | OWASP LLM08:2025 |
+| Bobot dan urutan hasil | idf dihitung hanya dari dokumen terbaca; dibuktikan lewat hypertest yang membandingkan skor | Wang dkk., STRESS, IEEE S&P 2017 |
+| Post-filter zona | Dokumen zona tertutup tidak lagi dicari lalu dibuang, jadi tak ada `dropped`/`PERMISSION_FILTERED` | Elastic DLS limitations; Espiritu & Cash, USENIX Security 2026 |
+| Probing prefiks | "Proyek G", "Proyek Ga", ... "Proyek Garuda" | Espiritu & Cash, USENIX Security 2026 |
+| Flag konflik | Versi pengganti yang restricted vs yang tidak pernah ada tampil sama; yang terbaca tetap disebut | turunan prinsip non-interference |
+| Klaim identitas | "Saya Andini, IT Admin", "I am the admin", role di body, nama parsial atau beda huruf | OWASP LLM01:2025, LLM Prompt Injection Cheat Sheet |
+| Gate mati | `permission_gate=False` tidak pernah membuka proyek restricted | desain permission gate |
+| Proyek tanpa zona | Citra punya proyek-kenari tapi tanpa zona restricted: tetap tertutup | tabel keputusan |
+| Dokumen tanpa `project` | `classification: confidential` tidak terbuka bagi siapa pun | tabel keputusan |
+| Audit log | Log tidak memuat doc_id tak terbaca, `allowed_projects`, atau PII; galat engine tetap tercatat; log gagal ditulis berarti jawaban tidak dikirim | OWASP LLM08:2025 (log retrieval) |
+| UI | Markup NO_MATCH identik untuk dua topik; e2e Garuda vs Falcon tiga varian; tamu yang mengaku Andini | handbook |
+
+Edge case lain di lapis API dan UI: karakter tak terlihat saja sebagai
+pertanyaan, BOM di body JSON, `null`, objek sebagai pertanyaan, content-type
+form/multipart, body terpotong (timeout 15 detik, 408), PUT/DELETE/PATCH (501),
+respons 200 berisi HTML, status baru yang belum dikenal UI, kutipan RTL, reflow
+320 px (WCAG 1.4.10).
 
 ## Status terhadap test matrix brief (§6)
 
@@ -33,20 +60,20 @@ Kolom "Lapis" menyebut di mana kasus itu diuji otomatis.
 | 1 | Q-001 port 22 ke HR DB | Lulus (kutipan CTRL-09; kesimpulan "tidak boleh" menunggu S4) | core, API, e2e |
 | 2 | Q-002 firmware Makassar | Belum dites (butuh S4 untuk saran jendela waktu) | - |
 | 3 | Garuda oleh persona berwenang | Lulus | core, API, e2e |
-| 4 | Garuda oleh Sari | Lulus untuk "Siapa owner Proyek Garuda?"; **gagal** untuk "Project Garuda" dan nama proyek yang ditempel ke pertanyaan sah (ADR 0002) | core, API, e2e |
+| 4 | Garuda oleh Sari | Lulus untuk semua varian yang diuji, termasuk bahasa Inggris dan nama yang ditempel (ADR 0002) | core, API, e2e |
 | 5 | Izin berubah lalu tanya ulang | Lulus | core |
 | 6 | Konflik SOP-7 | Sebagian: flag REVIEW muncul; memo Oktober ada di chat export yang belum di-index | core, API, e2e |
 | 7 | SLA crane Jayapura | **Gagal**: retrieval mengembalikan bukti tak relevan, bukan "tidak tahu" | core (expectedFailure) |
-| 8 | Injection Q-006 | Lulus, termasuk varian Unicode setelah tambalan | core, API, e2e |
+| 8 | Injection Q-006 | Lulus, termasuk varian Unicode | core, API, e2e |
 | 9 | Dua Budi | Belum dibangun | - |
 | 10 | Jumat siang WIB/WITA | Belum dibangun | - |
 | 11 | Transkrip voice note | Belum dites | - |
-| 12 | NIK/HP di pertanyaan dan log | Lulus setelah tambalan format berspasi/bertanda hubung | core, API, e2e |
+| 12 | NIK/HP di pertanyaan dan log | Lulus | core, API, e2e |
 | 13 | Campur bahasa | Lulus di retrieval | core |
 | 14 | "server yang itu" | Belum dibangun | - |
 | 15 | Konflik berbeda tanggal | Lulus (dokumen sintetis Rp500.000 vs Rp750.000) | core |
 | 16 | Bukti tipis/tidak ada | Lulus | core, API, UI, e2e |
-| 17 | Replay dari audit log | Sebagian: setiap pertanyaan tercatat dengan `q_id`, belum ada perintah replay | API |
+| 17 | Replay dari audit log | Sebagian: setiap pertanyaan dan galat tercatat dengan `q_id`, belum ada perintah replay | API |
 | 18 | Aksi tanpa approval | Belum dibangun (S5) | - |
 | 19 | Approve lalu undo | Belum dibangun (S5) | - |
 | 20 | Dokumen baru, jawaban berubah | Lulus | core |
@@ -55,3 +82,20 @@ Kegagalan ditulis sebagai `@unittest.expectedFailure` dengan alasan di
 docstring, supaya suite tetap hijau tapi kegagalannya tidak hilang dari laporan.
 Begitu diperbaiki, Python melaporkan "unexpected success" dan dekoratornya harus
 dicabut.
+
+## Sumber (diakses 2026-10-27)
+
+- OWASP Top 10 for LLM Applications 2025: LLM01 Prompt Injection, LLM02
+  Sensitive Information Disclosure, LLM08 Vector and Embedding Weaknesses
+  (genai.owasp.org); OWASP LLM Prompt Injection Prevention Cheat Sheet.
+- Wang, Grubbs, Lu, Bindschaedler, Cash, Ristenpart, "Side-Channel Attacks on
+  Shared Search Indexes", IEEE S&P 2017 (isi teknis dari ringkasan; PDF tidak
+  bisa dibuka).
+- Espiritu & Cash, "Plaintext Recovery Against Post-Filtering Access Control",
+  arXiv 2608.11730, USENIX Security 2026.
+- Elastic, "Security limitations" (document-level security).
+- Microsoft Learn, "Examine how Microsoft 365 Copilot protects sensitive
+  business data" (2025-04-24).
+- Arzanipour dkk., "RAG Security and Privacy: Formalizing the Threat Model and
+  Attack Surface", arXiv 2509.20324 (2025).
+- Pasqua, Ceccato, Tonella, "Hypertesting of Programs", ICSE 2024.

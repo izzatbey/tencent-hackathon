@@ -45,6 +45,16 @@ describe('ask', () => {
     expect(err.message).not.toContain('Traceback')
   })
 
+  it('200 yang isinya bukan JSON (proxy, halaman login) ditolak dengan pesan umum', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response('<html>login</html>', { status: 200, headers: { 'Content-Type': 'text/html' } }),
+    )
+    const err = await ask('a', null, fetchMock).catch((e) => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.kind).toBe('server')
+    expect(err.message).not.toContain('<html>')
+  })
+
   it('koneksi putus menjadi galat jaringan', async () => {
     const fetchMock = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'))
     await expect(ask('a', null, fetchMock)).rejects.toMatchObject({ kind: 'network' })

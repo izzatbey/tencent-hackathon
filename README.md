@@ -68,7 +68,7 @@ Butuh Python 3.10+ (tanpa dependensi eksternal).
 # tanya knowledge base
 python backend/scripts/search_kb.py -q "Saya Andini, IT Admin. Boleh buka port 22 ke db-hr-jkt-01?"
 
-# 44 kasus regresi (wajib lulus sebelum merge) + tes core/API
+# 46 kasus regresi (wajib lulus sebelum merge) + tes core/API
 python backend/tests/verify_matrix.py
 python -m unittest discover -s backend/tests
 
@@ -107,5 +107,5 @@ python tools/pack_skill.py
 | HTTP API (`POST /api/ask`) | ✅ | `backend/api/server.py`, stdlib; `answer` null sampai S4 |
 | Audit log per pertanyaan | 🟡 | JSONL ber-`q_id` dari API; belum ada replay |
 | Frontend chat UI | ✅ | Svelte, `frontend/` |
-| Existence leak lewat beda respons | ❌ | "Project Garuda" vs "Project Falcon", [ADR 0002](docs/decisions/0002-existence-leak-differential.md) |
+| Existence leak (non-interference) | ✅ | Dokumen tak terbaca dilewati sebelum pencarian, [ADR 0002](docs/decisions/0002-existence-leak-differential.md) |
 | Status test matrix | | [docs/testing.md](docs/testing.md) |

@@ -3,7 +3,8 @@
 
 Searches a folder of compliance documents (controls, network topology, SOPs)
 and returns the most relevant passages together with the metadata needed to
-cite them. Restricted documents are matched but NEVER emitted.
+cite them. Restricted documents are skipped before scoring for everyone who is
+not on their project, so they cannot influence an answer in any way.
 
 Usage:
     search_kb.py --query "buka port 22 ke db-hr-jkt-01" [--kb-root PATH]
@@ -19,7 +20,6 @@ KB root resolution order:
 Exit codes:
     0  matches found
     1  usage / IO error
-    2  only restricted documents matched -> answer "does not exist"
     3  no matches -> answer "I don't know" + route to SME owner
 """
 
@@ -51,17 +51,6 @@ STOPWORDS = {
     "kita", "saya", "mau", "gimana", "bagaimana", "itu", "ini", "dan", "atau",
     "untuk", "dari", "ke", "di", "ya", "pak", "bu", "mohon", "tanya", "sesuai",
     "policy", "kebijakan", "kantor", "risk", "risiko", "risk-nya", "please",
-}
-
-# Terms that describe *where* or *what kind of work* someone does, or ordinary
-# HR/benefit vocabulary. They are public information: a question that merely
-# mentions them is answerable and must never be silenced. Over-blocking these
-# does not add safety - it just hides SOPs employees are allowed to read.
-NEVER_BLOCK = {
-    "gudang", "makassar", "branch-mks", "branch", "mks", "jakarta", "jayapura",
-    "warehouse", "cabang", "gudang-makassar", "tunjangan", "gaji", "bonus",
-    "karyawan", "staff", "staf", "employee", "hr", "hrd", "shift", "lokasi",
-    "kota", "site", "office", "kantor", "firewall", "network", "jaringan",
 }
 
 CTRL_ID = re.compile(r"\b(?:ctrl|kontrol)[-\s]?\d+\b", re.I)
@@ -217,18 +206,6 @@ def is_restricted(meta):
     return bool(flags & {"true", "restricted", "confidential", "secret", "need-to-know"})
 
 
-def restricted_haystack(meta):
-    """Match restricted docs on metadata + declared keywords only, never body."""
-    parts = [
-        str(meta.get("doc_id", "")),
-        str(meta.get("title", "")),
-        " ".join(as_list(meta.get("keywords"))),
-        " ".join(as_list(meta.get("aliases"))),
-        " ".join(as_list(meta.get("tags"))),
-    ]
-    return " ".join(parts)
-
-
 def has_token(tok, haystack):
     return re.search(r"(?<!\w)" + re.escape(tok) + r"(?!\w)", haystack) is not None
 
@@ -268,13 +245,15 @@ ASSET_RE = re.compile(r"\d|-")
 
 
 def compute_idf(docs):
-    """Rare/specific terms (db-hr-jkt-01, hr-data) must outweigh generic ones."""
+    """Rare/specific terms (db-hr-jkt-01, hr-data) must outweigh generic ones.
+
+    `docs` hanya dokumen yang boleh dibaca penanya. Kalau dokumen di luar
+    aksesnya ikut dihitung, urutan hasil yang ia lihat berubah karena dokumen
+    itu ada: side channel yang sama dengan serangan STRESS (Wang dkk., S&P 2017).
+    """
     df, chunks = {}, 0
     for doc in docs:
-        meta = doc["meta"]
-        if str(meta.get("type", "")).lower() in META_TYPES or is_restricted(meta):
-            continue
-        title = str(meta.get("title", ""))
+        title = str(doc["meta"].get("title", ""))
         for heading, text in doc["sections"]:
             chunks += 1
             blob = " ".join([title, heading, text]).lower()
@@ -338,149 +317,34 @@ def best_sentence(text, tokens, query_lower, limit=300):
     return best or " ".join(text.split())[:limit]
 
 
-def load_never_block():
-    """Public vocabulary that must never trigger blocking (config + default)."""
-    allow = set(NEVER_BLOCK)
-    cfg = SKILL_DIR / "config.json"
-    if cfg.exists():
-        try:
-            data = json.loads(cfg.read_text(encoding="utf-8"))
-            for term in data.get("never_block_terms", []) or []:
-                term = str(term).strip().lower()
-                if term:
-                    allow.add(term)
-        except (OSError, json.JSONDecodeError):
-            pass
-    return allow
-
-
-def public_terms(docs):
-    """Words that occur anywhere in the non-restricted knowledge base.
-
-    A single-word restricted keyword that also shows up in public documents is
-    a generic term (a city, a branch, a team name). Blocking every question
-    that merely mentions it would silence unrelated topics that the KB does
-    answer - so such words are demoted to 'doc matching only', never to
-    'silence the whole question'.
-    """
-    terms = set()
-    for doc in docs:
-        if is_restricted(doc["meta"]):
-            continue
-        meta = doc["meta"]
-        blob = " ".join(
-            [
-                str(meta.get("doc_id", "")),
-                str(meta.get("title", "")),
-                " ".join(as_list(meta.get("keywords"))),
-                " ".join(as_list(meta.get("aliases"))),
-                " ".join(as_list(meta.get("tags"))),
-            ]
-            + [" ".join((h, t)) for h, t in doc["sections"]]
-        ).lower()
-        terms.update(re.findall(r"[\w\-]{3,}", blob))
-    return terms
-
-
-def collect_restricted_triggers(docs, unlocked=()):
-    """Phrases that must never be answered about (from restricted metadata).
-
-    Multi-word phrases always block. A single-word keyword blocks only when it
-    is exclusive to restricted metadata - see public_terms(). Docs in
-    `unlocked` (asker is on the project) contribute no triggers.
-    """
-    common = public_terms(docs)
-    allow = load_never_block()
-    triggers = set()
-    for doc in docs:
-        if not is_restricted(doc["meta"]) or doc["path"] in unlocked:
-            continue
-        meta = doc["meta"]
-        for phrase in (as_list(meta.get("keywords")) + as_list(meta.get("aliases"))
-                       + as_list(meta.get("trigger_phrases"))):
-            phrase = str(phrase).strip().lower()
-            if len(phrase) < 3:
-                continue
-            words = phrase.split()
-            # Public/allowlisted words never silence a question on their own.
-            if len(words) == 1 and (phrase in allow or phrase in common):
-                continue
-            # A phrase made up only of public words is not distinctive either.
-            if len(words) > 1 and all(w in allow or w in common for w in words):
-                continue
-            triggers.add(phrase)
-    return triggers
-
-
-def scrub_query(query_lower, tokens, triggers):
-    """Remove restricted phrases so they can never influence ranking or output.
-
-    Matching is word-boundary based, never substring: a trigger only fires on
-    the whole word/phrase, so unrelated words that merely contain it are left
-    alone.
-    """
-    hit = False
-    q = query_lower
-    for trig in sorted(triggers, key=len, reverse=True):
-        pattern = r"(?<!\w)" + re.escape(trig) + r"(?!\w)"
-        if re.search(pattern, q):
-            hit = True
-            q = re.sub(pattern, " ", q)
-    if not hit:
-        return query_lower, tokens, False
-    banned = {w for t in triggers for w in t.split()}
-    kept = [t for t in tokens if t not in banned]
-    return " ".join(q.split()), kept, True
-
-
-def restricted_touched(raw_query_lower, tokens, meta, triggers, common):
-    """True only when the question is really *about* a restricted topic.
-
-    A restricted doc counts as touched when a blocking trigger phrase appears
-    in the question, or when a query word matches a distinctive term from the
-    restricted metadata. Generic words that also occur in the public KB (a city
-    or branch name, for instance) do NOT count - otherwise every question that
-    merely mentions that location would be silenced.
-    """
-    for trig in triggers:
-        if re.search(r"(?<!\w)" + re.escape(trig) + r"(?!\w)", raw_query_lower):
-            return True
-    hay = restricted_haystack(meta).lower()
-    allow = load_never_block()
-    distinctive = {
-        w for w in re.findall(r"[\w\-]{3,}", hay)
-        if w not in common and w not in allow
-    }
-    return any(t in distinctive for t in tokens)
-
-
 def search(kb_root, query, top_k, permissions=None, use_gate=True, risk_mode=None,
            injection_sensitivity=None):
-    raw_query_lower = query.lower().strip()
-    query_lower = raw_query_lower
+    query_lower = query.lower().strip()
     tokens = tokenize(query)
     docs = load_documents(kb_root)
     # Restricted docs open up only to askers listed on their project, and only
-    # while the gate is on. For everyone else they stay invisible.
+    # while the gate is on. For everyone else they are skipped here, before
+    # scoring: the answer is then exactly what it would be if the documents did
+    # not exist, which is the only way to leak nothing (docs/decisions/0002).
     unlocked = set()
     if use_gate and permissions:
         unlocked = {d["path"] for d in docs
                     if is_restricted(d["meta"]) and perm.project_allowed(d["meta"], permissions)}
-    triggers = collect_restricted_triggers(docs, unlocked)
-    query_lower, tokens, restricted_query = scrub_query(query_lower, tokens, triggers)
-    idf, _ = compute_idf(docs)
-    common = public_terms(docs)
+    visible = [d for d in docs
+               if str(d["meta"].get("type", "")).lower() not in META_TYPES
+               and (not is_restricted(d["meta"]) or d["path"] in unlocked)]
+    readable = [{"doc": d, "doc_id": str(d["meta"].get("doc_id")), "zones": perm.doc_zones(d["meta"])}
+                for d in visible]
+    if use_gate and permissions:
+        readable, _, _ = perm.filter_by_permissions(readable, permissions, "off")
+    idf, _ = compute_idf([r["doc"] for r in readable])
 
-    hits, restricted_hits = [], []
-    for doc in docs:
+    # Hanya dokumen yang boleh dibaca yang dinilai (pre-filter). Mencari semua
+    # lalu membuang yang di luar zona meninggalkan jejak: daftar `dropped`,
+    # pesan "di luar akses Anda", dan bobot idf.
+    hits = []
+    for doc in (r["doc"] for r in readable):
         meta = doc["meta"]
-        if str(meta.get("type", "")).lower() in META_TYPES:
-            continue
-        if is_restricted(meta) and doc["path"] not in unlocked:
-            if restricted_touched(raw_query_lower, tokens, meta, triggers, common):
-                restricted_hits.append(meta.get("doc_id", doc["path"]))
-            continue
-
         title = str(meta.get("title", ""))
         doc_id = str(meta.get("doc_id", ""))
         for heading, text in doc["sections"]:
@@ -515,16 +379,15 @@ def search(kb_root, query, top_k, permissions=None, use_gate=True, risk_mode=Non
         seen.add(key)
         deduped.append(h)
 
-    # A restricted topic was touched -> suppress everything, never answer partially.
-    if restricted_query or restricted_hits:
-        return [], (restricted_hits or ["query"]), {"enabled": False, "dropped": [], "risk_notes": []}
+    # readable_ids: doc_id yang boleh disebut ke penanya ini (detect_conflicts).
+    gate = {"enabled": False, "dropped": [], "risk_notes": [], "mode": "off",
+            "readable_ids": sorted({r["doc_id"] for r in readable})}
 
-    # Permission gate: results outside the asker's zones never reach the answer.
-    gate = {"enabled": False, "dropped": [], "risk_notes": [], "mode": "off"}
+    # Zona sudah disaring di atas; di sini tinggal batas risiko (flag/enforce).
     if use_gate and permissions:
         mode = risk_mode or perm.risk_gate_mode()
         kept, dropped, _ = perm.filter_by_permissions(deduped, permissions, mode)
-        gate = {"enabled": True, "dropped": dropped, "risk_notes": [], "mode": mode}
+        gate.update({"enabled": True, "dropped": dropped, "mode": mode})
         deduped = kept
 
     selected = deduped[:top_k]
@@ -541,12 +404,23 @@ def search(kb_root, query, top_k, permissions=None, use_gate=True, risk_mode=Non
         # Catatan risiko hanya untuk hasil yang benar-benar dikembalikan.
         _, _, gate["risk_notes"] = perm.filter_by_permissions(selected, permissions, "flag")
 
-    return selected, [], gate
+    return selected, gate
 
 
-def detect_conflicts(hits):
-    """Flag superseded / overlapping sources so the answer can surface them."""
+def detect_conflicts(hits, readable_ids=None):
+    """Flag superseded / overlapping sources so the answer can surface them.
+
+    `readable_ids`: doc_id yang boleh dilihat penanya. Versi pengganti/lama di
+    luar daftar itu tidak disebut namanya, dengan kalimat yang sama entah
+    dokumennya ada tapi tertutup atau memang tidak ada.
+    """
     flags, seen = [], set()
+    readable = None if readable_ids is None else set(readable_ids)
+
+    def name(doc_id):
+        if readable is None or str(doc_id) in readable:
+            return str(doc_id)
+        return "versi lain yang tidak tersedia untuk Anda"
 
     def add(flag_type, doc, detail):
         key = (flag_type, str(doc), detail)
@@ -562,9 +436,9 @@ def detect_conflicts(hits):
         if status in ("superseded", "deprecated", "obsolete", "draft"):
             add("STATUS", h["doc_id"], "status=%s" % status)
         if h.get("superseded_by"):
-            add("SUPERSEDED_BY", h["doc_id"], "digantikan oleh %s" % h["superseded_by"])
+            add("SUPERSEDED_BY", h["doc_id"], "digantikan oleh %s" % name(h["superseded_by"]))
         if h.get("supersedes"):
-            add("SUPERSEDES", h["doc_id"], "menggantikan %s" % h["supersedes"])
+            add("SUPERSEDES", h["doc_id"], "menggantikan %s" % name(h["supersedes"]))
         target = h.get("supersedes")
         if target and target in by_id:
             add("CONFLICT", "%s vs %s" % (target, h["doc_id"]),
@@ -632,7 +506,7 @@ def render_access(identity, permissions, gate):
     return out
 
 
-def render_text(hits, flags, restricted_hits, kb_root, identity=None, permissions=None,
+def render_text(hits, flags, kb_root, identity=None, permissions=None,
                 gate=None, injection=None, mask_log=None, quarantined=None,
                 masked_query=None):
     identity = identity or {"authenticated": False, "matched_by": "none"}
@@ -679,10 +553,6 @@ def render_text(hits, flags, restricted_hits, kb_root, identity=None, permission
         for f in flags:
             out.append("- %s [%s] %s" % (f["type"], f["doc"], f["detail"]))
         out.append("")
-    if restricted_hits:
-        out.append("RESTRICTED_QUERY: pertanyaan menyentuh topik terbatas.")
-        out.append("JANGAN jawab sebagian pun. Balas seolah informasi itu tidak ada,")
-        out.append("tanpa konfirmasi, sangkalan, atau alasan. Lihat references/restricted-handling.md")
     return "\n".join(out)
 
 
@@ -700,7 +570,7 @@ EVIDENCE_QUARANTINE_NOTE = (
 
 def process_query(query, kb_root=None, top_k=5, user=None, role=None,
                   permission_gate=True, risk_mode=None, injection_sensitivity=None,
-                  mask_pii=True):
+                  mask_pii=True, identity_from_text=True):
     """Satu pintu masuk untuk memproses pertanyaan.
 
     Urutan wajib, tidak boleh ditukar:
@@ -710,8 +580,9 @@ def process_query(query, kb_root=None, top_k=5, user=None, role=None,
       4. retrieval, karantina context injection, deteksi konflik
 
     Mengembalikan dict. Kunci yang selalu ada: `status`, `rc`.
-    status: INJECTION_DETECTED (rc 4) | RESTRICTED_SILENCED (rc 2) | NO_MATCH
-    (rc 3) | OK (rc 0).
+    status: INJECTION_DETECTED (rc 4) | NO_MATCH (rc 3) | OK (rc 0). Topik
+    restricted tidak punya status sendiri: bagi yang tidak berwenang ia sama
+    dengan topik yang tidak ada.
     """
     root = resolve_kb_root(kb_root)
 
@@ -737,10 +608,11 @@ def process_query(query, kb_root=None, top_k=5, user=None, role=None,
         scrubbed, mask_log = query, []
 
     use_gate = permission_gate and not perm.skip_gate()
-    identity, permissions = perm.resolve(scrubbed, user=user, role=role)
+    identity, permissions = perm.resolve(scrubbed, user=user, role=role,
+                                         from_text=identity_from_text)
 
     # Semua tahap di bawah memakai `scrubbed` — query asli tidak dipakai lagi.
-    hits, restricted_hits, gate = search(root, scrubbed, top_k,
+    hits, gate = search(root, scrubbed, top_k,
                                          permissions=permissions, use_gate=use_gate,
                                          risk_mode=risk_mode,
                                          injection_sensitivity=injection_sensitivity)
@@ -769,11 +641,9 @@ def process_query(query, kb_root=None, top_k=5, user=None, role=None,
     if pii.enabled("evidence"):
         for h in hits:
             h["quote"], _ = pii.mask_pii(h["quote"])
-    flags = detect_conflicts(hits) + risk_flags(gate)
+    flags = detect_conflicts(hits, gate.get("readable_ids")) + risk_flags(gate)
 
-    if restricted_hits:
-        status, rc = "RESTRICTED_SILENCED", 2
-    elif hits:
+    if hits:
         status, rc = "OK", 0
     else:
         status, rc = "NO_MATCH", 3
@@ -792,8 +662,6 @@ def process_query(query, kb_root=None, top_k=5, user=None, role=None,
         "hits": hits,
         "quarantined": quarantined,
         "flags": flags,
-        # hanya jumlahnya — daftar doc_id tidak boleh ikut keluar
-        "restricted_matches": len(restricted_hits),
     }
 
 
@@ -805,9 +673,7 @@ def render_result(result):
             "Terdeteksi pola: %s" % (", ".join(labels) or "-"),
             result["answer"],
         ])
-    return render_text(result["hits"], result["flags"],
-                       ["query"] if result["restricted_matches"] else [],
-                       result["kb_root"],
+    return render_text(result["hits"], result["flags"], result["kb_root"],
                        identity=result["identity"], permissions=result["permissions"],
                        gate=result["permission_gate"], injection=result["injection_check"],
                        mask_log=result["mask_log"], quarantined=result["quarantined"],
