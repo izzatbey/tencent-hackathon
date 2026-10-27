@@ -1,0 +1,105 @@
+/* SecuritySahabat: lembar bukti di atas meja abu-dingin.
+   Jangkar dunia nyata: lembar disposisi kantor + stempel tinta biru.
+   Lihat frontend/DESIGN.md untuk alasan tiap token. */
+
+:root {
+  color-scheme: light;
+  --surface: #f2f3f6;
+  --sheet: #fefefd;
+  --ink: #16181d;
+  --ink-2: #474c57;
+  --ink-3: #636978;
+  --rule: #dcdee4;
+  --rule-strong: #c2c6cf;
+  --accent: #2440a0;
+  --accent-soft: #e8ecf8;
+  --deny: #b42318;
+  --deny-soft: #fdecea;
+  --warn: #8f4500;
+  --warn-soft: #fff1de;
+  --unknown-soft: #eceef1;
+  --focus: #2440a0;
+
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', system-ui,
+    sans-serif;
+  --font-serif: 'Source Serif 4 Variable', Georgia, 'Times New Roman', serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  --r-sheet: 14px;
+  --r-control: 10px;
+  --r-chip: 6px;
+  --r-stamp: 3px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --surface: #101114;
+    --sheet: #1a1c21;
+    --ink: #eceef1;
+    --ink-2: #b6bac3;
+    --ink-3: #9299a6;
+    --rule: #2d3038;
+    --rule-strong: #3d414b;
+    --accent: #a3b5f4;
+    --accent-soft: #1e2747;
+    --deny: #f59b90;
+    --deny-soft: #3a1c19;
+    --warn: #f3b86c;
+    --warn-soft: #33260f;
+    --unknown-soft: #24262c;
+    --focus: #a3b5f4;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font: 400 1rem/1.55 var(--font-ui);
+  font-feature-settings: 'tnum' 1;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+button,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+.visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

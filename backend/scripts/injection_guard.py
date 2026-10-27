@@ -33,6 +33,7 @@ Uji langsung:
 import argparse
 import json
 import re
+import unicodedata
 from pathlib import Path
 
 SKILL_DIR = Path(__file__).resolve().parent.parent
@@ -160,6 +161,16 @@ def load_sensitivity():
     return "high"
 
 
+def normalize(text):
+    """Bentuk teks yang dipindai: NFKC + buang karakter format (Cf).
+
+    Tanpa ini "ign​ore previous" (zero-width space) atau huruf fullwidth
+    lolos dari regex. Hanya dipakai untuk pemindaian; teks aslinya tidak diubah.
+    """
+    text = unicodedata.normalize("NFKC", text or "")
+    return "".join(ch for ch in text if unicodedata.category(ch) != "Cf")
+
+
 def _scan(text, patterns):
     """Kembalikan [{"pattern", "severity", "label", "match"}] untuk pola yang cocok."""
     hits = []
@@ -190,10 +201,11 @@ def detect_injection(text, scope="query", sensitivity=None):
     block_at = BLOCK_AT[sensitivity]
 
     patterns = EVIDENCE_PATTERNS + INJECTION_PATTERNS if scope == "evidence" else INJECTION_PATTERNS
-    hits = _scan(text or "", patterns)
+    text = normalize(text)
+    hits = _scan(text, patterns)
     # Sinyal lemah hanya dihitung kalau tidak ada pola keras yang cocok — supaya
     # pertanyaan sah tidak ikut terblokir.
-    hits += _scan(text or "", SOFT_PATTERNS) if not hits else []
+    hits += _scan(text, SOFT_PATTERNS) if not hits else []
 
     hard = [h for h in hits if h["severity"] == "high"]
     confidence = round(min(len(hard) / CONFIDENCE_DIVISOR, 1.0), 2)
