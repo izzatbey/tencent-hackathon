@@ -217,6 +217,10 @@ class Handler(BaseHTTPRequestHandler):
     demo = False
 
     def log_message(self, fmt, *args):  # tanpa query string / body di log akses
+        # Koneksi keep-alive yang diam lalu kena timeout belum punya request line,
+        # jadi command/path belum ada; tidak ada yang perlu dicatat.
+        if not getattr(self, "command", None):
+            return
         sys.stderr.write("%s %s\n" % (self.command, self.path.split("?")[0]))
 
     def send_json(self, status, payload):

@@ -81,6 +81,11 @@ Setiap jawaban punya nomor catatan; baca ulang catatannya dengan
 `python backend/api/server.py --replay <nomor>`. Mode pengembangan UI (hot
 reload) ada di [frontend/README.md](frontend/README.md).
 
+Pra-CAB belum punya UI. Jalankan server dengan `--demo`, lalu di terminal lain
+`python tools/demo_pracab.py` untuk alur lengkap: precheck SOP-14 → dispatch
+ditolak → rapat CAB → approve → mock dispatch → undo → verifikasi audit log.
+Kontrak endpoint: [docs/pracab-api.md](docs/pracab-api.md).
+
 ### Menjalankan lewat WorkBuddy
 
 Buka folder repo ini sebagai folder kerja tugas di WorkBuddy. Skill

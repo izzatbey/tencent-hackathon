@@ -8,6 +8,7 @@ topik restricted terlihat berbeda dari topik fiktif, dan PII masuk ke log.
 """
 
 import hashlib
+import io
 import json
 import os
 import shutil
@@ -16,6 +17,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 import unittest
 import urllib.error
 import urllib.request
@@ -402,6 +404,22 @@ class HttpTest(LogEnv, unittest.TestCase):
         finally:
             httpd.shutdown()
             httpd.server_close()
+
+    def test_koneksi_diam_tanpa_request_line_tidak_membuat_traceback(self):
+        # Regresi: timeout sebelum request line dibaca memanggil log_message
+        # tanpa self.command, dan server mencetak AttributeError ke stderr.
+        httpd = server.make_server("127.0.0.1", 0, timeout=1)
+        threading.Thread(target=httpd.serve_forever, daemon=True).start()
+        stderr = io.StringIO()
+        try:
+            with mock.patch.object(sys, "stderr", stderr):
+                with socket.create_connection(httpd.server_address, timeout=10) as sock:
+                    sock.recv(1)  # server menutup koneksi setelah 1 detik diam
+                time.sleep(0.5)
+        finally:
+            httpd.shutdown()
+            httpd.server_close()
+        self.assertNotIn("Traceback", stderr.getvalue())
 
     def test_identitas_dari_body_bukan_dari_teks(self):
         status, _, body = self.request("/api/ask", "POST",
