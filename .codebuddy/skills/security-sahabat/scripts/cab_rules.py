@@ -13,6 +13,11 @@ Setiap cek: {id, status, title, detail, basis, citations}
           sistem       aturan aplikasi yang belum ada di SOP
 
 Outcome (urutan prioritas): BLOCKED > NEEDS_INFO > NEEDS_REVISION > READY
+
+Cek yang berupa aturan perusahaan per aset (ACCESS-SCOPE, EXPOSURE, dan aturan
+baru yang disahkan lewat aplikasi) datang dari policy register
+(policy_register.py). Cek lain di modul ini masih kode ("built-in") dan
+dimigrasi bertahap; lihat docs/decisions/0004.
 """
 
 import sys
@@ -23,8 +28,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import injection_guard as guard  # noqa: E402
 import kb_facts  # noqa: E402
 import permissions as perm  # noqa: E402
+import policy_register  # noqa: E402
 
-ENGINE = "sop14-v1"
+ENGINE = "sop14-v2"
 RISK_LEVELS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
 CHANGE_KINDS = ("firewall_rule", "firmware_upgrade", "config_change", "software_install",
                 "access_grant", "backup_change", "auth_change", "decommission", "other")
@@ -60,14 +66,8 @@ SOURCES = {
     "ctrl12.fields": ("doc", "CTRL-12", "Change requests must document: what, why, impact assessment, rollback plan, and approver."),
     "ctrl12.emergency": ("doc", "CTRL-12", "Emergency changes may bypass CAB but must be retroactively reviewed within 48 hours."),
     "ctrl01.access": ("doc", "CTRL-01", "any change granting new network or system access must name the requester, the authorizing role, and an expiry date."),
-    "ctrl02.least": ("doc", "CTRL-02", "users should only have access to information necessary for their role."),
-    "ctrl02.need": ("doc", "CTRL-02", "Any access request must justify the business need."),
-    "ctrl09.exposure": ("doc", "CTRL-09", "direct internet exposure of internal databases or servers is prohibited."),
     "ctrl09.nat": ("doc", "CTRL-09", "Port forwarding or NAT rules exposing internal services to the internet must be classified as HIGH or CRITICAL risk."),
     "ctrl09.ssh": ("doc", "CTRL-09", "SSH (port 22) from the internet to any internal server is classified as CRITICAL risk"),
-    "topo.hr-data": ("doc", "TOPO-SEGMENTS", "hr-data | HR Data VLAN | VLAN 99 | HR database only. Segregated. | No. Direct internet exposure PROHIBITED."),
-    "topo.server-farm-jkt": ("doc", "TOPO-SEGMENTS", "server-farm-jkt | Server Farm | VLAN 30 | Production servers (ERP, DB, K8s) | No direct exposure. Behind reverse proxy."),
-    "topo.mgmt": ("doc", "TOPO-SEGMENTS", "mgmt | Management Network | VLAN 40 | Monitoring, backup, admin access | No. Jump-host access only."),
     "wms.schedule": ("doc", "TOPO-WMS-WINDOW", "Schedule: 23:00 WIB – 02:00 WIB (daily)"),
     "wms.avoid": ("doc", "TOPO-WMS-WINDOW", "Avoid scheduling network changes on fw-edge-mks-01 or vpn-gw-jkt-01 during this window."),
     "sop7.cab": ("doc", "SOP-7", "CAB approval is required for changes that affect the replication window (23:00–02:00 WIB)."),
@@ -89,12 +89,14 @@ SOURCES = {
 class Context:
     """Data KB yang dibaca sekali per precheck (KB baru langsung terpakai)."""
 
-    def __init__(self, root=None):
+    def __init__(self, root=None, rules=None, submitted=None):
         self.root = kb_facts.kb_root(root)
         self.docs = kb_facts._documents(self.root)
         self.cmdb = kb_facts.load_cmdb(self.root)
         self.people = perm.load_permissions_rows()
         self.directory = kb_facts.load_directory(self.root)
+        self.rules = rules if rules is not None else policy_register.load_seed(self.root)
+        self.submitted = submitted or {}
         self._cache = {}
 
     def c(self, key):
@@ -291,51 +293,10 @@ def cab_slot(chair, keys, ctx):
             "kind": "cab_meeting", "mode": "tertulis", "citations": ctx.cites(*keys)}
 
 
-def check_access_scope(cr, assets, ctx):
-    """Siapa boleh mengakses aset: kolom allowed_departments di CMDB (policy
-    perusahaan, tingkat 1). Aset tanpa kolom itu dinilai dengan standar global
-    (CTRL-02 / ISO A.5.18, tingkat 2): butuh justifikasi + persetujuan owner.
-
-    Mengembalikan (daftar cek, perlu_owner_slot)."""
-    access = cr.get("access") or {}
-    grantee = str(access.get("grantee") or "").strip()
-    if not grantee or not assets:
-        return [], False
-    person = ctx.staff(grantee)
-    if person is None:
-        return [_check("ACCESS-SCOPE", "NEEDS_INFO", "Penerima akses tidak dikenal",
-                       "'%s' tidak ada di direktori staf. Tulis nama lengkap seperti di direktori."
-                       % grantee, "sistem")], False
-    dept = person.get("department") or "-"
-    who = "%s (%s)" % (person["name"], dept)
-    checks, need_owner = [], False
-    for a in assets:
-        allowed = perm.split_multi(a.get("allowed_departments"))
-        if not allowed:
-            need_owner = True
-            checks.append(_check("ACCESS-SCOPE", "WARN", "Tidak ada policy internal untuk %s" % a["asset_id"],
-                                 "CMDB tidak mencatat departemen yang boleh mengakses %s. Dinilai dengan "
-                                 "standar global: akses hanya sesuai kebutuhan peran, kebutuhan bisnis wajib "
-                                 "dijustifikasi, dan owner aset (%s) harus menyetujui."
-                                 % (a["asset_id"], kb_facts.owner_name(a.get("owner")) or "-"),
-                                 "standar", ctx.cites("ctrl02.least", "ctrl02.need")))
-            continue
-        cite = kb_facts.cite_cmdb(a["asset_id"], "allowed_departments", cmdb=ctx.cmdb)
-        if dept.lower() in {d.lower() for d in allowed}:
-            checks.append(_check("ACCESS-SCOPE", "PASS", "Departemen penerima diizinkan",
-                                 "%s boleh mengakses %s (diizinkan: %s)." % (who, a["asset_id"], ", ".join(allowed)),
-                                 "sop", [cite]))
-        else:
-            checks.append(_check("ACCESS-SCOPE", "BLOCK", "Departemen penerima tidak diizinkan",
-                                 "%s bukan departemen yang boleh mengakses %s (policy: %s). Permintaan ini "
-                                 "tidak dapat dilanjutkan; ubah penerima atau minta owner merevisi policy."
-                                 % (who, a["asset_id"], ", ".join(allowed)),
-                                 "sop", [cite] + ctx.cites("ctrl02.least")))
-    return checks, need_owner
-
-
-def precheck(cr, submitted_at, root=None, ctx=None):
-    ctx = ctx or Context(root)
+def precheck(cr, submitted_at, root=None, ctx=None, rules=None, submitted=None):
+    """`rules`/`submitted`: register efektif dari PolicyStore. Tanpa itu, seed
+    register (kb/_policies.json) yang dipakai."""
+    ctx = ctx or Context(root, rules=rules, submitted=submitted)
     checks = []
     extra_cab = []           # alasan tambahan yang mewajibkan keputusan CAB
     emergency = bool(cr.get("emergency"))
@@ -376,10 +337,11 @@ def precheck(cr, submitted_at, root=None, ctx=None):
                              ("Belum diisi: %s." % "; ".join(gaps)) if gaps
                              else "Penerima, role pemberi otorisasi, dan kedaluwarsa %s tercatat." % expires,
                              "sop", ctx.cites("ctrl01.access")))
-        scope_checks, need_owner = check_access_scope(cr, assets, ctx)
-        checks += scope_checks
-    else:
-        need_owner = False
+
+    # --- policy register: aturan sebagai data (ACCESS-SCOPE, EXPOSURE, ...) ---
+    day = submitted_at.astimezone(kb_facts.tz("WIB")).date().isoformat()
+    policy_checks, policy_slots, policies_used = policy_register.evaluate(cr, assets, ctx, day)
+    checks += policy_checks
 
     # --- instruksi tersembunyi di teks ---------------------------------------
     text = "\n".join(str(cr.get(k) or "") for k in FREE_TEXT)
@@ -388,15 +350,6 @@ def precheck(cr, submitted_at, root=None, ctx=None):
         checks.append(_check("INJECTION", "WARN", "Instruksi ke sistem di dalam teks",
                              "Teks permintaan memuat kalimat yang ditujukan ke sistem/AI. Kalimat itu "
                              "diabaikan; keputusan di bawah hanya dari aturan.", "sistem"))
-
-    # --- larangan eksposur internet ----------------------------------------
-    if cr.get("exposure") == "internet":
-        for a in assets:
-            if a.get("zone") in SENSITIVE_ZONES:
-                keys = ["ctrl09.exposure", "topo.%s" % a["zone"]]
-                checks.append(_check("EXPOSURE", "BLOCK", "Eksposur internet dilarang",
-                                     "%s ada di segmen %s yang tidak boleh diekspos langsung ke internet."
-                                     % (a["asset_id"], a["zone"]), "sop", ctx.cites(*keys)))
 
     # --- risiko -------------------------------------------------------------
     level, reasons = classify_risk(cr, assets, window, ctx)
@@ -466,16 +419,12 @@ def precheck(cr, submitted_at, root=None, ctx=None):
                              "retroaktif CAB paling lambat 48 jam setelah eksekusi.", "sop",
                              ctx.cites("sop14.emergency", "ctrl12.emergency")))
     else:
-        if need_owner:
-            # tingkat 2 (standar): owner aset ikut menyetujui walau risikonya LOW
-            have = {s["assignee"] for s in slots}
-            for a in assets:
-                owner = kb_facts.owner_name(a.get("owner"))
-                if owner and owner not in have and not perm.split_multi(a.get("allowed_departments")):
-                    slots.append({"slot": "owner:%s" % owner, "label": "System owner (standar A.5.18)",
-                                  "assignee": owner, "kind": "person", "mode": "tertulis",
-                                  "citations": ctx.cites("ctrl02.need")})
-                    have.add(owner)
+        # approver tambahan dari policy register (mis. owner aset untuk standar A.5.18)
+        have = {s["assignee"] for s in slots}
+        for s in policy_slots:
+            if s["assignee"] not in have:
+                slots.append(s)
+                have.add(s["assignee"])
         if extra_cab and not any(s["slot"] == "cab" for s in slots):
             slots.append(cab_slot(ctx.person("HR Manager"), extra_cab, ctx))
         if any(s["slot"] == "cab" for s in slots):
@@ -517,6 +466,9 @@ def precheck(cr, submitted_at, root=None, ctx=None):
         "cab_meeting": cab_meeting,
         "retro_review_hours": 48 if emergency else None,
         "kb_versions": dict(sorted(cited.items())),
+        # aturan register yang dipakai, dengan hash isinya: keputusan bisa
+        # diputar ulang persis walau aturan kemudian diganti
+        "policies": policies_used,
     }
 
 

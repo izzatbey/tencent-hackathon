@@ -40,7 +40,7 @@ import injection_guard as guard  # noqa: E402
 import permissions as perm  # noqa: E402
 import search_kb  # noqa: E402
 from audit_chain import AuditChain  # noqa: E402
-from cab_request import CabError  # noqa: E402
+from policy_register import PolicyError  # noqa: E402  (induk CabError)
 
 MAX_BODY = 64 * 1024
 MAX_DRAIN = 1024 * 1024
@@ -278,7 +278,7 @@ class Handler(BaseHTTPRequestHandler):
     def run(self, label, fn):
         try:
             self.send_json(200, fn())
-        except (ApiError, CabError) as err:
+        except (ApiError, PolicyError) as err:
             self.send_error_json(err)
         except Exception as exc:  # jangan bocorkan stack trace atau isi permintaan
             sys.stderr.write("%s gagal: %s\n" % (label, type(exc).__name__))

@@ -1,0 +1,545 @@
+{
+  "_note": "Seed policy register Pra-CAB. Aturan di sini dimigrasi dari kode cab_rules.py pada 27 Okt 2026 dan dianggap sudah disahkan pemilik dokumen sumbernya saat migrasi (origin: seed). Aturan baru masuk lewat POST /api/policies atau /api/policies/extract dan disahkan lewat aplikasi; statusnya tercatat di audit log, bukan di file ini. Lihat docs/decisions/0004.",
+  "version": "2026-10-27",
+  "rules": [
+    {
+      "id": "POL-s001",
+      "title": "Departemen penerima tidak diizinkan",
+      "topic": "access_scope",
+      "check_id": "ACCESS-SCOPE",
+      "tier": "perusahaan",
+      "subject": {
+        "asset": "db-hr-jkt-01"
+      },
+      "action": "access",
+      "condition": {
+        "grantee_department_not_in": [
+          "HR"
+        ]
+      },
+      "effect": "BLOCK",
+      "message": "{grantee} ({department}) bukan departemen yang boleh mengakses {asset} (policy: {allowed}). Permintaan ini tidak dapat dilanjutkan; ubah penerima atau minta owner merevisi policy.",
+      "pass_title": "Departemen penerima diizinkan",
+      "pass_message": "{grantee} ({department}) boleh mengakses {asset} (diizinkan: {allowed}).",
+      "sources": [
+        {
+          "type": "cmdb",
+          "asset": "db-hr-jkt-01",
+          "field": "allowed_departments"
+        },
+        {
+          "type": "doc",
+          "doc_id": "CTRL-02",
+          "quote": "users should only have access to information necessary for their role."
+        }
+      ],
+      "owner": "Indah Permatasari",
+      "effective_date": "2026-10-27"
+    },
+    {
+      "id": "POL-s002",
+      "title": "Departemen penerima tidak diizinkan",
+      "topic": "access_scope",
+      "check_id": "ACCESS-SCOPE",
+      "tier": "perusahaan",
+      "subject": {
+        "asset": "db-erp-jkt-01"
+      },
+      "action": "access",
+      "condition": {
+        "grantee_department_not_in": [
+          "IT",
+          "Finance"
+        ]
+      },
+      "effect": "BLOCK",
+      "message": "{grantee} ({department}) bukan departemen yang boleh mengakses {asset} (policy: {allowed}). Permintaan ini tidak dapat dilanjutkan; ubah penerima atau minta owner merevisi policy.",
+      "pass_title": "Departemen penerima diizinkan",
+      "pass_message": "{grantee} ({department}) boleh mengakses {asset} (diizinkan: {allowed}).",
+      "sources": [
+        {
+          "type": "cmdb",
+          "asset": "db-erp-jkt-01",
+          "field": "allowed_departments"
+        },
+        {
+          "type": "doc",
+          "doc_id": "CTRL-02",
+          "quote": "users should only have access to information necessary for their role."
+        }
+      ],
+      "owner": "Andini Pratama",
+      "effective_date": "2026-10-27"
+    },
+    {
+      "id": "POL-s003",
+      "title": "Departemen penerima tidak diizinkan",
+      "topic": "access_scope",
+      "check_id": "ACCESS-SCOPE",
+      "tier": "perusahaan",
+      "subject": {
+        "asset": "fw-edge-mks-01"
+      },
+      "action": "access",
+      "condition": {
+        "grantee_department_not_in": [
+          "IT",
+          "Operations"
+        ]
+      },
+      "effect": "BLOCK",
+      "message": "{grantee} ({department}) bukan departemen yang boleh mengakses {asset} (policy: {allowed}). Permintaan ini tidak dapat dilanjutkan; ubah penerima atau minta owner merevisi policy.",
+      "pass_title": "Departemen penerima diizinkan",
+      "pass_message": "{grantee} ({department}) boleh mengakses {asset} (diizinkan: {allowed}).",
+      "sources": [
+        {
+          "type": "cmdb",
+          "asset": "fw-edge-mks-01",
+          "field": "allowed_departments"
+        },
+        {
+          "type": "doc",
+          "doc_id": "CTRL-02",
+          "quote": "users should only have access to information necessary for their role."
+        }
+      ],
+      "owner": "Ragil Wibowo",
+      "effective_date": "2026-10-27"
+    },
+    {
+      "id": "POL-s004",
+      "title": "Departemen penerima tidak diizinkan",
+      "topic": "access_scope",
+      "check_id": "ACCESS-SCOPE",
+      "tier": "perusahaan",
+      "subject": {
+        "asset": "fw-edge-jkt-01"
+      },
+      "action": "access",
+      "condition": {
+        "grantee_department_not_in": [
+          "IT"
+        ]
+      },
+      "effect": "BLOCK",
+      "message": "{grantee} ({department}) bukan departemen yang boleh mengakses {asset} (policy: {allowed}). Permintaan ini tidak dapat dilanjutkan; ubah penerima atau minta owner merevisi policy.",
+      "pass_title": "Departemen penerima diizinkan",
+      "pass_message": "{grantee} ({department}) boleh mengakses {asset} (diizinkan: {allowed}).",
+      "sources": [
+        {
+          "type": "cmdb",
+          "asset": "fw-edge-jkt-01",
+          "field": "allowed_departments"
+        },
+        {
+          "type": "doc",
+          "doc_id": "CTRL-02",
+          "quote": "users should only have access to information necessary for their role."
+        }
+      ],
+      "owner": "Andini Pratama",
+      "effective_date": "2026-10-27"
+    },
+    {
+      "id": "POL-s005",
+      "title": "Departemen penerima tidak diizinkan",
+      "topic": "access_scope",
+      "check_id": "ACCESS-SCOPE",
+      "tier": "perusahaan",
+      "subject": {
+        "asset": "core-sw-jkt-01"
+      },
+      "action": "access",
+      "condition": {
+        "grantee_department_not_in": [
+          "IT"
+        ]
+      },
+      "effect": "BLOCK",
+      "message": "{grantee} ({department}) bukan departemen yang boleh mengakses {asset} (policy: {allowed}). Permintaan ini tidak dapat dilanjutkan; ubah penerima atau minta owner merevisi policy.",
+      "pass_title": "Departemen penerima diizinkan",
+      "pass_message": "{grantee} ({department}) boleh mengakses {asset} (diizinkan: {allowed}).",
+      "sources": [
+        {
+          "type": "cmdb",
+          "asset": "core-sw-jkt-01",
+          "field": "allowed_departments"
+        },
+        {
+          "type": "doc",
+          "doc_id": "CTRL-02",
+          "quote": "users should only have access to information necessary for their role."
+        }
+      ],
+      "owner": "Fajar Ramadhan",
+      "effective_date": "2026-10-27"
+    },
+    {
+      "id": "POL-s006",
+      "title": "Departemen penerima tidak diizinkan",
+      "topic": "access_scope",
+      "check_id": "ACCESS-SCOPE",
+      "tier": "perusahaan",
+      "subject": {
+        "asset": "vpn-gw-jkt-01"
+      },
+      "action": "access",
+      "condition": {
+        "grantee_department_not_in": [
+          "IT"
+        ]
+      },
+      "effect": "BLOCK",
+      "message": "{grantee} ({department}) bukan departemen yang boleh mengakses {asset} (policy: {allowed}). Permintaan ini tidak dapat dilanjutkan; ubah penerima atau minta owner merevisi policy.",
+      "pass_title": "Departemen penerima diizinkan",
+      "pass_message": "{grantee} ({department}) boleh mengakses {asset} (diizinkan: {allowed}).",
+      "sources": [
+        {
+          "type": "cmdb",
+          "asset": "vpn-gw-jkt-01",
+          "field": "allowed_departments"
+        },
+        {
+          "type": "doc",
+          "doc_id": "CTRL-02",
+          "quote": "users should only have access to information necessary for their role."
+        }
+      ],
+      "owner": "Andini Pratama",
+      "effective_date": "2026-10-27"
+    },
+    {
+      "id": "POL-s007",
+      "title": "Departemen penerima tidak diizinkan",
+      "topic": "access_scope",
+      "check_id": "ACCESS-SCOPE",
+      "tier": "perusahaan",
+      "subject": {
+        "asset": "app-erp-prod"
+      },
+      "action": "access",
+      "condition": {
+        "grantee_department_not_in": [
+          "IT",
+          "Operations",
+          "Finance"
+        ]
+      },
+      "effect": "BLOCK",
+      "message": "{grantee} ({department}) bukan departemen yang boleh mengakses {asset} (policy: {allowed}). Permintaan ini tidak dapat dilanjutkan; ubah penerima atau minta owner merevisi policy.",
+      "pass_title": "Departemen penerima diizinkan",
+      "pass_message": "{grantee} ({department}) boleh mengakses {asset} (diizinkan: {allowed}).",
+      "sources": [
+        {
+          "type": "cmdb",
+          "asset": "app-erp-prod",
+          "field": "allowed_departments"
+        },
+        {
+          "type": "doc",
+          "doc_id": "CTRL-02",
+          "quote": "users should only have access to information necessary for their role."
+        }
+      ],
+      "owner": "Andini Pratama",
+      "effective_date": "2026-10-27"
+    },
+    {
+      "id": "POL-s008",
+      "title": "Departemen penerima tidak diizinkan",
+      "topic": "access_scope",
+      "check_id": "ACCESS-SCOPE",
+      "tier": "perusahaan",
+      "subject": {
+        "asset": "backup-jkt-01"
+      },
+      "action": "access",
+      "condition": {
+        "grantee_department_not_in": [
+          "IT"
+        ]
+      },
+      "effect": "BLOCK",
+      "message": "{grantee} ({department}) bukan departemen yang boleh mengakses {asset} (policy: {allowed}). Permintaan ini tidak dapat dilanjutkan; ubah penerima atau minta owner merevisi policy.",
+      "pass_title": "Departemen penerima diizinkan",
+      "pass_message": "{grantee} ({department}) boleh mengakses {asset} (diizinkan: {allowed}).",
+      "sources": [
+        {
+          "type": "cmdb",
+          "asset": "backup-jkt-01",
+          "field": "allowed_departments"
+        },
+        {
+          "type": "doc",
+          "doc_id": "CTRL-02",
+          "quote": "users should only have access to information necessary for their role."
+        }
+      ],
+      "owner": "Andini Pratama",
+      "effective_date": "2026-10-27"
+    },
+    {
+      "id": "POL-s009",
+      "title": "Departemen penerima tidak diizinkan",
+      "topic": "access_scope",
+      "check_id": "ACCESS-SCOPE",
+      "tier": "perusahaan",
+      "subject": {
+        "asset": "wms-mks-01"
+      },
+      "action": "access",
+      "condition": {
+        "grantee_department_not_in": [
+          "IT",
+          "Operations"
+        ]
+      },
+      "effect": "BLOCK",
+      "message": "{grantee} ({department}) bukan departemen yang boleh mengakses {asset} (policy: {allowed}). Permintaan ini tidak dapat dilanjutkan; ubah penerima atau minta owner merevisi policy.",
+      "pass_title": "Departemen penerima diizinkan",
+      "pass_message": "{grantee} ({department}) boleh mengakses {asset} (diizinkan: {allowed}).",
+      "sources": [
+        {
+          "type": "cmdb",
+          "asset": "wms-mks-01",
+          "field": "allowed_departments"
+        },
+        {
+          "type": "doc",
+          "doc_id": "CTRL-02",
+          "quote": "users should only have access to information necessary for their role."
+        }
+      ],
+      "owner": "Ragil Wibowo",
+      "effective_date": "2026-10-27"
+    },
+    {
+      "id": "POL-s010",
+      "title": "Departemen penerima tidak diizinkan",
+      "topic": "access_scope",
+      "check_id": "ACCESS-SCOPE",
+      "tier": "perusahaan",
+      "subject": {
+        "asset": "mon-jkt-01"
+      },
+      "action": "access",
+      "condition": {
+        "grantee_department_not_in": [
+          "IT"
+        ]
+      },
+      "effect": "BLOCK",
+      "message": "{grantee} ({department}) bukan departemen yang boleh mengakses {asset} (policy: {allowed}). Permintaan ini tidak dapat dilanjutkan; ubah penerima atau minta owner merevisi policy.",
+      "pass_title": "Departemen penerima diizinkan",
+      "pass_message": "{grantee} ({department}) boleh mengakses {asset} (diizinkan: {allowed}).",
+      "sources": [
+        {
+          "type": "cmdb",
+          "asset": "mon-jkt-01",
+          "field": "allowed_departments"
+        },
+        {
+          "type": "doc",
+          "doc_id": "CTRL-02",
+          "quote": "users should only have access to information necessary for their role."
+        }
+      ],
+      "owner": "Fajar Ramadhan",
+      "effective_date": "2026-10-27"
+    },
+    {
+      "id": "POL-s011",
+      "title": "Departemen penerima tidak diizinkan",
+      "topic": "access_scope",
+      "check_id": "ACCESS-SCOPE",
+      "tier": "perusahaan",
+      "subject": {
+        "asset": "dns-jkt-01"
+      },
+      "action": "access",
+      "condition": {
+        "grantee_department_not_in": [
+          "IT"
+        ]
+      },
+      "effect": "BLOCK",
+      "message": "{grantee} ({department}) bukan departemen yang boleh mengakses {asset} (policy: {allowed}). Permintaan ini tidak dapat dilanjutkan; ubah penerima atau minta owner merevisi policy.",
+      "pass_title": "Departemen penerima diizinkan",
+      "pass_message": "{grantee} ({department}) boleh mengakses {asset} (diizinkan: {allowed}).",
+      "sources": [
+        {
+          "type": "cmdb",
+          "asset": "dns-jkt-01",
+          "field": "allowed_departments"
+        },
+        {
+          "type": "doc",
+          "doc_id": "CTRL-02",
+          "quote": "users should only have access to information necessary for their role."
+        }
+      ],
+      "owner": "Fajar Ramadhan",
+      "effective_date": "2026-10-27"
+    },
+    {
+      "id": "POL-s012",
+      "title": "Departemen penerima tidak diizinkan",
+      "topic": "access_scope",
+      "check_id": "ACCESS-SCOPE",
+      "tier": "perusahaan",
+      "subject": {
+        "asset": "k8s-prod-01"
+      },
+      "action": "access",
+      "condition": {
+        "grantee_department_not_in": [
+          "IT"
+        ]
+      },
+      "effect": "BLOCK",
+      "message": "{grantee} ({department}) bukan departemen yang boleh mengakses {asset} (policy: {allowed}). Permintaan ini tidak dapat dilanjutkan; ubah penerima atau minta owner merevisi policy.",
+      "pass_title": "Departemen penerima diizinkan",
+      "pass_message": "{grantee} ({department}) boleh mengakses {asset} (diizinkan: {allowed}).",
+      "sources": [
+        {
+          "type": "cmdb",
+          "asset": "k8s-prod-01",
+          "field": "allowed_departments"
+        },
+        {
+          "type": "doc",
+          "doc_id": "CTRL-02",
+          "quote": "users should only have access to information necessary for their role."
+        }
+      ],
+      "owner": "Andini Pratama",
+      "effective_date": "2026-10-27"
+    },
+    {
+      "id": "POL-g001",
+      "title": "Tidak ada policy internal untuk {asset}",
+      "topic": "access_scope",
+      "check_id": "ACCESS-SCOPE",
+      "tier": "standar",
+      "subject": {
+        "asset": "*"
+      },
+      "action": "access",
+      "condition": {},
+      "effect": "REQUIRE_APPROVER",
+      "approver": "asset_owner",
+      "approver_label": "System owner (standar A.5.18)",
+      "message": "CMDB tidak mencatat departemen yang boleh mengakses {asset}. Dinilai dengan standar global: akses hanya sesuai kebutuhan peran, kebutuhan bisnis wajib dijustifikasi, dan owner aset ({owner}) harus menyetujui.",
+      "sources": [
+        {
+          "type": "doc",
+          "doc_id": "CTRL-02",
+          "quote": "users should only have access to information necessary for their role."
+        },
+        {
+          "type": "doc",
+          "doc_id": "CTRL-02",
+          "quote": "Any access request must justify the business need."
+        }
+      ],
+      "owner": "Citra Kusuma",
+      "effective_date": "2026-08-01"
+    },
+    {
+      "id": "POL-x001",
+      "title": "Eksposur internet dilarang",
+      "topic": "internet_exposure",
+      "check_id": "EXPOSURE",
+      "tier": "perusahaan",
+      "subject": {
+        "zone": "hr-data"
+      },
+      "action": "*",
+      "condition": {
+        "exposure_in": [
+          "internet"
+        ]
+      },
+      "effect": "BLOCK",
+      "message": "{asset} ada di segmen {zone} yang tidak boleh diekspos langsung ke internet.",
+      "sources": [
+        {
+          "type": "doc",
+          "doc_id": "CTRL-09",
+          "quote": "direct internet exposure of internal databases or servers is prohibited."
+        },
+        {
+          "type": "doc",
+          "doc_id": "TOPO-SEGMENTS",
+          "quote": "hr-data | HR Data VLAN | VLAN 99 | HR database only. Segregated. | No. Direct internet exposure PROHIBITED."
+        }
+      ],
+      "owner": "Andini Pratama",
+      "effective_date": "2026-09-15"
+    },
+    {
+      "id": "POL-x002",
+      "title": "Eksposur internet dilarang",
+      "topic": "internet_exposure",
+      "check_id": "EXPOSURE",
+      "tier": "perusahaan",
+      "subject": {
+        "zone": "server-farm-jkt"
+      },
+      "action": "*",
+      "condition": {
+        "exposure_in": [
+          "internet"
+        ]
+      },
+      "effect": "BLOCK",
+      "message": "{asset} ada di segmen {zone} yang tidak boleh diekspos langsung ke internet.",
+      "sources": [
+        {
+          "type": "doc",
+          "doc_id": "CTRL-09",
+          "quote": "direct internet exposure of internal databases or servers is prohibited."
+        },
+        {
+          "type": "doc",
+          "doc_id": "TOPO-SEGMENTS",
+          "quote": "server-farm-jkt | Server Farm | VLAN 30 | Production servers (ERP, DB, K8s) | No direct exposure. Behind reverse proxy."
+        }
+      ],
+      "owner": "Andini Pratama",
+      "effective_date": "2026-09-15"
+    },
+    {
+      "id": "POL-x003",
+      "title": "Eksposur internet dilarang",
+      "topic": "internet_exposure",
+      "check_id": "EXPOSURE",
+      "tier": "perusahaan",
+      "subject": {
+        "zone": "mgmt"
+      },
+      "action": "*",
+      "condition": {
+        "exposure_in": [
+          "internet"
+        ]
+      },
+      "effect": "BLOCK",
+      "message": "{asset} ada di segmen {zone} yang tidak boleh diekspos langsung ke internet.",
+      "sources": [
+        {
+          "type": "doc",
+          "doc_id": "CTRL-09",
+          "quote": "direct internet exposure of internal databases or servers is prohibited."
+        },
+        {
+          "type": "doc",
+          "doc_id": "TOPO-SEGMENTS",
+          "quote": "mgmt | Management Network | VLAN 40 | Monitoring, backup, admin access | No. Jump-host access only."
+        }
+      ],
+      "owner": "Andini Pratama",
+      "effective_date": "2026-09-15"
+    }
+  ]
+}

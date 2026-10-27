@@ -12,8 +12,12 @@ Alur: Ragil mengajukan upgrade firmware firewall Makassar -> precheck SOP-14
 -> dispatch sebelum disetujui ditolak -> CAB belum rapat ditolak -> jam maju
 ke rapat CAB -> Indah menyetujui -> dispatch ke mock tool -> undo -> verifikasi
 audit log. Lalu tiga contoh akses: SSH dari internet ke HR DB (diblokir),
-akses ERP untuk Marketing (diblokir oleh policy di CMDB), dan akses aset
+akses ERP untuk Marketing (diblokir oleh policy register), dan akses aset
 tanpa policy internal (dinilai dengan standar global, owner ikut menyetujui).
+Terakhir policy register: memo baru -> aturan diusulkan -> disahkan pemilik
+memo -> permintaan berikutnya berubah, permintaan lama tetap.
+
+    python tools/demo_pracab.py --llm   # langkah 13 diekstrak LLM (SECURITY_SAHABAT_LLM=claude)
 Semua CR yang dibuat tercatat di audit log server.
 """
 
@@ -24,7 +28,19 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-RAGIL, INDAH, ANDINI, EKA = "Ragil Wibowo", "Indah Permatasari", "Andini Pratama", "Eka Putri"
+RAGIL, INDAH, ANDINI, EKA, CITRA = ("Ragil Wibowo", "Indah Permatasari", "Andini Pratama", "Eka Putri",
+                                    "Citra Kusuma")
+MEMO_QUOTE = "mail relay mail-jkt-01 hanya boleh diakses oleh tim IT"
+MEMO = ("Memo IT Security, 27 Okt 2026. Mulai hari ini %s. Departemen lain memakai email cloud. "
+        "Hubungi Citra Kusuma bila ada pertanyaan." % MEMO_QUOTE)
+MEMO_RULE = {
+    "title": "Mail relay hanya untuk IT", "topic": "access_scope", "check_id": "ACCESS-SCOPE",
+    "tier": "perusahaan", "subject": {"asset": "mail-jkt-01"}, "action": "access",
+    "condition": {"grantee_department_not_in": ["IT"]}, "effect": "BLOCK",
+    "message": "{grantee} ({department}) tidak boleh mengakses {asset} (policy: {allowed}).",
+    "pass_message": "{grantee} ({department}) boleh mengakses {asset}.",
+    "sources": [{"type": "submitted", "quote": MEMO_QUOTE}], "owner": CITRA,
+}
 NOW = "2026-10-27T10:00:00+07:00"        # Selasa; rapat CAB terdekat yang sah: Rabu 4 Nov
 AFTER_MEETING = "2026-11-04T15:00:00+07:00"
 
@@ -111,6 +127,8 @@ def expect_error(status, body, label):
 def main():
     ap = argparse.ArgumentParser(description="Demo terpandu Pra-CAB.")
     ap.add_argument("--base", default="http://127.0.0.1:8787", help="URL server SecuritySahabat")
+    ap.add_argument("--llm", action="store_true",
+                    help="Langkah 13 memakai /api/policies/extract (server harus SECURITY_SAHABAT_LLM=claude)")
     args = ap.parse_args()
     api = Api(args.base)
 
@@ -188,7 +206,45 @@ def main():
     for s in acc["approvals"]:
         print("    approver: %-32s -> %s" % (s["label"], s["assignee"]))
 
-    step(13, "Verifikasi rantai hash audit log")
+    first_mail = acc
+
+    step(13, "Policy register: Andini mengajukan aturan dari memo Citra (%s)"
+         % ("diekstrak LLM" if args.llm else "diisi manual"))
+    if args.llm:
+        status, out = api.call("/api/policies/extract", {"user": ANDINI, "title": "Memo mail relay",
+                                                         "text": MEMO, "owner": CITRA})
+        if status != 200:
+            sys.exit("    ekstraksi gagal (HTTP %d %s): %s" % (status, out["error"]["code"], out["error"]["message"]))
+        for d in out["dropped"]:
+            print("    dibuang: %s (%s)" % (d.get("title"), d["reason"]))
+        if not out["proposed"]:
+            sys.exit("    LLM tidak mengusulkan aturan yang lolos verifikasi.")
+        rule = out["proposed"][0]
+        print("    diusulkan oleh %s/%s" % (out["llm"]["provider"], out["llm"]["model"]))
+    else:
+        _, rule = api.call("/api/policies", {"user": ANDINI, "rule": MEMO_RULE,
+                                             "source": {"title": "Memo mail relay", "text": MEMO, "owner": CITRA}})
+    print("    %s [%s] %s" % (rule["id"], rule["status"], rule["title"]))
+    print("    kondisi: %s -> %s" % (json.dumps(rule["condition"]), rule["effect"]))
+    print("    kutipan: \"%s\"" % rule["sources"][0]["quote"])
+    print("    pemilik dokumen: %s · tombol untuk Andini: %s" % (rule["owner"], rule["allowed_actions"]))
+
+    step(14, "Yang tidak berhak mencoba mengesahkan, lalu Citra (pemilik memo) mengesahkan")
+    expect_error(*api.call("/api/policies/%s/approve" % rule["id"], {"user": EKA}), "approve oleh Eka")
+    expect_error(*api.call("/api/policies/%s/approve" % rule["id"], {"user": ANDINI}), "approve oleh pengusul")
+    _, rule = api.call("/api/policies/%s/approve" % rule["id"], {"user": CITRA})
+    print("    %s sekarang %s, berlaku mulai %s" % (rule["id"], rule["status"], rule["effective_date"]))
+
+    step(15, "Lina mengajukan akses mail-jkt-01 lagi -> keputusan mengikuti aturan baru")
+    _, acc = api.call("/api/requests", {"user": EKA, "fields": dict(ACCESS, assets=["mail-jkt-01"],
+                                                                   title="Akses mail relay untuk Marketing")})
+    _, acc = api.call("/api/requests/%s/submit" % acc["id"], {"user": EKA})
+    show_scope(acc)
+    _, old = api.call("/api/requests/%s" % first_mail["id"], user=EKA)
+    print("    permintaan sebelumnya (%s) tetap: %s, %s" % (old["id"], old["state"],
+                                                          old["precheck"]["outcome"]))
+
+    step(16, "Verifikasi rantai hash audit log")
     _, verify = api.call("/api/audit/verify")
     print("    %s" % json.dumps(verify, ensure_ascii=False))
 

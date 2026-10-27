@@ -12,6 +12,15 @@
     GET  /api/audit/verify               status rantai hash audit log
     POST /api/demo/clock                 {now: ISO | null}  hanya dengan server --demo
 
+  Policy register:
+    GET  /api/policies?user=[&status=]   semua aturan (seed + yang diajukan lewat aplikasi)
+    GET  /api/policies/{id}?user=
+    POST /api/policies                   {user, rule, source?: {title, text, owner}}   usulan manual
+    POST /api/policies/extract           {user, title, text, owner}   LLM mengusulkan dari dokumen
+    POST /api/policies/{id}/approve      {user}            hanya owner dokumen sumber, bukan pengusul
+    POST /api/policies/{id}/reject       {user, reason}
+    POST /api/policies/{id}/retire       {user, reason}
+
 Permintaan yang tidak ada dan yang tidak boleh dilihat dijawab 404 yang sama.
 """
 
@@ -25,11 +34,16 @@ sys.path.insert(0, str(BACKEND / "scripts"))
 import cab_intake  # noqa: E402
 import cab_rules  # noqa: E402
 import kb_facts  # noqa: E402
+import policy_intake  # noqa: E402
+import policy_register  # noqa: E402
 from audit_chain import AuditChain  # noqa: E402
 from cab_request import CHANNELS, CabError, CabStore, Clock  # noqa: E402
 
 ID_RE = re.compile(r"^/api/requests/(CR-[0-9a-f]{10})(?:/([a-z]+))?$")
+POLICY_RE = re.compile(r"^/api/policies/(POL-[0-9a-z]{4,12})(?:/([a-z]+))?$")
 ACTIONS = ("update", "submit", "approve", "reject", "dispatch", "undo", "review", "cancel")
+POLICY_ACTIONS = ("approve", "reject", "retire")
+POLICY_STATUSES = ("draft", "active", "superseded", "retired", "rejected")
 MAX_TEXT = 4000
 
 CLOCK = Clock()
@@ -95,14 +109,84 @@ def _text(data, key, required=False, limit=MAX_TEXT):
 
 
 def handles(path):
-    return path in ("/api/intake", "/api/requests", "/api/audit/verify", "/api/demo/clock") \
-        or path.startswith("/api/requests/")
+    return path in ("/api/intake", "/api/requests", "/api/audit/verify", "/api/demo/clock",
+                    "/api/policies", "/api/policies/extract") \
+        or path.startswith("/api/requests/") or path.startswith("/api/policies/")
+
+
+# --------------------------------------------------------------------------
+# policy register
+# --------------------------------------------------------------------------
+POLICY_VIEW = ("id", "title", "topic", "check_id", "tier", "subject", "action", "condition", "effect",
+               "approver", "approver_label", "message", "pass_title", "pass_message", "basis", "sources",
+               "owner", "effective_date", "supersedes", "status", "origin", "proposed_by", "proposed_at",
+               "approved_by", "approved_at", "superseded_by", "rejected_by", "retired_by", "reason", "history")
+
+
+def policy_view(policies, rule, actor):
+    out = {k: rule.get(k) for k in POLICY_VIEW}
+    docs = {s.get("doc_id") for s in rule.get("sources", []) if s.get("type") == "submitted"}
+    out["source_documents"] = [{"doc_id": d, "title": policies.sources[d]["title"],
+                                "owner": policies.sources[d]["owner"], "sha256": policies.sources[d]["sha256"],
+                                "added_by": policies.sources[d]["by"], "added_at": policies.sources[d]["at"]}
+                               for d in sorted(docs) if d in policies.sources]
+    out["allowed_actions"] = policies.allowed_actions(actor, rule)
+    return out
+
+
+def handle_policies_get(store, path, query):
+    params = parse_qs(query)
+    actor = store.actor((params.get("user") or [None])[0])
+    policies = store.policies
+    if path == "/api/policies":
+        status = (params.get("status") or [None])[0]
+        if status is not None and status not in POLICY_STATUSES:
+            raise CabError(400, "invalid_status", "status salah satu dari %s." % ", ".join(POLICY_STATUSES))
+        rules = [r for r in policies.rules.values() if status is None or r["status"] == status]
+        return {"policies": [policy_view(policies, r, actor) for r in sorted(rules, key=lambda r: r["id"])]}
+    m = POLICY_RE.match(path)
+    if not m or m.group(2) is not None:
+        raise CabError(404, "not_found", "Tidak ditemukan.")
+    return policy_view(policies, policies.get(m.group(1)), actor)
+
+
+def handle_policies_post(store, path, data, actor):
+    policies = store.policies
+    if path == "/api/policies":
+        source = data.get("source")
+        rule = data.get("rule")
+        if source is not None:
+            if not isinstance(source, dict) or not isinstance(rule, dict):
+                raise CabError(400, "invalid_source", "source harus objek {title, text, owner}.")
+            # validasi bentuk dulu supaya aturan rusak tidak meninggalkan dokumen yatim di log
+            policy_register.validate_rule(rule, policy_register.references(policies.root))
+            # source baru dibuat; kutipan bertipe submitted tanpa doc_id menunjuk ke sana
+            doc_id = policies.add_source(actor, source.get("title"), source.get("text"), source.get("owner"))
+            rule = dict(rule, sources=[dict(s, doc_id=doc_id) if isinstance(s, dict) and s.get("type") == "submitted"
+                                       and not s.get("doc_id") else s for s in rule.get("sources") or []])
+        return policy_view(policies, policies.propose(actor, rule), actor)
+    if path == "/api/policies/extract":
+        result = policy_intake.propose_from_text(policies, actor, _text(data, "title", required=True, limit=200),
+                                                 _text(data, "text", required=True, limit=20000),
+                                                 data.get("owner"))
+        return dict(result, proposed=[policy_view(policies, r, actor) for r in result["proposed"]])
+    m = POLICY_RE.match(path)
+    if not m or m.group(2) not in POLICY_ACTIONS:
+        raise CabError(404, "not_found", "Tidak ditemukan.")
+    pid, action = m.groups()
+    if action == "approve":
+        rule = policies.approve(actor, pid)
+    else:
+        rule = getattr(policies, action)(actor, pid, _text(data, "reason", required=True, limit=1000))
+    return policy_view(policies, rule, actor)
 
 
 def handle_get(path, query, audit_path):
     store = store_for(audit_path)
     if path == "/api/audit/verify":
         return store.chain.verify()
+    if path == "/api/policies" or path.startswith("/api/policies/"):
+        return handle_policies_get(store, path, query)
     user = (parse_qs(query).get("user") or [None])[0]
     if path == "/api/requests":
         actor = store.actor(user)
@@ -129,6 +213,8 @@ def handle_post(path, data, audit_path, demo=False):
         return {"now": CLOCK.now().isoformat(timespec="seconds"), "fixed": CLOCK.fixed is not None}
 
     actor = store.actor(data.get("user"))
+    if path == "/api/policies" or path.startswith("/api/policies/"):
+        return handle_policies_post(store, path, data, actor)
     if path == "/api/intake":
         channel = data.get("channel") or "chat"
         if channel not in CHANNELS:

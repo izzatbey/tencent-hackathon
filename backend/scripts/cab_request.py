@@ -31,6 +31,7 @@ import cab_rules  # noqa: E402
 import kb_facts  # noqa: E402
 import permissions as perm  # noqa: E402
 import pii_masker as pii  # noqa: E402
+import policy_register  # noqa: E402
 from audit_chain import canonical  # noqa: E402
 
 EDITABLE = {"draft", "returned", "blocked", "pending_approval", "approved"}
@@ -49,10 +50,9 @@ ASSET_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 PII_TYPES = {"NIK", "PHONE", "EMAIL", "EMP-ID"}  # IP tetap: data infrastruktur
 
 
-class CabError(Exception):
-    def __init__(self, status, code, message):
-        super().__init__(message)
-        self.status, self.code, self.message = status, code, message
+class CabError(policy_register.PolicyError):
+    """Galat API Pra-CAB (status HTTP, kode, pesan). Turunan PolicyError supaya
+    server cukup menangkap satu jenis galat domain."""
 
 
 class Clock:
@@ -169,6 +169,9 @@ class CabStore:
         self.root = root
         self.lock = threading.RLock()
         self.requests, self.intakes = {}, {}
+        # register aturan di rantai yang sama: aturan yang disahkan langsung
+        # dipakai precheck berikutnya
+        self.policies = policy_register.PolicyStore(chain, self.clock, root)
         for rec in chain.records():
             if str(rec.get("stage", "")).startswith("cab."):
                 self._apply(rec)
@@ -306,7 +309,9 @@ class CabStore:
                 self._deny(req, actor, "submit", 409, "not_draft",
                            "Hanya draft yang bisa diajukan; ubah dulu permintaan ini.")
             cr = dict(req["fields"], requester=req["requester"])
-            result = cab_rules.precheck(cr, self.clock.now(), root=self.root)
+            with self.policies.lock:
+                rules, submitted = self.policies.active_rules(), dict(self.policies.sources)
+            result = cab_rules.precheck(cr, self.clock.now(), root=self.root, rules=rules, submitted=submitted)
             self._emit("submitted", cr_id, actor, OUTCOME_STATE[result["outcome"]],
                        {"precheck": result}, snap=snapshot(req["fields"]))
             return req
