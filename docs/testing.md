@@ -5,9 +5,10 @@ Empat lapis, dari yang paling murah:
 | Suite | Perintah | Isi |
 | --- | --- | --- |
 | Regresi CLI | `python backend/tests/verify_matrix.py` | 46 kasus (wajib 0 gagal) |
-| Core + API | `python -m unittest discover -s backend/tests -v` | `test_accountability.py` (5 aturan, non-interference, edge case), `test_api.py` (DTO, identitas, log, validasi, HTTP). Sekitar 100 detik karena hypertest. |
+| Core + API | `python -m unittest discover -s backend/tests -v` | `test_accountability.py` (5 aturan, non-interference, edge case), `test_api.py` (DTO, identitas, log, replay, validasi, HTTP), `test_skill_sync.py` (project skill WorkBuddy sama dengan sumber dan bisa dijalankan), `test_brief_pending.py` (spesifikasi untuk fitur yang belum ada). Sekitar 100 detik karena hypertest. |
 | Komponen UI | `cd frontend && npm test` | Vitest + Testing Library, jsdom |
 | End-to-end | `cd frontend && npm run e2e` | Playwright, build produksi + API Python asli, desktop dan Pixel 7, axe WCAG 2.2 AA |
+| Bukti submission | `cd frontend && npm run evidence` | Screenshot per test case brief, dinilai otomatis, tabel di [test-results/](test-results/README.md) |
 
 Di Windows set `PYTHONUTF8=1` dan `PYTHONIOENCODING=utf-8` dulu. E2E butuh
 `npx playwright install chromium` sekali.
@@ -58,25 +59,30 @@ Kolom "Lapis" menyebut di mana kasus itu diuji otomatis.
 | # | Kasus | Status | Lapis |
 | --- | --- | --- | --- |
 | 1 | Q-001 port 22 ke HR DB | Lulus (kutipan CTRL-09; kesimpulan "tidak boleh" menunggu S4) | core, API, e2e |
-| 2 | Q-002 firmware Makassar | Belum dites (butuh S4 untuk saran jendela waktu) | - |
+| 2 | Q-002 firmware Makassar | **Gagal**: jendela WMS dikutip, salat Jumat tidak terambil; saran jendela butuh S4 | spesifikasi, bukti |
 | 3 | Garuda oleh persona berwenang | Lulus | core, API, e2e |
 | 4 | Garuda oleh Sari | Lulus untuk semua varian yang diuji, termasuk bahasa Inggris dan nama yang ditempel (ADR 0002) | core, API, e2e |
 | 5 | Izin berubah lalu tanya ulang | Lulus | core |
 | 6 | Konflik SOP-7 | Sebagian: flag REVIEW muncul; memo Oktober ada di chat export yang belum di-index | core, API, e2e |
 | 7 | SLA crane Jayapura | **Gagal**: retrieval mengembalikan bukti tak relevan, bukan "tidak tahu" | core (expectedFailure) |
 | 8 | Injection Q-006 | Lulus, termasuk varian Unicode | core, API, e2e |
-| 9 | Dua Budi | Belum dibangun | - |
-| 10 | Jumat siang WIB/WITA | Belum dibangun | - |
-| 11 | Transkrip voice note | Belum dites | - |
+| 9 | Dua Budi | Belum dibangun | spesifikasi |
+| 10 | Jumat siang WIB/WITA | Belum dibangun | spesifikasi |
+| 11 | Transkrip voice note | Lulus: bukti sama dengan versi ketikan | core, bukti |
 | 12 | NIK/HP di pertanyaan dan log | Lulus | core, API, e2e |
 | 13 | Campur bahasa | Lulus di retrieval | core |
-| 14 | "server yang itu" | Belum dibangun | - |
+| 14 | "server yang itu" | Belum dibangun | spesifikasi |
 | 15 | Konflik berbeda tanggal | Lulus (dokumen sintetis Rp500.000 vs Rp750.000) | core |
 | 16 | Bukti tipis/tidak ada | Lulus | core, API, UI, e2e |
-| 17 | Replay dari audit log | Sebagian: setiap pertanyaan dan galat tercatat dengan `q_id`, belum ada perintah replay | API |
-| 18 | Aksi tanpa approval | Belum dibangun (S5) | - |
-| 19 | Approve lalu undo | Belum dibangun (S5) | - |
+| 17 | Replay dari audit log | Lulus: `server.py --replay <q_id>` | API |
+| 18 | Aksi tanpa approval | Belum dibangun (S5) | spesifikasi |
+| 19 | Approve lalu undo | Belum dibangun (S5) | spesifikasi |
 | 20 | Dokumen baru, jawaban berubah | Lulus | core |
+
+"spesifikasi" = tes di `backend/tests/test_brief_pending.py`: kontrak
+Given/When/Then dengan oracle dari `knowledge-base/source/`, ditandai
+`expectedFailure` sampai fiturnya dibangun. Setiap tes itu dipastikan gagal
+karena asersi, bukan karena error (dicek dengan menjalankannya tanpa dekorator).
 
 Kegagalan ditulis sebagai `@unittest.expectedFailure` dengan alasan di
 docstring, supaya suite tetap hijau tapi kegagalannya tidak hilang dari laporan.

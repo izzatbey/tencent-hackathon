@@ -6,8 +6,19 @@
     "moduleResolution": "bundler",
     "strict": true,
     "noEmit": true,
-    "types": ["vite/client", "@testing-library/jest-dom/vitest"],
+    "types": [
+      "vite/client",
+      "@testing-library/jest-dom/vitest"
+    ],
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "src/**/*.svelte", "e2e/**/*.ts", "vite.config.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.svelte",
+    "e2e/**/*.ts",
+    "vite.config.ts"
+  ],
+  "exclude": [
+    "e2e/evidence.spec.ts"
+  ]
 }

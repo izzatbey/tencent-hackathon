@@ -6,6 +6,8 @@ Membungkus process_query() dan hanya mengeluarkan field yang aman ke browser
 
     python backend/api/server.py                     # 127.0.0.1:8787
     python backend/api/server.py --static frontend/dist   # sekalian melayani UI hasil build
+    python backend/api/server.py --replay Q-0091a2d7fa37  # baca ulang catatan audit
+    PORT=8080 python backend/api/server.py --static frontend/dist  # bind 0.0.0.0 (WorkBuddy Sites)
 
 Endpoint:
     POST /api/ask       {"question": "...", "user": null, "role": null}
@@ -313,14 +315,31 @@ def make_server(host="127.0.0.1", port=8787, static_root=None, kb_root=None,
     return ThreadingHTTPServer((host, port), handler)
 
 
+def replay(q_id):
+    """Semua baris audit log untuk satu q_id (tes #17: rantai bisa direkonstruksi)."""
+    path = audit_path()
+    if not path.exists():
+        return []
+    with path.open(encoding="utf-8") as fh:
+        return [r for r in map(json.loads, fh) if r.get("q_id") == q_id]
+
+
 def main():
     ap = argparse.ArgumentParser(description="HTTP API SecuritySahabat.")
-    ap.add_argument("--host", default="127.0.0.1")
-    ap.add_argument("--port", type=int, default=8787)
+    # WorkBuddy Sites menyuntikkan PORT dan butuh bind 0.0.0.0; lokal tetap 127.0.0.1.
+    ap.add_argument("--host", default=os.environ.get("HOST")
+                    or ("0.0.0.0" if os.environ.get("PORT") else "127.0.0.1"))
+    ap.add_argument("--port", type=int, default=int(os.environ.get("PORT") or 8787))
     ap.add_argument("--static", help="Folder UI hasil build (mis. frontend/dist)")
+    ap.add_argument("--replay", metavar="Q_ID", help="Cetak catatan audit untuk q_id ini lalu keluar")
     args = ap.parse_args()
+    if args.replay:
+        records = replay(args.replay)
+        for record in records:
+            print(json.dumps(record, ensure_ascii=False, indent=2))
+        return 0 if records else 1
     server = make_server(args.host, args.port, args.static)
-    print("SecuritySahabat API di http://%s:%d" % server.server_address[:2])
+    print("SecuritySahabat API di http://%s:%d" % server.server_address[:2], flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

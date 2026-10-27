@@ -3,6 +3,13 @@
 
 Jalankan:
     python tools/pack_skill.py            -> dist/security-sahabat.skill
+    python tools/pack_skill.py --project  -> .codebuddy/skills/security-sahabat/
+
+`--project` memasang isi yang sama sebagai project skill WorkBuddy/CodeBuddy:
+siapa pun yang membuka repo ini di WorkBuddy langsung mendapat skill-nya.
+Folder itu di-commit; backend/tests/test_skill_sync.py memastikan isinya selalu
+sama dengan sumber, jadi jalankan ulang perintah ini setiap mengubah skill/,
+backend/scripts/ atau knowledge-base/kb/.
 
 Isi paket (layout yang diharapkan SKILL.md):
     security-sahabat/SKILL.md, references/   <- skill/
@@ -11,12 +18,14 @@ Isi paket (layout yang diharapkan SKILL.md):
 knowledge-base/source/ sengaja TIDAK ikut (berisi teks restricted asli).
 """
 
+import shutil
 import sys
 import zipfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 NAME = "security-sahabat"
+PROJECT_SKILL = REPO / ".codebuddy" / "skills" / NAME
 
 SOURCES = [
     (REPO / "skill", ""),
@@ -38,7 +47,21 @@ def entries():
                 yield p, "%s/%s" % (dest, rel) if dest else rel
 
 
+def install_project():
+    shutil.rmtree(PROJECT_SKILL, ignore_errors=True)
+    n = 0
+    for src, arc in entries():
+        dest = PROJECT_SKILL / arc
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(src.read_bytes())
+        n += 1
+    print("%s  files=%d" % (PROJECT_SKILL, n))
+    return 0
+
+
 def main():
+    if "--project" in sys.argv[1:]:
+        return install_project()
     out = REPO / "dist" / ("%s.skill" % NAME)
     out.parent.mkdir(exist_ok=True)
     n = 0

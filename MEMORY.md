@@ -32,6 +32,11 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
 
 ## Struktur & cara kerja
 
+- `.codebuddy/skills/security-sahabat/` = project skill WorkBuddy, salinan
+  persis hasil `tools/pack_skill.py --project`. Jalankan ulang perintah itu
+  setiap mengubah `skill/`, `backend/scripts/` atau `knowledge-base/kb/`;
+  `test_skill_sync.py` merah bila lupa. Panduan WorkBuddy: `docs/workbuddy.md`.
+
 - `backend/` berperan sebagai "skill dir": skrip mencari `config.json` di
   `backend/`, lalu KB di `backend/kb/` → fallback `knowledge-base/kb/`
   (`REPO_KB` di `search_kb.py`). Jangan pindahkan `scripts/` keluar `backend/`.
@@ -93,8 +98,9 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
 
 - Tes #7: pertanyaan di luar data tetap mendapat bukti tak relevan (butuh
   ambang relevansi atau S4).
-- S1 parser LLM, S4 answer synthesizer untuk web app, S5 approval gate,
-  replay audit log (log JSONL per `q_id` sudah ditulis API).
+- S1 parser LLM, S4 answer synthesizer untuk web app, S5 approval gate.
+  Spesifikasinya sudah ada sebagai tes `expectedFailure` di
+  `backend/tests/test_brief_pending.py` (#2, #6, #9, #10, #14, #18, #19).
 - Indexing `cmdb.csv`, `chat_exports.jsonl`; klarifikasi "dua Budi"
   (`contacts.csv`, brief test #9).
 - Autentikasi: API mempercayai `user` dari request (pemilih persona demo).

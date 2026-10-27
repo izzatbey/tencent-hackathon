@@ -12,6 +12,7 @@ import json
 import os
 import shutil
 import socket
+import subprocess
 import sys
 import tempfile
 import threading
@@ -207,6 +208,27 @@ class AuditLogTest(LogEnv, unittest.TestCase):
         expected = hashlib.sha256(response["answer"].encode("utf-8")).hexdigest()
         self.assertEqual(self.log_lines()[0]["answer_sha256"], expected)
 
+    def test_replay_mengembalikan_rantai_lengkap_per_q_id(self):  # #17
+        first = server.ask("Boleh buka port 22 ke HR DB?", user="Bimo Nugroho")
+        server.ask("Boleh bawa hewan peliharaan ke kantor?")
+        records = server.replay(first["q_id"])
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["citations"], [c["doc_id"] for c in first["citations"]])
+        self.assertEqual(records[0]["user"], "Bimo Nugroho")
+        self.assertEqual(server.replay("Q-tidakada0000"), [])
+
+    def test_replay_lewat_cli(self):
+        response = server.ask("Boleh bawa hewan peliharaan ke kantor?")
+        env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
+        script = str(ROOT / "backend" / "api" / "server.py")
+        found = subprocess.run([sys.executable, script, "--replay", response["q_id"]],
+                               capture_output=True, env=env, timeout=60)
+        missing = subprocess.run([sys.executable, script, "--replay", "Q-tidakada0000"],
+                                 capture_output=True, env=env, timeout=60)
+        self.assertEqual(found.returncode, 0)
+        self.assertEqual(json.loads(found.stdout)["q_id"], response["q_id"])
+        self.assertEqual(missing.returncode, 1)
+
     def test_galat_engine_tetap_tercatat(self):
         with mock.patch.object(server.search_kb, "process_query", side_effect=RuntimeError("x")):
             with self.assertRaises(RuntimeError):
@@ -388,6 +410,18 @@ class HttpTest(LogEnv, unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertNotIn(b"RESTRICTED-01", body)
         self.assertEqual(json.loads(body)["identity"], {"user": None, "role": None})
+
+    def test_port_dari_lingkungan_bind_ke_semua_antarmuka(self):
+        # WorkBuddy Sites menyuntikkan PORT dan mewajibkan bind 0.0.0.0.
+        env = dict(os.environ, PORT="0", PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
+        proc = subprocess.Popen([sys.executable, str(ROOT / "backend" / "api" / "server.py")],
+                                stdout=subprocess.PIPE, env=env)
+        try:
+            line = proc.stdout.readline().decode("utf-8")
+        finally:
+            proc.kill()
+            proc.wait(timeout=10)
+        self.assertIn("http://0.0.0.0:", line)
 
     def test_static_melayani_ui_dengan_csp(self):
         status, headers, body = self.request("/")

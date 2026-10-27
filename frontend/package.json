@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
     "test": "vitest run",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "evidence": "playwright test -c playwright.evidence.config.ts"
   },
   "dependencies": {
     "@fontsource-variable/source-serif-4": "5.3.1",

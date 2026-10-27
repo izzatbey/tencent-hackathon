@@ -33,6 +33,7 @@ npm run build && python ../backend/api/server.py --static dist
 npm run check   # svelte-check, gagal bila ada warning
 npm test        # Vitest: komponen + klien API
 npm run e2e     # Playwright terhadap build + API asli (sekali: npx playwright install chromium)
+npm run evidence  # screenshot per test case brief + tabel di docs/test-results/
 ```
 
 Rancangan tes dan status terhadap test matrix brief: [docs/testing.md](../docs/testing.md).
