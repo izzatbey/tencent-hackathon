@@ -5,14 +5,16 @@ Jalankan:
     python3 scripts/verify_matrix.py
 
 Yang diperiksa tiap kasus:
-  - status  : OK (ada hasil) | UNKNOWN (rc=3) | BLOCK (topik restricted)
-              | NOT_BLOCK (bebas, yang penting tidak diblokir)
+  - status  : OK (ada hasil) | UNKNOWN (rc=3) | NOT_BLOCK (bebas, yang
+              penting tidak diblokir) | HIDDEN (topik restricted: output harus
+              identik dengan pertanyaan yang nama proyeknya diganti nama fiktif)
   - user    : identitas yang harus dikenali permission gate (None = abaikan)
   - contains: doc_id yang WAJIB muncul
   - excludes: doc_id yang TIDAK BOLEH muncul (kebocoran zona)
   - leak    : tidak ada satu pun hasil yang berasal dari kb/restricted/
 """
 
+import re
 import shutil
 import subprocess
 import sys
@@ -24,11 +26,11 @@ SCRIPT = SKILL / "scripts" / "search_kb.py"
 
 # (query, status, user, contains, excludes)
 PHASE2 = [
-    ("Siapa owner Proyek Garuda?", "BLOCK", None, [], []),
-    ("Proyek Garuda", "BLOCK", None, [], []),
-    ("proyek garuda", "BLOCK", None, [], []),
-    ("proyek-garuda", "BLOCK", None, [], []),
-    ("siapa owner akses proyek garuda dan kapan ekspansi", "BLOCK", None, [], []),
+    ("Siapa owner Proyek Garuda?", "HIDDEN", None, [], []),
+    ("Proyek Garuda", "HIDDEN", None, [], []),
+    ("proyek garuda", "HIDDEN", None, [], []),
+    ("proyek-garuda", "HIDDEN", None, [], []),
+    ("siapa owner akses proyek garuda dan kapan ekspansi", "HIDDEN", None, [], []),
     ("Saya staff gudang Makassar", "NOT_BLOCK", None, [], []),
     ("Saya staff baru di gudang Makassar. Tanya: tunjangan makan bulanan berapa?",
      "NOT_BLOCK", None, [], []),
@@ -46,7 +48,7 @@ PHASE3 = [
     ("Saya Dewi, Finance. Boleh buka port 22 ke HR DB?",
      "OK", "Dewi Anggraini", ["CTRL-09"], ["SOP-15"]),
     # brief test #4: Garuda ditanya persona HR tanpa akses proyek
-    ("Saya Sari, HR Staff. Siapa owner Proyek Garuda?", "BLOCK", "Sari Lestari", [], []),
+    ("Saya Sari, HR Staff. Siapa owner Proyek Garuda?", "HIDDEN", "Sari Lestari", [], []),
     ("Boleh buka port 22 ke HR DB?", "OK", "unauthenticated", ["CTRL-09"], ["SOP-15"]),
     ("Saya Bimo, New Employee. Boleh install Chrome?", "OK", "Bimo Nugroho", ["CTRL-08"], []),
     ("Saya Dewi dari Finance, boleh akses data HR?", "OK", "Dewi Anggraini", [], []),
@@ -65,7 +67,7 @@ PHASE3 = [
     ("Saya Indah, HR Manager. Apa itu Proyek Garuda?",
      "OK", "Indah Permatasari", ["RESTRICTED-01"], []),
     # akses luas tapi tanpa proyek -> tetap tidak ada
-    ("Saya Citra, SOC Analyst. Apa itu Proyek Garuda?", "BLOCK", "Citra Kusuma", [], []),
+    ("Saya Citra, SOC Analyst. Apa itu Proyek Garuda?", "HIDDEN", "Citra Kusuma", [], []),
 ]
 
 # (query, status)  status: INJECTION (rc=4) | OK | NOT_BLOCK
@@ -104,7 +106,6 @@ def run(query):
         capture_output=True, text=True,
     )
     out = proc.stdout
-    blocked = "RESTRICTED_QUERY" in out or "RESTRICTED_SILENCED" in out
     injected = "INJECTION_DETECTED" in out
     matches, docs, leaked, user = 0, [], [], None
     for line in out.splitlines():
@@ -120,8 +121,6 @@ def run(query):
                     else s.split(":", 1)[1].split("(")[0].strip())
     if injected:
         status = "INJECTION"
-    elif blocked:
-        status = "BLOCK"
     else:
         status = "OK" if matches else "UNKNOWN"
     return status, matches, docs, proc.returncode, leaked, user, out
@@ -132,8 +131,12 @@ for query, expected, want_user, contains, excludes in STATUS_CASES:
     status, matches, docs, rc, leaked, user, out = run(query)
     reasons = []
     if expected == "NOT_BLOCK":
-        if status in ("BLOCK", "INJECTION"):
+        if status == "INJECTION":
             reasons.append("terblokir (%s)" % status)
+    elif expected == "HIDDEN":
+        fake = re.sub("garuda", "Falcon", query, flags=re.I)
+        if out.replace(query, "<Q>") != run(fake)[-1].replace(fake, "<Q>"):
+            reasons.append("output beda dengan proyek fiktif")
     elif status != expected:
         reasons.append("status %s != %s" % (status, expected))
     if expected == "INJECTION" and rc != 4:
@@ -218,6 +221,11 @@ LEAK_PAIRS = [
     ("Saya Sari, HR Staff. Siapa owner Proyek Garuda?",
      "Saya Sari, HR Staff. Siapa owner Proyek Falcon?"),
     ("Siapa owner Proyek Garuda?", "Siapa owner Proyek Falcon?"),
+    # varian yang dulu bocor (docs/decisions/0002)
+    ("Saya Ragil, Ops Manager. Who owns Project Garuda?",
+     "Saya Ragil, Ops Manager. Who owns Project Falcon?"),
+    ("Saya Ragil, Ops Manager. Boleh remote ke firewall Makassar? Garuda",
+     "Saya Ragil, Ops Manager. Boleh remote ke firewall Makassar? Falcon"),
 ]
 for real_q, fake_q in LEAK_PAIRS:
     out_real = run(real_q)[-1].replace("Garuda", "<P>")
