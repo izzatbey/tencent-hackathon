@@ -85,8 +85,10 @@ Prioritas berikutnya, urut:
    `anthropic`; Izzat yang harus memasangnya (agent tidak boleh mengisi key).
 3. Materi submission. Sudah ada (27 Okt): `docs/submission/accountability-sheet.md`,
    `docs/submission/project-description.md`, `docs/test-results/pracab.md`
-   (+ transkrip `pracab-demo.txt`). Sisa: demo video, perbarui angka tes
-   di kedua dokumen itu bila berubah sebelum submit.
+   (+ transkrip `pracab-demo.txt`), draf `docs/submission/product-sharing.md`
+   (catatan keputusan tim ada di komentar akhir file). Sisa: demo video,
+   cover image, perbarui angka tes di dokumen-dokumen itu bila berubah
+   sebelum submit. Status per item: `docs/submission/README.md`.
 4. Migrasi cek built-in berikutnya ke register (fase 2b). Selesai 27 Okt:
    `FRIDAY-PRAYER` (`POL-w001/w002`, kondisi baru `schedule_overlaps`) dan
    `BRANCH-FW-MEMO` (`POL-m001`, approver baru `cab_meeting` +

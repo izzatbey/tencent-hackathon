@@ -17,7 +17,7 @@ file: `SHA256SUMS.txt`.
 | `workflow/security-sahabat.skill` | Skill WorkBuddy siap impor (zip): instruksi agen (`SKILL.md`), playbook jawaban, engine retrieval + penjaga, knowledge base |
 | `workflow/project-skill/` | Isi yang sama sebagai project skill (`.codebuddy/skills/security-sahabat/`), terbaca otomatis saat folder repo dibuka di WorkBuddy |
 | `evidence/` | Bukti pemakaian WorkBuddy (lihat tabel di bawah) dan hasil tes |
-| `submission/` | Accountability sheet, deskripsi proyek, diagram arsitektur, catatan WorkBuddy (bahan *Product sharing*) |
+| `submission/` | Accountability sheet, deskripsi proyek, *Product sharing*, diagram arsitektur, catatan teknis WorkBuddy |
 | `source/` | Seluruh source code repo: engine, API, UI Svelte, Pra-CAB, policy register, tes |
 
 ## Menjalankan workflow di WorkBuddy
@@ -59,7 +59,8 @@ python tools/demo_pracab.py                                   # demo Pra-CAB 16 
 | Setiap artifact WorkBuddy dipetakan ke file repo, dengan hash (35 dari 48 masih identik) | `evidence/workbuddy-provenance.md` |
 | Catatan kerja yang ditulis agen WorkBuddy sendiri selama sesi | `evidence/workbuddy-agent-memory/` |
 | Skill berjalan di WorkBuddy online: Q-001 port 22 (lulus), Proyek Garuda oleh Sari vs Andini | `evidence/workbuddy-screenshots/q001-*.jpg`, `garuda-*.jpg` |
-| Analisis pemakaian, kredit, temuan, dan masukan produk untuk WorkBuddy | `submission/workbuddy.md` |
+| Nilai WorkBuddy, pelajaran, dan masukan produk | `submission/product-sharing.md` |
+| Catatan teknis: deteksi project skill, uji online, kredit, Sites | `submission/workbuddy.md` |
 | Hasil tes Challenge A (20 kasus, termasuk yang gagal) dan Pra-CAB | `evidence/test-results/` |
 
 ## Yang tidak bisa diekspor (apa adanya)

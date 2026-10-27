@@ -35,6 +35,7 @@ LAYOUT = [
     ("docs/test-results/screenshots", "evidence/test-results/screenshots"),
     ("docs/submission/accountability-sheet.md", "submission/accountability-sheet.md"),
     ("docs/submission/project-description.md", "submission/project-description.md"),
+    ("docs/submission/product-sharing.md", "submission/product-sharing.md"),
     ("docs/architecture-diagram.svg", "submission/architecture-diagram.svg"),
     ("docs/architecture.md", "submission/architecture.md"),
     ("docs/workbuddy.md", "submission/workbuddy.md"),

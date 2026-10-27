@@ -40,6 +40,7 @@ class ExportTest(unittest.TestCase):
                      "workflow/project-skill/SKILL.md", "evidence/workbuddy-provenance.md",
                      "evidence/workbuddy-screenshots/skill-creator-task-47-artifacts.jpg",
                      "evidence/test-results/pracab.md", "submission/accountability-sheet.md",
+                     "submission/product-sharing.md",
                      "submission/architecture-diagram.svg", "source/backend/scripts/search_kb.py",
                      "source/frontend/package.json"):
             with self.subTest(name=name):
