@@ -1,0 +1,98 @@
+Jam demo: 2026-10-27T10:00:00+07:00 (Selasa)
+
+[1] Ragil (Ops Manager Makassar) membuat change request
+    CR-598c5289be dibuat, state=draft, tombol untuk Ragil: ['update', 'cancel', 'submit']
+
+[2] Ragil mengajukan -> precheck SOP-14 (tanpa LLM)
+    state   : pending_approval
+    outcome : READY   risiko: HIGH
+    PASS       ASSETS            fw-edge-mks-01 (branch-mks, high)  [sistem]
+    PASS       FIELDS            Semua field wajib terisi.  [sop]
+               ↳ SOP-14: "Submit via the IT change management system with: description, reason, impact ass"
+               ↳ CTRL-12: "Change requests must document: what, why, impact assessment, rollback plan, and "
+    INFO       RISK              HIGH: jenis perubahan firmware_upgrade memutus layanan selama pengerjaan  [interpretasi]
+               ↳ SOP-14: "HIGH: Touches sensitive zone, affects availability, or weakens security controls"
+    PASS       WMS-WINDOW        Tidak beririsan dengan replikasi 23:00-02:00 WIB.  [sop]
+               ↳ TOPO-WMS-WINDOW: "Schedule: 23:00 WIB – 02:00 WIB (daily)"
+    PASS       BRANCH-FW-WINDOW  Seluruh jadwal di dalam jendela Senin-Jumat 21:00-06:00 waktu Makassar.  [interpretasi]
+               ↳ SOP-7: "Remote maintenance of branch firewalls is allowed any weekday (Monday–Friday) be"
+    WARN       BRANCH-FW-MEMO    SOP-7 masih mengizinkan persetujuan lisan, tetapi memo IT 1 Okt 2026 (lebih baru) mewajibk  [sop]
+               ↳ SOP-7: "Verbal approval from the on-call IT admin or ops manager is sufficient for routi"
+               ↳ CMDB: "Remote changes require MFA jump-host."
+    PASS       LEAD-TIME         Diputuskan di rapat CAB Rabu 04 Nov 2026 14:00 WIB.  [sop]
+               ↳ SOP-14: "The Change Advisory Board (CAB) meets weekly on Wednesdays 14:00 WIB. Requests m"
+    approver: Keputusan rapat CAB (dicatat CAB chair)  -> Indah Permatasari (tertulis)
+    approver: HR Manager (acting CAB chair)            -> Indah Permatasari (tertulis)
+    rapat CAB: Rabu 04 Nov 2026 14:00 WIB
+
+[3] Ragil mencoba dispatch sebelum disetujui
+    ditolak (HTTP 409 not_approved): Belum disetujui semua approver; tidak ada tool yang dijalankan.
+
+[4] Indah mencoba mencatat keputusan CAB sebelum rapat
+    ditolak (HTTP 409 meeting_not_held): Keputusan CAB baru bisa dicatat setelah rapat Rabu 04 Nov 2026 14:00 WIB.
+
+[5] Jam demo maju ke setelah rapat CAB: 2026-11-04T15:00:00+07:00
+    tombol untuk Indah sekarang: ['approve:cab', 'approve:cab_chair', 'reject']
+
+[6] Indah mengisi slot CAB dan slot HR Manager
+    state=approved
+
+[7] Ragil dispatch -> mock tool (tidak ada yang benar-benar terkirim)
+    calendar.create_event  would_have_sent  [CR-598c5289be] Upgrade firmware FortiGate Makassar
+    ticket.create          would_have_sent  IT change register
+    task.create            would_have_sent  Telepon branch coordinator sebelum maintenance dimulai
+               ⚠ Sumber bertentangan: SOP-7 menyebut Hendra Wijaya untuk Makassar, direktori mencatat Branch Coordinator, kantor Jayapura.
+    undo sampai: 2026-11-04T15:01:00+07:00
+
+[8] Ragil membatalkan dalam 60 detik
+    state=undone
+
+[9] Riwayat CR-598c5289be dari audit log
+    #1    cab.created    Ragil     draft              hash=7f575a583fc9…
+    #2    cab.submitted  Ragil     pending_approval   hash=fa5fb0e3e5a1…
+    #3    cab.denied     Ragil     pending_approval   hash=69a47b9e6e87…
+    #4    cab.denied     Indah     pending_approval   hash=4bbba017aef3…
+    #5    cab.approved   Indah     pending_approval   hash=e85634377d75…
+    #6    cab.approved   Indah     approved           hash=395d112f0b61…
+    #7    cab.dispatched Ragil     dispatched         hash=0e27e181e24e…
+    #8    cab.undone     Ragil     undone             hash=749daee05727…
+
+[10] Contoh lain: Andini minta buka SSH dari internet ke HR DB
+    state=blocked outcome=BLOCKED risiko=CRITICAL
+    BLOCK: db-hr-jkt-01 ada di segmen hr-data yang tidak boleh diekspos langsung ke internet.
+
+[11] Contoh "Server A": Eka (Team Lead) minta akses app-erp-prod untuk Lina (Marketing)
+    state=blocked outcome=BLOCKED risiko=HIGH
+    BLOCK [sop]: Lina Kartika (Marketing) bukan departemen yang boleh mengakses app-erp-prod (policy: IT, Operations, Finance). Permintaan ini tidak dapat dilanjutkan; ubah penerima atau minta owner merevisi policy.
+               ↳ CMDB: "IT;Operations;Finance"
+               ↳ CTRL-02: "users should only have access to information necessary for their role."
+
+[12] Aset tanpa policy internal: akses mail-jkt-01 untuk Lina -> dinilai dengan standar global
+    state=pending_approval outcome=READY risiko=MEDIUM
+    WARN [standar]: CMDB tidak mencatat departemen yang boleh mengakses mail-jkt-01. Dinilai dengan standar global: akses hanya sesuai kebutuhan peran, kebutuhan bisnis wajib dijustifikasi, dan owner aset (Citra Kusuma) harus menyetujui.
+               ↳ CTRL-02: "users should only have access to information necessary for their role."
+               ↳ CTRL-02: "Any access request must justify the business need."
+    approver: System owner                     -> Citra Kusuma
+    approver: IT Admin                         -> Andini Pratama
+
+[13] Policy register: Andini mengajukan aturan dari memo Citra (diisi manual)
+    POL-8a20a14e [draft] Mail relay hanya untuk IT
+    kondisi: {"grantee_department_not_in": ["IT"]} -> BLOCK
+    kutipan: "mail relay mail-jkt-01 hanya boleh diakses oleh tim IT"
+    pemilik dokumen: Citra Kusuma · tombol untuk Andini: []
+
+[14] Yang tidak berhak mencoba mengesahkan, lalu Citra (pemilik memo) mengesahkan
+    ditolak (HTTP 403 not_owner): Aturan ini hanya bisa disahkan pemilik dokumen sumbernya (Citra Kusuma).
+    ditolak (HTTP 403 self_approval): Pengusul tidak boleh mengesahkan aturannya sendiri.
+    POL-8a20a14e sekarang active, berlaku mulai 2026-10-27
+
+[15] Lina mengajukan akses mail-jkt-01 lagi -> keputusan mengikuti aturan baru
+    state=blocked outcome=BLOCKED risiko=MEDIUM
+    BLOCK [sop]: Lina Kartika (Marketing) tidak boleh mengakses mail-jkt-01 (policy: IT).
+               ↳ DOC-5487d456: "mail relay mail-jkt-01 hanya boleh diakses oleh tim IT"
+    permintaan sebelumnya (CR-95e28694f2) tetap: pending_approval, READY
+
+[16] Verifikasi rantai hash audit log
+    {"ok": true, "checked": 21, "chained": 21, "legacy": 0, "head": "672d7ec03623d9c4ff726fd7f7a130fb1c5f1010a6f01ed5aa0da83058e296f3"}
+
+Selesai. Jam demo dikembalikan ke waktu nyata.

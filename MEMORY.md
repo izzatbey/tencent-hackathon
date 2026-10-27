@@ -80,9 +80,13 @@ Prioritas berikutnya, urut:
 
 1. UI Pra-CAB + register (Farrez) dari `docs/pracab-api.md`; tombol dari
    `allowed_actions`, label `basis` dibedakan.
-2. Uji ekstraksi aturan dengan Claude sungguhan, catat hasilnya.
-3. Materi submission: accountability sheet, test results (termasuk Pra-CAB),
-   demo video, deskripsi proyek dari `docs/vision-v2.md`.
+2. Uji ekstraksi aturan dengan Claude sungguhan, catat hasilnya. **Terblokir
+   per 27 Okt:** di mesin Izzat belum ada `ANTHROPIC_API_KEY` maupun paket
+   `anthropic`; Izzat yang harus memasangnya (agent tidak boleh mengisi key).
+3. Materi submission. Sudah ada (27 Okt): `docs/submission/accountability-sheet.md`,
+   `docs/submission/project-description.md`, `docs/test-results/pracab.md`
+   (+ transkrip `pracab-demo.txt`). Sisa: demo video, perbarui angka tes
+   di kedua dokumen itu bila berubah sebelum submit.
 4. Migrasi cek built-in berikutnya ke register (fase 2b).
 5. Repo private vs syarat handbook "source code public atau ekspor workflow
    WorkBuddy": putuskan sebelum submit (lihat bagian Repo di bawah).
@@ -114,6 +118,14 @@ python backend/scripts/audit_chain.py --verify backend/logs/audit.jsonl
 
 Jangan jalankan dua server ke file audit yang sama: kunci audit chain hanya
 berlaku dalam satu proses.
+
+`demo_pracab.py` **tidak idempoten**: aturan yang disahkan di langkah 14
+tersimpan di audit log, jadi run kedua terhadap log yang sama membuat langkah
+12 BLOCKED (seharusnya READY). Untuk video/bukti: hentikan server, pindahkan
+`backend/logs/audit.jsonl`, nyalakan lagi, baru jalankan demo sekali.
+
+Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
+`PYTHONUTF8`, dan output demo (karakter `↳`, `⚠`) crash di konsol cp1252.
 - **Tim:** Muhammad Izzat (izzatbey): backend, skill, sistem. Farrez: frontend
   dan test case UI/UX + core. Wafi: anggota tim. Komunikasi dalam Bahasa Indonesia.
 - **Repo:** `izzatbey/tencent-hackathon`, **harus tetap private** —

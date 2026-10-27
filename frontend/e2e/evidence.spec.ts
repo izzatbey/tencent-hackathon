@@ -206,6 +206,7 @@ test.describe.serial('bukti hasil tes', () => {
       '',
       'Nomor mengikuti test matrix `adjusted_brief.md` §6. H1 = contoh tes handbook, X1 = kasus tambahan.',
       'Rincian rancangan tes dan sumbernya: [../testing.md](../testing.md).',
+      'Hasil tes Pra-CAB (change request, approval, policy register): [pracab.md](pracab.md).',
       '',
     ]
     writeFileSync(join(OUT, 'README.md'), lines.join('\n'), 'utf-8')
