@@ -1,5 +1,5 @@
 {
-  "_note": "Seed policy register Pra-CAB. Aturan di sini dimigrasi dari kode cab_rules.py pada 27 Okt 2026 dan dianggap sudah disahkan pemilik dokumen sumbernya saat migrasi (origin: seed). Aturan baru masuk lewat POST /api/policies atau /api/policies/extract dan disahkan lewat aplikasi; statusnya tercatat di audit log, bukan di file ini. Lihat docs/decisions/0004.",
+  "_note": "Seed policy register Pra-CAB. Aturan di sini dimigrasi dari kode cab_rules.py pada 27 Okt 2026 (FRIDAY-PRAYER: 27 Okt, fase 2b) dan dianggap sudah disahkan pemilik dokumen sumbernya saat migrasi (origin: seed). Aturan baru masuk lewat POST /api/policies atau /api/policies/extract dan disahkan lewat aplikasi; statusnya tercatat di audit log, bukan di file ini. Lihat docs/decisions/0004.",
   "version": "2026-10-27",
   "rules": [
     {
@@ -536,6 +536,78 @@
           "type": "doc",
           "doc_id": "TOPO-SEGMENTS",
           "quote": "mgmt | Management Network | VLAN 40 | Monitoring, backup, admin access | No. Jump-host access only."
+        }
+      ],
+      "owner": "Andini Pratama",
+      "effective_date": "2026-09-15"
+    },
+    {
+      "id": "POL-w001",
+      "title": "Bentrok shalat Jumat ({site})",
+      "topic": "friday_prayer",
+      "check_id": "FRIDAY-PRAYER",
+      "tier": "perusahaan",
+      "subject": {
+        "site": "Jakarta"
+      },
+      "action": "*",
+      "condition": {
+        "schedule_overlaps": {
+          "weekdays": [
+            4
+          ],
+          "from": "11:30",
+          "to": "13:00"
+        }
+      },
+      "effect": "WARN",
+      "message": "Jadwal beririsan dengan {overlap}; kantor {site} tutup.",
+      "sources": [
+        {
+          "type": "doc",
+          "doc_id": "TOPO-PRAYER-TIMES",
+          "quote": "Jakarta (WIB): 11:30 – 13:00 WIB — offices closed, no meetings should be scheduled"
+        },
+        {
+          "type": "doc",
+          "doc_id": "TOPO-PRAYER-TIMES",
+          "quote": "Any change request or meeting proposed during these windows should be flagged."
+        }
+      ],
+      "owner": "Andini Pratama",
+      "effective_date": "2026-09-15"
+    },
+    {
+      "id": "POL-w002",
+      "title": "Bentrok shalat Jumat ({site})",
+      "topic": "friday_prayer",
+      "check_id": "FRIDAY-PRAYER",
+      "tier": "perusahaan",
+      "subject": {
+        "site": "Makassar"
+      },
+      "action": "*",
+      "condition": {
+        "schedule_overlaps": {
+          "weekdays": [
+            4
+          ],
+          "from": "11:00",
+          "to": "12:30"
+        }
+      },
+      "effect": "WARN",
+      "message": "Jadwal beririsan dengan {overlap}; kantor {site} tutup.",
+      "sources": [
+        {
+          "type": "doc",
+          "doc_id": "TOPO-PRAYER-TIMES",
+          "quote": "Makassar (WITA): 11:00 – 12:30 WITA — offices closed, no meetings should be scheduled"
+        },
+        {
+          "type": "doc",
+          "doc_id": "TOPO-PRAYER-TIMES",
+          "quote": "Any change request or meeting proposed during these windows should be flagged."
         }
       ],
       "owner": "Andini Pratama",

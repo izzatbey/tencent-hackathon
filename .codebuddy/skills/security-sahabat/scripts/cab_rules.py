@@ -14,8 +14,8 @@ Setiap cek: {id, status, title, detail, basis, citations}
 
 Outcome (urutan prioritas): BLOCKED > NEEDS_INFO > NEEDS_REVISION > READY
 
-Cek yang berupa aturan perusahaan per aset (ACCESS-SCOPE, EXPOSURE, dan aturan
-baru yang disahkan lewat aplikasi) datang dari policy register
+Cek yang berupa aturan perusahaan per aset (ACCESS-SCOPE, EXPOSURE,
+FRIDAY-PRAYER, dan aturan baru yang disahkan lewat aplikasi) datang dari policy register
 (policy_register.py). Cek lain di modul ini masih kode ("built-in") dan
 dimigrasi bertahap; lihat docs/decisions/0004.
 """
@@ -42,7 +42,6 @@ SENSITIVE_ZONES = {"hr-data", "server-farm-jkt", "mgmt"}
 AVAILABILITY_KINDS = {"firmware_upgrade", "decommission"}
 # TOPO-WMS-WINDOW menyebut fw-edge-mks-01 & vpn-gw-jkt-01; wms-mks-01 ditambahkan (interpretasi)
 WMS_ASSETS = {"fw-edge-mks-01", "vpn-gw-jkt-01", "wms-mks-01"}
-PRAYER = {"Jakarta": ((11, 30), (13, 0)), "Makassar": ((11, 0), (12, 30))}
 OFFICE_HOURS = {"Jakarta": ((8, 0), (17, 0)), "Makassar": ((8, 0), (17, 0)),
                 "Jayapura": ((7, 30), (16, 30))}
 WEEKDAYS = {0, 1, 2, 3, 4}
@@ -77,9 +76,6 @@ SOURCES = {
     "memo.cab": ("chat", MEMO_TS, "Approval verbal tidak cukup lagi, wajib CAB written approval."),
     "memo.mfa": ("chat", MEMO_TS, "Wajib via jump-host dengan MFA."),
     "cmdb.fw-mks.mfa": ("cmdb", "fw-edge-mks-01", "notes", "Remote changes require MFA jump-host."),
-    "prayer.Jakarta": ("doc", "TOPO-PRAYER-TIMES", "Jakarta (WIB): 11:30 – 13:00 WIB — offices closed, no meetings should be scheduled"),
-    "prayer.Makassar": ("doc", "TOPO-PRAYER-TIMES", "Makassar (WITA): 11:00 – 12:30 WITA — offices closed, no meetings should be scheduled"),
-    "prayer.flag": ("doc", "TOPO-PRAYER-TIMES", "Any change request or meeting proposed during these windows should be flagged."),
     "office.Jakarta": ("doc", "TOPO-OFFICE-HOURS", "Jakarta HQ: 08:00 – 17:00 WIB"),
     "office.Makassar": ("doc", "TOPO-OFFICE-HOURS", "Makassar Branch: 08:00 – 17:00 WITA"),
     "office.Jayapura": ("doc", "TOPO-OFFICE-HOURS", "Jayapura Branch: 07:30 – 16:30 WIT"),
@@ -124,46 +120,12 @@ class Context:
 
 
 # --------------------------------------------------------------------------
-# waktu
+# waktu (helper tinggal di kb_facts supaya policy_register ikut memakainya)
 # --------------------------------------------------------------------------
-def parse_time(value):
-    """ISO-8601 berzona -> datetime; None bila kosong/tidak valid/tanpa zona."""
-    if not value or not isinstance(value, str):
-        return None
-    try:
-        dt = datetime.fromisoformat(value.strip())
-    except ValueError:
-        return None
-    return dt if dt.tzinfo else None
-
-
-def daily_overlap(start, end, tzinfo, from_hm, to_hm, weekdays=None):
-    """Kejadian pertama jendela harian [from, to) (waktu lokal `tzinfo`) yang
-    beririsan dengan [start, end). `to` < `from` = melewati tengah malam."""
-    s, e = start.astimezone(tzinfo), end.astimezone(tzinfo)
-    day = s.date() - timedelta(days=1)
-    while day <= e.date():
-        ws = datetime.combine(day, time(*from_hm), tzinfo)
-        we = datetime.combine(day, time(*to_hm), tzinfo)
-        if we <= ws:
-            we += timedelta(days=1)
-        if (weekdays is None or ws.weekday() in weekdays) and ws < e and s < we:
-            return ws, we
-        day += timedelta(days=1)
-    return None
-
-
-def inside_daily(start, end, tzinfo, from_hm, to_hm, weekdays):
-    """True bila [start, end) seluruhnya di dalam satu kejadian jendela harian."""
-    s = start.astimezone(tzinfo)
-    for day in (s.date() - timedelta(days=1), s.date()):
-        ws = datetime.combine(day, time(*from_hm), tzinfo)
-        we = datetime.combine(day, time(*to_hm), tzinfo)
-        if we <= ws:
-            we += timedelta(days=1)
-        if ws.weekday() in weekdays and ws <= start and end <= we:
-            return True
-    return False
+parse_time = kb_facts.parse_time
+daily_overlap = kb_facts.daily_overlap
+inside_daily = kb_facts.inside_daily
+fmt = kb_facts.fmt
 
 
 def next_cab_meeting(submitted_at):
@@ -176,18 +138,6 @@ def next_cab_meeting(submitted_at):
         if day.weekday() == CAB_WEEKDAY and meeting >= earliest:
             return meeting
         day += timedelta(days=1)
-
-
-HARI = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
-BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
-
-
-def fmt(dt, tzname=None):
-    """'Rabu 04 Nov 2026 14:00 WIB' (tanpa bergantung locale OS)."""
-    if tzname:
-        dt = dt.astimezone(kb_facts.tz(tzname))
-    return "%s %02d %s %d %s %s" % (HARI[dt.weekday()], dt.day, BULAN[dt.month - 1], dt.year,
-                                     dt.strftime("%H:%M"), dt.tzname() or "")
 
 
 # --------------------------------------------------------------------------
@@ -373,13 +323,6 @@ def precheck(cr, submitted_at, root=None, ctx=None, rules=None, submitted=None):
                 checks.append(_check("WMS-WINDOW", "PASS", "Jendela replikasi WMS",
                                      "Tidak beririsan dengan replikasi 23:00-02:00 WIB.", "sop",
                                      ctx.cites("wms.schedule")))
-        for site in sorted({a.get("site") for a in assets if a.get("site") in PRAYER}):
-            frm, to = PRAYER[site]
-            hit = daily_overlap(start, end, kb_facts.site_tz(site), frm, to, {4})
-            if hit:
-                checks.append(_check("FRIDAY-PRAYER", "WARN", "Bentrok shalat Jumat (%s)" % site,
-                                     "Jadwal beririsan dengan %s; kantor %s tutup." % (fmt(hit[0]), site),
-                                     "sop", ctx.cites("prayer.%s" % site, "prayer.flag")))
         branch_fw = [a for a in assets if a.get("type") == "Firewall" and a.get("site") != "Jakarta"]
         for a in branch_fw:
             local = kb_facts.site_tz(a["site"])

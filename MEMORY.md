@@ -64,12 +64,12 @@ Sudah ada dan teruji (main):
 - Pra-CAB (ADR 0003): intake LLM → normalisasi + PII mask → scan injection →
   precheck (`cab_rules.py` + policy register) → state machine + approval per
   slot (SoD, rapat CAB dulu) → mock dispatch + undo 60 dtk → audit.
-- Policy register v0 (ADR 0004): 16 aturan seed, siklus hidup draft → active
+- Policy register v0 (ADR 0004): 18 aturan seed, siklus hidup draft → active
   → superseded/retired, hanya pemilik dokumen yang mengesahkan, ekstraksi
   aturan dari memo oleh LLM (diuji dengan FakeProvider).
 - Audit log berantai hash bersama untuk semua jalur (`audit_chain.py`).
 - Demo end-to-end tanpa UI: `python tools/demo_pracab.py` (16 langkah).
-- Tes: 153 unit test (8 `expectedFailure` disengaja), 46 regresi.
+- Tes: 159 unit test (8 `expectedFailure` disengaja), 46 regresi.
 
 Belum diverifikasi: ekstraksi aturan dengan Claude sungguhan (`pip install
 anthropic` + `ANTHROPIC_API_KEY`, lalu `SECURITY_SAHABAT_LLM=claude` dan
@@ -87,7 +87,14 @@ Prioritas berikutnya, urut:
    `docs/submission/project-description.md`, `docs/test-results/pracab.md`
    (+ transkrip `pracab-demo.txt`). Sisa: demo video, perbarui angka tes
    di kedua dokumen itu bila berubah sebelum submit.
-4. Migrasi cek built-in berikutnya ke register (fase 2b).
+4. Migrasi cek built-in berikutnya ke register (fase 2b). Selesai 27 Okt:
+   `FRIDAY-PRAYER` (`POL-w001/w002`, kondisi baru `schedule_overlaps`). Urutan
+   berikutnya yang disarankan: `BRANCH-FW-MEMO` (butuh efek/approver baru
+   "slot rapat CAB" + perilaku saat kutipan memo hilang) → `WMS-WINDOW`
+   (jendela waktu + PASS + slot CAB) → `BRANCH-FW-WINDOW` (butuh kondisi
+   "seluruhnya di dalam jendela" + FAIL + mode emergency). Risiko, approver
+   SOP-14, SoD, kelengkapan = lintas aset, bukan aturan per aset; jangan
+   dipaksakan ke skema sekarang.
 5. Repo private vs syarat handbook "source code public atau ekspor workflow
    WorkBuddy": putuskan sebelum submit (lihat bagian Repo di bawah).
 
@@ -200,7 +207,7 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
 - `python backend/tests/verify_matrix.py` — **46 kasus, wajib 0 gagal**
   sebelum commit (phase2 13, phase3 14, injection 10, pii 4, ctx 1, leak 4).
 - `python -m unittest discover -s backend/tests` — core + API + Pra-CAB
-  (`test_pracab.py`) + policy register (`test_policy.py`); 153 tes per 27 Okt.
+  (`test_pracab.py`) + policy register (`test_policy.py`); 159 tes per 27 Okt.
   Kegagalan yang diketahui ditulis `@unittest.expectedFailure` (tes #7 SLA
   crane, spesifikasi `test_brief_pending.py`). Status matriks brief dan
   katalog edge case: `docs/testing.md`.
@@ -237,7 +244,7 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
   atas KB global (ISO/NIST/GDPR), aturan jadi data (policy register), LLM
   mengusulkan aturan dan manusia mengesahkan. Jangan merombak sebelum 1 Nov.
 - **Policy register v0** (ADR 0004, `policy_register.py`): `ACCESS-SCOPE` dan
-  `EXPOSURE` sudah data di `kb/_policies.json` (16 aturan seed; awalan `_`
+  `EXPOSURE` sudah data di `kb/_policies.json` (18 aturan seed; awalan `_`
   supaya tidak diindeks `search_kb`). Perubahan aturan = event `policy.*` di
   audit chain. Hanya pemilik dokumen sumber yang mengesahkan, bukan pengusul.
   Kolom `allowed_departments` CMDB tetap ada sebagai **sumber kutipan** aturan
@@ -246,13 +253,21 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
   Lina Kartika (direktori saja, bukan permissions).
 - Jangan tambah cek per-aset baru sebagai kode di `cab_rules.py`; tambahkan
   sebagai aturan register.
+- **Cara memigrasi satu cek (dipakai untuk FRIDAY-PRAYER):** rekam dulu
+  `precheck` lengkap untuk matriks aset × jadwal × jenis CR, migrasikan, lalu
+  bandingkan (hapus `rule_id`/`policies`, urutkan `checks`): harus identik.
+  Helper waktu (`parse_time`, `daily_overlap`, `inside_daily`, `fmt`) kini di
+  `kb_facts.py`; `cab_rules` memakai alias dengan nama yang sama. Engine
+  menyaring pesan identik, jadi aturan per site/zona aman untuk banyak aset.
+  Setelah mengubah `backend/scripts/` atau `kb/`, jalankan
+  `tools/pack_skill.py --project`.
 
 ## Belum dikerjakan (per 27 Okt)
 
 - Pra-CAB: UI frontend (termasuk register); klarifikasi "dua Budi" di intake;
   usulan jendela waktu alternatif; data hari libur nasional (belum ada di
   dataset); provider WorkBuddy; ekstraksi aturan belum dicoba dengan Claude
-  sungguhan; migrasi cek built-in lain ke register.
+  sungguhan; migrasi cek built-in lain ke register (lihat prioritas #4).
 - Tes #7: pertanyaan di luar data tetap mendapat bukti tak relevan (butuh
   ambang relevansi atau S4).
 - S1 parser LLM dan S4 answer synthesizer untuk `/api/ask`; S5 approval gate

@@ -110,7 +110,7 @@ class SeedTest(unittest.TestCase):
     def test_seed_mencakup_aturan_yang_dulu_kode(self):
         topics = {(r["topic"], r["tier"]) for r in reg.load_seed()}
         self.assertEqual(topics, {("access_scope", "perusahaan"), ("access_scope", "standar"),
-                                  ("internet_exposure", "perusahaan")})
+                                  ("internet_exposure", "perusahaan"), ("friday_prayer", "perusahaan")})
 
     def test_seed_tidak_diindeks_retrieval(self):
         import search_kb
@@ -153,9 +153,48 @@ class EngineTest(unittest.TestCase):
 
     def test_precheck_mencatat_aturan_dan_hash(self):
         used = self.pre(reg.load_seed(), assets=["app-erp-prod"])["policies"]
-        # app-erp-prod di server-farm-jkt: aturan eksposur ikut dievaluasi, tidak terpicu
-        self.assertEqual([(u["id"], u["triggered"]) for u in used], [("POL-s007", True), ("POL-x002", False)])
+        # app-erp-prod di server-farm-jkt, Jakarta: aturan eksposur dan shalat Jumat
+        # ikut dievaluasi, tidak terpicu
+        self.assertEqual([(u["id"], u["triggered"]) for u in used],
+                         [("POL-s007", True), ("POL-w001", False), ("POL-x002", False)])
         self.assertEqual(len(used[0]["rule_sha256"]), 64)
+
+
+class ScheduleRuleTest(unittest.TestCase):
+    """FRIDAY-PRAYER dipindah dari kode ke register (fase 2b): kondisi jadwal."""
+
+    CHANGE = {"type": "change", "change_kind": "config_change", "title": "Ganti konfigurasi",
+              "description": "d", "reason": "r", "impact": "i", "implementation_plan": "p",
+              "rollback_plan": "b", "requester": {"user": EKA, "role": "Team Lead"}}
+
+    def pre(self, assets, start, end, rules=None):
+        cr = dict(self.CHANGE, assets=assets, window={"start": start, "end": end})
+        return [c for c in cab_rules.precheck(cr, NOW, rules=rules)["checks"] if c["id"] == "FRIDAY-PRAYER"]
+
+    def test_peringatan_datang_dari_aturan_register(self):
+        [chk] = self.pre(["mail-jkt-01"], "2026-11-06T11:45:00+07:00", "2026-11-06T12:15:00+07:00")
+        self.assertEqual((chk["status"], chk["rule_id"], chk["basis"]), ("WARN", "POL-w001", "sop"))
+        self.assertEqual(chk["detail"], "Jadwal beririsan dengan Jumat 06 Nov 2026 11:30 WIB; kantor Jakarta tutup.")
+        self.assertEqual({c["doc_id"] for c in chk["citations"]}, {"TOPO-PRAYER-TIMES"})
+
+    def test_aturan_dicabut_peringatan_hilang(self):
+        rules = [r for r in reg.load_seed() if r["id"] != "POL-w001"]
+        self.assertEqual(self.pre(["mail-jkt-01"], "2026-11-06T11:45:00+07:00",
+                                  "2026-11-06T12:15:00+07:00", rules=rules), [])
+
+    def test_dua_aset_satu_site_cukup_satu_peringatan(self):
+        checks = self.pre(["mail-jkt-01", "dns-jkt-01"], "2026-11-06T11:45:00+07:00", "2026-11-06T12:15:00+07:00")
+        self.assertEqual(len(checks), 1)
+
+    def test_jendela_dihitung_di_waktu_lokal_site(self):
+        # 11:15 WITA = 10:15 WIB: kena jendela Makassar, tidak kena jendela Jakarta
+        start, end = "2026-11-06T11:15:00+08:00", "2026-11-06T11:45:00+08:00"
+        self.assertEqual([c["rule_id"] for c in self.pre(["wms-mks-01"], start, end)], ["POL-w002"])
+        self.assertEqual(self.pre(["mail-jkt-01"], start, end), [])
+
+    def test_bukan_jumat_atau_tanpa_zona_waktu_tidak_ditandai(self):
+        self.assertEqual(self.pre(["mail-jkt-01"], "2026-11-05T11:45:00+07:00", "2026-11-05T12:15:00+07:00"), [])
+        self.assertEqual(self.pre(["mail-jkt-01"], "2026-11-06T11:45:00", "2026-11-06T12:15:00"), [])
 
 
 # --------------------------------------------------------------------------
@@ -258,6 +297,20 @@ class ValidationTest(Env, unittest.TestCase):
         self.propose_err(self.base(effect="ALLOW_ALL"), "invalid_rule")
         self.propose_err(self.base(action="change"), "invalid_rule")  # kondisi departemen hanya untuk access
         self.propose_err(self.base(effect="REQUIRE_APPROVER"), "invalid_rule")  # tanpa approver
+
+    def test_kondisi_jadwal_divalidasi(self):
+        ok = {"weekdays": [4], "from": "11:30", "to": "13:00"}
+        for bad in ({"weekdays": [7], "from": "11:30", "to": "13:00"},
+                    {"weekdays": [True], "from": "11:30", "to": "13:00"},
+                    {"weekdays": [4, 4], "from": "11:30", "to": "13:00"},
+                    {"weekdays": [4], "from": "25:00", "to": "13:00"},
+                    {"weekdays": [4], "from": "11:30", "to": "11:30"},
+                    {"weekdays": [4], "from": "11:30"},
+                    ["11:30", "13:00"]):
+            with self.subTest(bad=bad):
+                self.propose_err(self.base(condition={"schedule_overlaps": bad}), "invalid_rule")
+        rule = self.policies.propose(self.who(ANDINI), self.base(condition={"schedule_overlaps": ok}))
+        self.assertEqual((rule["status"], rule["condition"]), ("draft", {"schedule_overlaps": ok}))
 
     def test_kutipan_yang_tidak_ada_di_sumber_ditolak(self):
         self.propose_err(self.base(sources=[{"type": "doc", "doc_id": "CTRL-02", "quote": "semua boleh akses"}]),

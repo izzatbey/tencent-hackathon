@@ -9,7 +9,11 @@ Satu aturan:
     tier       perusahaan | standar   (perusahaan menutup standar, per topik & aset)
     subject    {asset | zone | site | asset_type}: "*" = semua
     action     "*" | access | change
-    condition  semua harus benar (AND); kosong = selalu benar
+    condition  semua harus benar (AND); kosong = selalu benar. Daftar nilai
+               (departemen penerima, exposure, port, jenis perubahan), atau
+               schedule_overlaps {weekdays: [0=Senin..6=Minggu], from: "HH:MM",
+               to: "HH:MM"} = jadwal CR beririsan dengan jendela harian itu,
+               waktu lokal site aset
     effect     BLOCK | WARN | REQUIRE_APPROVER
     sources    kutipan yang diverifikasi ulang setiap kali aturan dipakai:
                {type: doc, doc_id, quote} | {type: cmdb, asset, field, quote?}
@@ -44,6 +48,9 @@ SUBJECT_FIELDS = {"asset": "asset_id", "zone": "zone", "site": "site", "asset_ty
 LIST_CONDITIONS = ("grantee_department_in", "grantee_department_not_in", "exposure_in",
                    "ports_any", "change_kind_in")
 GRANTEE_CONDITIONS = ("grantee_department_in", "grantee_department_not_in")
+SCHEDULE_CONDITION = "schedule_overlaps"
+CONDITIONS = LIST_CONDITIONS + (SCHEDULE_CONDITION,)
+HM_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 SOURCE_TYPES = ("doc", "cmdb", "chat", "submitted")
 STATUS_EFFECT = {"BLOCK": "BLOCK", "WARN": "WARN", "REQUIRE_APPROVER": "WARN"}
 ID_RE = re.compile(r"^POL-[0-9a-z]{4,12}$")
@@ -130,9 +137,12 @@ def validate_rule(rule, refs):
     out["subject"] = dict(subject)
 
     condition = rule.get("condition") or {}
-    if not isinstance(condition, dict) or set(condition) - set(LIST_CONDITIONS):
-        _bad("invalid_rule", "condition hanya boleh berisi %s." % ", ".join(LIST_CONDITIONS))
+    if not isinstance(condition, dict) or set(condition) - set(CONDITIONS):
+        _bad("invalid_rule", "condition hanya boleh berisi %s." % ", ".join(CONDITIONS))
     for key, value in condition.items():
+        if key == SCHEDULE_CONDITION:
+            _validate_schedule(value)
+            continue
         if not isinstance(value, list) or not value or len(value) > 20:
             _bad("invalid_rule", "condition.%s harus daftar 1-20 nilai." % key)
         if key in GRANTEE_CONDITIONS:
@@ -144,7 +154,7 @@ def validate_rule(rule, refs):
             _bad("invalid_rule", "condition.ports_any harus angka port.")
     if condition and any(k in GRANTEE_CONDITIONS for k in condition) and out["action"] != "access":
         _bad("invalid_rule", "Kondisi departemen penerima hanya untuk action access.")
-    out["condition"] = {k: list(v) for k, v in condition.items()}
+    out["condition"] = {k: dict(v) if k == SCHEDULE_CONDITION else list(v) for k, v in condition.items()}
 
     if out["effect"] == "REQUIRE_APPROVER":
         approver = rule.get("approver")
@@ -179,6 +189,20 @@ def validate_rule(rule, refs):
         _bad("invalid_rule", "supersedes harus id aturan.")
     out["supersedes"] = sup
     return out
+
+
+def _validate_schedule(value):
+    if not isinstance(value, dict) or set(value) != {"weekdays", "from", "to"}:
+        _bad("invalid_rule", "condition.schedule_overlaps butuh tepat weekdays, from, to.")
+    days = value["weekdays"]
+    if (not isinstance(days, list) or not 1 <= len(days) <= 7 or len(set(days)) != len(days)
+            or any(isinstance(d, bool) or not isinstance(d, int) or not 0 <= d <= 6 for d in days)):
+        _bad("invalid_rule", "schedule_overlaps.weekdays harus 1-7 angka unik 0 (Senin) - 6 (Minggu).")
+    for key in ("from", "to"):
+        if not isinstance(value[key], str) or not HM_RE.match(value[key]):
+            _bad("invalid_rule", "schedule_overlaps.%s harus HH:MM." % key)
+    if value["from"] == value["to"]:
+        _bad("invalid_rule", "schedule_overlaps.from dan to tidak boleh sama.")
 
 
 def references(root=None):
@@ -234,9 +258,31 @@ def applies(rule, cr, asset):
     return all(v == "*" or asset.get(SUBJECT_FIELDS[k]) == v for k, v in rule["subject"].items())
 
 
-def holds(condition, cr, department):
+def cr_window(cr):
+    """(start, end) jadwal CR, atau None bila kosong/tanpa zona/terbalik."""
+    w = cr.get("window") or {}
+    start, end = kb_facts.parse_time(w.get("start")), kb_facts.parse_time(w.get("end"))
+    return (start, end) if start and end and start < end else None
+
+
+def schedule_hit(cond, cr, asset):
+    """Kejadian pertama jendela `cond` (waktu lokal site aset) yang beririsan dengan jadwal CR."""
+    window = cr_window(cr)
+    if not window:
+        return None
+
+    def hm(text):
+        return tuple(int(x) for x in text.split(":"))
+
+    return kb_facts.daily_overlap(window[0], window[1], kb_facts.site_tz(asset.get("site")),
+                                  hm(cond["from"]), hm(cond["to"]), set(cond["weekdays"]))
+
+
+def holds(condition, cr, department, asset=None):
     for key, values in condition.items():
-        if key == "grantee_department_in":
+        if key == SCHEDULE_CONDITION:
+            ok = schedule_hit(values, cr, asset or {}) is not None
+        elif key == "grantee_department_in":
             ok = (department or "").lower() in {str(v).lower() for v in values}
         elif key == "grantee_department_not_in":
             ok = (department or "").lower() not in {str(v).lower() for v in values}
@@ -262,6 +308,13 @@ def evaluate(cr, assets, ctx, day):
     department = person.get("department") if person else None
     checks, slots, used = [], [], []
     unknown_reported = False
+    shown = set()  # aturan per site/zona dievaluasi per aset; pesan yang sama cukup sekali
+
+    def show(check):
+        key = (check.get("rule_id"), check["status"], check["title"], check["detail"])
+        if key not in shown:
+            shown.add(key)
+            checks.append(check)
 
     for topic in sorted({r["topic"] for r in rules}):
         for asset in assets:
@@ -287,17 +340,20 @@ def evaluate(cr, assets, ctx, day):
                     continue
                 allowed = rule["condition"].get("grantee_department_not_in") or \
                     rule["condition"].get("grantee_department_in") or []
+                schedule = rule["condition"].get(SCHEDULE_CONDITION)
+                hit = schedule_hit(schedule, cr, asset) if schedule else None
                 fields = _Fields(asset=asset["asset_id"], zone=asset.get("zone"), site=asset.get("site"),
                                  grantee=grantee, department=department or "-", allowed=", ".join(allowed),
-                                 owner=kb_facts.owner_name(asset.get("owner")) or "-")
+                                 owner=kb_facts.owner_name(asset.get("owner")) or "-",
+                                 overlap=kb_facts.fmt(hit[0]) if hit else "-")
                 basis = rule.get("basis") or ("standar" if rule["tier"] == "standar" else "sop")
-                triggered = holds(rule["condition"], cr, department)
+                triggered = holds(rule["condition"], cr, department, asset)
                 used.append({"id": rule["id"], "topic": topic, "tier": rule["tier"], "asset": asset["asset_id"],
                              "triggered": triggered, "rule_sha256": rule_hash(rule)})
                 if triggered:
-                    checks.append(_check(rule["check_id"], STATUS_EFFECT[rule["effect"]],
-                                         rule["title"].format_map(fields),
-                                         rule["message"].format_map(fields), basis, cites, rule["id"]))
+                    show(_check(rule["check_id"], STATUS_EFFECT[rule["effect"]],
+                                rule["title"].format_map(fields),
+                                rule["message"].format_map(fields), basis, cites, rule["id"]))
                     if rule["effect"] == "REQUIRE_APPROVER":
                         who = (kb_facts.owner_name(asset.get("owner")) if rule["approver"] == "asset_owner"
                                else ctx.person(rule["approver"]["role"]))
@@ -308,9 +364,9 @@ def evaluate(cr, assets, ctx, day):
                                           "assignee": who, "kind": "person", "mode": "tertulis",
                                           "citations": cites, "rule_id": rule["id"]})
                 elif rule.get("pass_message"):
-                    checks.append(_check(rule["check_id"], "PASS",
-                                         (rule.get("pass_title") or rule["title"]).format_map(fields),
-                                         rule["pass_message"].format_map(fields), basis, cites[:1], rule["id"]))
+                    show(_check(rule["check_id"], "PASS",
+                                (rule.get("pass_title") or rule["title"]).format_map(fields),
+                                rule["pass_message"].format_map(fields), basis, cites[:1], rule["id"]))
     return checks, slots, used
 
 

@@ -43,9 +43,19 @@ mengesahkan aturan itu.
 | --- | --- | --- |
 | `ACCESS-SCOPE` | kode membaca kolom `allowed_departments` CMDB | 12 aturan per aset (kutipan sel CMDB + CTRL-02) + 1 aturan standar `POL-g001` |
 | `EXPOSURE` | kode + `SENSITIVE_ZONES` | 3 aturan per segmen (kutipan TOPO-SEGMENTS + CTRL-09) |
-| Lainnya (kelengkapan, risiko, approver SOP-14, jendela waktu, memo SOP-7, emergency, SoD) | kode | tetap kode ("built-in"), dimigrasi bertahap |
+| `FRIDAY-PRAYER` (fase 2b, 27 Okt) | kode + `PRAYER` | 2 aturan per site (`POL-w001`, `POL-w002`) dengan kondisi baru `schedule_overlaps`; kutipan TOPO-PRAYER-TIMES |
+| Lainnya (kelengkapan, risiko, approver SOP-14, jendela WMS & firewall cabang, memo SOP-7, emergency, SoD) | kode | tetap kode ("built-in"), dimigrasi bertahap |
 
-Semua tes Pra-CAB lama lulus tanpa diubah setelah migrasi.
+Semua tes Pra-CAB lama lulus tanpa diubah setelah migrasi ACCESS-SCOPE dan
+EXPOSURE. Untuk FRIDAY-PRAYER, kesetaraan dibuktikan dengan membandingkan
+`precheck` lengkap untuk 408 kombinasi aset × jadwal × jenis CR sebelum dan
+sesudah migrasi: identik, kecuali `rule_id` dan `policies[]` yang memang
+bertambah. Dua tes yang mendaftar isi register ikut diperbarui (daftar topik
+seed; aturan yang dievaluasi untuk aset Jakarta).
+
+Kondisi `schedule_overlaps` dievaluasi per aset dalam waktu lokal site-nya;
+engine menyaring pesan yang identik, jadi aturan per site/zona tidak
+mengulang peringatan untuk setiap aset di site yang sama.
 
 ## Konsekuensi
 

@@ -18,7 +18,7 @@ import csv
 import json
 import re
 import sys
-from datetime import timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -40,6 +40,61 @@ def tz(name):
 
 def site_tz(site):
     return tz(SITE_TZ.get(site, "WIB"))
+
+
+# --------------------------------------------------------------------------
+# waktu (dipakai cab_rules dan policy_register)
+# --------------------------------------------------------------------------
+def parse_time(value):
+    """ISO-8601 berzona -> datetime; None bila kosong/tidak valid/tanpa zona."""
+    if not value or not isinstance(value, str):
+        return None
+    try:
+        dt = datetime.fromisoformat(value.strip())
+    except ValueError:
+        return None
+    return dt if dt.tzinfo else None
+
+
+def daily_overlap(start, end, tzinfo, from_hm, to_hm, weekdays=None):
+    """Kejadian pertama jendela harian [from, to) (waktu lokal `tzinfo`) yang
+    beririsan dengan [start, end). `to` < `from` = melewati tengah malam."""
+    s, e = start.astimezone(tzinfo), end.astimezone(tzinfo)
+    day = s.date() - timedelta(days=1)
+    while day <= e.date():
+        ws = datetime.combine(day, time(*from_hm), tzinfo)
+        we = datetime.combine(day, time(*to_hm), tzinfo)
+        if we <= ws:
+            we += timedelta(days=1)
+        if (weekdays is None or ws.weekday() in weekdays) and ws < e and s < we:
+            return ws, we
+        day += timedelta(days=1)
+    return None
+
+
+def inside_daily(start, end, tzinfo, from_hm, to_hm, weekdays):
+    """True bila [start, end) seluruhnya di dalam satu kejadian jendela harian."""
+    s = start.astimezone(tzinfo)
+    for day in (s.date() - timedelta(days=1), s.date()):
+        ws = datetime.combine(day, time(*from_hm), tzinfo)
+        we = datetime.combine(day, time(*to_hm), tzinfo)
+        if we <= ws:
+            we += timedelta(days=1)
+        if ws.weekday() in weekdays and ws <= start and end <= we:
+            return True
+    return False
+
+
+HARI = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
+BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
+
+
+def fmt(dt, tzname=None):
+    """'Rabu 04 Nov 2026 14:00 WIB' (tanpa bergantung locale OS)."""
+    if tzname:
+        dt = dt.astimezone(tz(tzname))
+    return "%s %02d %s %d %s %s" % (HARI[dt.weekday()], dt.day, BULAN[dt.month - 1], dt.year,
+                                     dt.strftime("%H:%M"), dt.tzname() or "")
 
 
 def kb_root(root=None):
