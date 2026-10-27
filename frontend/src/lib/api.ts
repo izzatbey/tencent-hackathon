@@ -50,7 +50,12 @@ export async function ask(
   if (!res.ok) {
     throw new ApiError(await errorMessage(res), res.status < 500 ? 'invalid' : 'server')
   }
-  return (await res.json()) as AskResponse
+  try {
+    return (await res.json()) as AskResponse
+  } catch {
+    // 200 berisi HTML (proxy, halaman login, captive portal) bukan jawaban
+    throw new ApiError('Server mengirim balasan yang tidak dikenali. Coba lagi.', 'server')
+  }
 }
 
 export async function loadPersonas(fetchImpl: Fetch = fetch): Promise<Persona[]> {

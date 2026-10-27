@@ -19,7 +19,7 @@
   </header>
 
   <!-- Kutipan verbatim: tidak diringkas, tidak dipotong (frontend/README.md). -->
-  <blockquote>{citation.quote}</blockquote>
+  <blockquote dir="auto">{citation.quote}</blockquote>
 
   <dl>
     {#if citation.owner}<div><dt>Pemilik</dt><dd>{citation.owner}</dd></div>{/if}
