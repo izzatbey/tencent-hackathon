@@ -12,8 +12,9 @@ Satu aturan:
     condition  semua harus benar (AND); kosong = selalu benar. Daftar nilai
                (departemen penerima, exposure, port, jenis perubahan), atau
                schedule_overlaps {weekdays: [0=Senin..6=Minggu], from: "HH:MM",
-               to: "HH:MM"} = jadwal CR beririsan dengan jendela harian itu,
-               waktu lokal site aset
+               to: "HH:MM", tz?: WIB|WITA|WIT} = jadwal CR beririsan dengan
+               jendela harian itu; jam dibaca di `tz`, default waktu lokal site
+               aset. CR tanpa jadwal valid: aturan jadwal tidak dinilai
     effect     BLOCK | WARN | REQUIRE_APPROVER
     approver   (REQUIRE_APPROVER) "asset_owner" | "cab_meeting" | {role}.
                "cab_meeting" = wajib keputusan rapat CAB; precheck menggabungkannya
@@ -205,8 +206,10 @@ def validate_rule(rule, refs):
 
 
 def _validate_schedule(value):
-    if not isinstance(value, dict) or set(value) != {"weekdays", "from", "to"}:
-        _bad("invalid_rule", "condition.schedule_overlaps butuh tepat weekdays, from, to.")
+    if not isinstance(value, dict) or not {"weekdays", "from", "to"} <= set(value) <= {"weekdays", "from", "to", "tz"}:
+        _bad("invalid_rule", "condition.schedule_overlaps butuh weekdays, from, to (tz opsional).")
+    if "tz" in value and value["tz"] not in kb_facts.TZ_OFFSET:
+        _bad("invalid_rule", "schedule_overlaps.tz harus salah satu dari %s." % ", ".join(kb_facts.TZ_OFFSET))
     days = value["weekdays"]
     if (not isinstance(days, list) or not 1 <= len(days) <= 7 or len(set(days)) != len(days)
             or any(isinstance(d, bool) or not isinstance(d, int) or not 0 <= d <= 6 for d in days)):
@@ -279,7 +282,8 @@ def cr_window(cr):
 
 
 def schedule_hit(cond, cr, asset):
-    """Kejadian pertama jendela `cond` (waktu lokal site aset) yang beririsan dengan jadwal CR."""
+    """Kejadian pertama jendela `cond` yang beririsan dengan jadwal CR. Jam
+    jendela dibaca di zona `cond.tz` bila ada, selain itu waktu lokal site aset."""
     window = cr_window(cr)
     if not window:
         return None
@@ -287,7 +291,8 @@ def schedule_hit(cond, cr, asset):
     def hm(text):
         return tuple(int(x) for x in text.split(":"))
 
-    return kb_facts.daily_overlap(window[0], window[1], kb_facts.site_tz(asset.get("site")),
+    zone = kb_facts.tz(cond["tz"]) if cond.get("tz") else kb_facts.site_tz(asset.get("site"))
+    return kb_facts.daily_overlap(window[0], window[1], zone,
                                   hm(cond["from"]), hm(cond["to"]), set(cond["weekdays"]))
 
 
@@ -321,10 +326,13 @@ def evaluate(cr, assets, ctx, day):
     department = person.get("department") if person else None
     checks, slots, used = [], [], []
     unknown_reported = False
-    shown = set()  # aturan per site/zona dievaluasi per aset; pesan yang sama cukup sekali
+    # aturan per site/zona dievaluasi per aset, dan beberapa aturan bisa memberi
+    # temuan yang sama (mis. jendela WMS untuk tiga aset): yang identik cukup sekali
+    shown = set()
 
     def show(check):
-        key = (check.get("rule_id"), check["status"], check["title"], check["detail"])
+        key = (check["id"], check["status"], check["title"], check["detail"],
+               json.dumps(check["citations"], sort_keys=True, ensure_ascii=False))
         if key not in shown:
             shown.add(key)
             checks.append(check)
@@ -334,6 +342,8 @@ def evaluate(cr, assets, ctx, day):
             fits = [r for r in rules if r["topic"] == topic and applies(r, cr, asset)]
             chosen = [r for r in fits if r["tier"] == "perusahaan"] or [r for r in fits if r["tier"] == "standar"]
             for rule in chosen:
+                if SCHEDULE_CONDITION in rule["condition"] and not cr_window(cr):
+                    continue  # tanpa jadwal valid aturan jadwal tidak bisa dinilai; FIELDS sudah memintanya
                 if any(k in GRANTEE_CONDITIONS for k in rule["condition"]):
                     if not grantee:
                         continue  # cek ACCESS sudah meminta penerima

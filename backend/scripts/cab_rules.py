@@ -15,7 +15,7 @@ Setiap cek: {id, status, title, detail, basis, citations}
 Outcome (urutan prioritas): BLOCKED > NEEDS_INFO > NEEDS_REVISION > READY
 
 Cek yang berupa aturan perusahaan per aset (ACCESS-SCOPE, EXPOSURE,
-FRIDAY-PRAYER, BRANCH-FW-MEMO, dan aturan baru yang disahkan lewat aplikasi)
+FRIDAY-PRAYER, BRANCH-FW-MEMO, WMS-WINDOW, dan aturan baru yang disahkan lewat aplikasi)
 datang dari policy register
 (policy_register.py). Cek lain di modul ini masih kode ("built-in") dan
 dimigrasi bertahap; lihat docs/decisions/0004.
@@ -41,8 +41,6 @@ EXPOSURES = ("none", "internal", "internet")
 SENSITIVE_ZONES = {"hr-data", "server-farm-jkt", "mgmt"}
 # interpretasi: firmware upgrade & dekomisi memutus layanan
 AVAILABILITY_KINDS = {"firmware_upgrade", "decommission"}
-# TOPO-WMS-WINDOW menyebut fw-edge-mks-01 & vpn-gw-jkt-01; wms-mks-01 ditambahkan (interpretasi)
-WMS_ASSETS = {"fw-edge-mks-01", "vpn-gw-jkt-01", "wms-mks-01"}
 OFFICE_HOURS = {"Jakarta": ((8, 0), (17, 0)), "Makassar": ((8, 0), (17, 0)),
                 "Jayapura": ((7, 30), (16, 30))}
 WEEKDAYS = {0, 1, 2, 3, 4}
@@ -67,9 +65,6 @@ SOURCES = {
     "ctrl01.access": ("doc", "CTRL-01", "any change granting new network or system access must name the requester, the authorizing role, and an expiry date."),
     "ctrl09.nat": ("doc", "CTRL-09", "Port forwarding or NAT rules exposing internal services to the internet must be classified as HIGH or CRITICAL risk."),
     "ctrl09.ssh": ("doc", "CTRL-09", "SSH (port 22) from the internet to any internal server is classified as CRITICAL risk"),
-    "wms.schedule": ("doc", "TOPO-WMS-WINDOW", "Schedule: 23:00 WIB – 02:00 WIB (daily)"),
-    "wms.avoid": ("doc", "TOPO-WMS-WINDOW", "Avoid scheduling network changes on fw-edge-mks-01 or vpn-gw-jkt-01 during this window."),
-    "sop7.cab": ("doc", "SOP-7", "CAB approval is required for changes that affect the replication window (23:00–02:00 WIB)."),
     "sop7.window": ("doc", "SOP-7", "Remote maintenance of branch firewalls is allowed any weekday (Monday–Friday) between 21:00 and 06:00 local branch time."),
     "sop7.notify": ("doc", "SOP-7", "Notify the branch coordinator (Hendra Wijaya for Makassar) by phone before commencing maintenance."),
     "office.Jakarta": ("doc", "TOPO-OFFICE-HOURS", "Jakarta HQ: 08:00 – 17:00 WIB"),
@@ -306,19 +301,6 @@ def precheck(cr, submitted_at, root=None, ctx=None, rules=None, submitted=None):
 
     # --- jendela waktu --------------------------------------------------------
     if window:
-        wib = kb_facts.tz("WIB")
-        if WMS_ASSETS & set(asset_ids):
-            hit = daily_overlap(start, end, wib, (23, 0), (2, 0))
-            if hit:
-                extra_cab += ctx.cites("sop7.cab")
-                checks.append(_check("WMS-WINDOW", "WARN", "Bentrok jendela replikasi WMS",
-                                     "Jadwal beririsan dengan replikasi %s. Geser jadwal, atau perubahan "
-                                     "ini wajib diputuskan CAB." % fmt(hit[0], "WIB"), "sop",
-                                     ctx.cites("wms.schedule", "wms.avoid", "sop7.cab")))
-            else:
-                checks.append(_check("WMS-WINDOW", "PASS", "Jendela replikasi WMS",
-                                     "Tidak beririsan dengan replikasi 23:00-02:00 WIB.", "sop",
-                                     ctx.cites("wms.schedule")))
         branch_fw = [a for a in assets if a.get("type") == "Firewall" and a.get("site") != "Jakarta"]
         for a in branch_fw:
             local = kb_facts.site_tz(a["site"])
@@ -348,7 +330,7 @@ def precheck(cr, submitted_at, root=None, ctx=None, rules=None, submitted=None):
         have = {s["assignee"] for s in slots}
         for s in policy_slots:
             if s["kind"] == "cab_meeting":
-                extra_cab += s["citations"]
+                extra_cab += [c for c in s["citations"] if c not in extra_cab]
             elif s["assignee"] not in have:
                 slots.append(s)
                 have.add(s["assignee"])

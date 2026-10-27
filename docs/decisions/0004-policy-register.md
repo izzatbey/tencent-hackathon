@@ -45,7 +45,8 @@ mengesahkan aturan itu.
 | `EXPOSURE` | kode + `SENSITIVE_ZONES` | 3 aturan per segmen (kutipan TOPO-SEGMENTS + CTRL-09) |
 | `FRIDAY-PRAYER` (fase 2b, 27 Okt) | kode + `PRAYER` | 2 aturan per site (`POL-w001`, `POL-w002`) dengan kondisi baru `schedule_overlaps`; kutipan TOPO-PRAYER-TIMES |
 | `BRANCH-FW-MEMO` (fase 2b, 27 Okt) | kode + kunci `memo.*` | 1 aturan `POL-m001` (subjek firewall Makassar, berlaku 1 Okt 2026) dengan approver baru `cab_meeting` dan `approver_sources` |
-| Lainnya (kelengkapan, risiko, approver SOP-14, jendela WMS & firewall cabang, emergency, SoD) | kode | tetap kode ("built-in"), dimigrasi bertahap |
+| `WMS-WINDOW` (fase 2b, 27 Okt) | kode + `WMS_ASSETS` | 3 aturan per aset `POL-r001..r003` (jendela 23:00-02:00 dengan `tz: WIB`, PASS lewat `pass_message`, approver `cab_meeting`) |
+| Lainnya (kelengkapan, risiko, approver SOP-14, jendela firewall cabang, emergency, SoD) | kode | tetap kode ("built-in"), dimigrasi bertahap |
 
 Semua tes Pra-CAB lama lulus tanpa diubah setelah migrasi ACCESS-SCOPE dan
 EXPOSURE. Untuk FRIDAY-PRAYER, kesetaraan dibuktikan dengan membandingkan
@@ -67,6 +68,24 @@ urutan kutipan di slot CAB. Tiga perubahan yang disengaja:
 - Bila kutipan memo hilang, kode lama turun ke peringatan MFA dari CMDB saja.
   Sekarang berlaku aturan umum register: aturan tidak dipakai, `WARN` agar
   owner meninjau, dan tidak ada slot CAB tambahan.
+
+Untuk WMS-WINDOW matriksnya diperlebar lagi menjadi 1.530 kombinasi (jadwal
+yang berakhir tepat 23:00, mulai tepat 02:00, ekor 01:30-02:30, jadwal ditulis
+dalam WITA, malam Minggu): identik, termasuk 40 slot CAB yang mengutip SOP-7.
+Engine diperluas tiga hal: `tz` opsional di `schedule_overlaps` (jendela WMS
+selalu WIB walau asetnya di Makassar); aturan jadwal tidak dinilai sama sekali
+bila CR tidak punya jadwal valid (tanpa itu `pass_message` akan muncul); dan
+deduplikasi temuan tidak lagi per aturan tetapi per isi (`id`, status, judul,
+detail, kutipan), sehingga tiga aturan WMS tetap satu temuan. Kutipan slot CAB
+juga digabung tanpa duplikat. Perbedaan yang disengaja: aturan berlaku sejak
+2026-03-15 (SOP-7, yang sudah menyebut jendela dan kewajiban CAB); kode lama
+tanpa tanggal. Cakupan `wms-mks-01` tetap tafsiran tim seperti di kode lama
+(TOPO-WMS-WINDOW hanya menyebut fw-edge-mks-01 dan vpn-gw-jkt-01) dan basisnya
+dibiarkan `sop` agar keluaran tetap sama; perlu dikonfirmasi owner.
+
+Urutan alasan di slot CAB mengikuti urutan topik (alfabetis): topik WMS
+`availability_window` sengaja diurutkan sebelum memo `branch_fw_remote`, sama
+seperti urutan di kode lama. Diuji di `CabMeetingRuleTest`.
 
 Kondisi `schedule_overlaps` dievaluasi per aset dalam waktu lokal site-nya;
 engine menyaring pesan yang identik, jadi aturan per site/zona tidak

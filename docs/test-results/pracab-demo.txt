@@ -1,7 +1,7 @@
 Jam demo: 2026-10-27T10:00:00+07:00 (Selasa)
 
 [1] Ragil (Ops Manager Makassar) membuat change request
-    CR-d099129cd3 dibuat, state=draft, tombol untuk Ragil: ['update', 'cancel', 'submit']
+    CR-d99080dd14 dibuat, state=draft, tombol untuk Ragil: ['update', 'cancel', 'submit']
 
 [2] Ragil mengajukan -> precheck SOP-14 (tanpa LLM)
     state   : pending_approval
@@ -10,13 +10,13 @@ Jam demo: 2026-10-27T10:00:00+07:00 (Selasa)
     PASS       FIELDS            Semua field wajib terisi.  [sop]
                ↳ SOP-14: "Submit via the IT change management system with: description, reason, impact ass"
                ↳ CTRL-12: "Change requests must document: what, why, impact assessment, rollback plan, and "
+    PASS       WMS-WINDOW        Tidak beririsan dengan replikasi 23:00-02:00 WIB.  [sop]
+               ↳ TOPO-WMS-WINDOW: "Schedule: 23:00 WIB – 02:00 WIB (daily)"
     WARN       BRANCH-FW-MEMO    SOP-7 masih mengizinkan persetujuan lisan, tetapi memo IT 1 Okt 2026 (lebih baru) mewajibk  [sop]
                ↳ SOP-7: "Verbal approval from the on-call IT admin or ops manager is sufficient for routi"
                ↳ CMDB: "Remote changes require MFA jump-host."
     INFO       RISK              HIGH: jenis perubahan firmware_upgrade memutus layanan selama pengerjaan  [interpretasi]
                ↳ SOP-14: "HIGH: Touches sensitive zone, affects availability, or weakens security controls"
-    PASS       WMS-WINDOW        Tidak beririsan dengan replikasi 23:00-02:00 WIB.  [sop]
-               ↳ TOPO-WMS-WINDOW: "Schedule: 23:00 WIB – 02:00 WIB (daily)"
     PASS       BRANCH-FW-WINDOW  Seluruh jadwal di dalam jendela Senin-Jumat 21:00-06:00 waktu Makassar.  [interpretasi]
                ↳ SOP-7: "Remote maintenance of branch firewalls is allowed any weekday (Monday–Friday) be"
     PASS       LEAD-TIME         Diputuskan di rapat CAB Rabu 04 Nov 2026 14:00 WIB.  [sop]
@@ -38,7 +38,7 @@ Jam demo: 2026-10-27T10:00:00+07:00 (Selasa)
     state=approved
 
 [7] Ragil dispatch -> mock tool (tidak ada yang benar-benar terkirim)
-    calendar.create_event  would_have_sent  [CR-d099129cd3] Upgrade firmware FortiGate Makassar
+    calendar.create_event  would_have_sent  [CR-d99080dd14] Upgrade firmware FortiGate Makassar
     ticket.create          would_have_sent  IT change register
     task.create            would_have_sent  Telepon branch coordinator sebelum maintenance dimulai
                ⚠ Sumber bertentangan: SOP-7 menyebut Hendra Wijaya untuk Makassar, direktori mencatat Branch Coordinator, kantor Jayapura.
@@ -47,15 +47,15 @@ Jam demo: 2026-10-27T10:00:00+07:00 (Selasa)
 [8] Ragil membatalkan dalam 60 detik
     state=undone
 
-[9] Riwayat CR-d099129cd3 dari audit log
-    #1    cab.created    Ragil     draft              hash=9bf86e10d578…
-    #2    cab.submitted  Ragil     pending_approval   hash=917d6cf7890c…
-    #3    cab.denied     Ragil     pending_approval   hash=617859a7a879…
-    #4    cab.denied     Indah     pending_approval   hash=1eb80b887596…
-    #5    cab.approved   Indah     pending_approval   hash=6d54fb64bea4…
-    #6    cab.approved   Indah     approved           hash=9c83a2492e97…
-    #7    cab.dispatched Ragil     dispatched         hash=a6d2b1b5841a…
-    #8    cab.undone     Ragil     undone             hash=d19757f0e64f…
+[9] Riwayat CR-d99080dd14 dari audit log
+    #1    cab.created    Ragil     draft              hash=678fb7987a5a…
+    #2    cab.submitted  Ragil     pending_approval   hash=196524bf2183…
+    #3    cab.denied     Ragil     pending_approval   hash=17018848115a…
+    #4    cab.denied     Indah     pending_approval   hash=574ec9c171d9…
+    #5    cab.approved   Indah     pending_approval   hash=1a246a5edc7a…
+    #6    cab.approved   Indah     approved           hash=847f3b5611cc…
+    #7    cab.dispatched Ragil     dispatched         hash=4b00887fe6ae…
+    #8    cab.undone     Ragil     undone             hash=766a27f980db…
 
 [10] Contoh lain: Andini minta buka SSH dari internet ke HR DB
     state=blocked outcome=BLOCKED risiko=CRITICAL
@@ -76,7 +76,7 @@ Jam demo: 2026-10-27T10:00:00+07:00 (Selasa)
     approver: IT Admin                         -> Andini Pratama
 
 [13] Policy register: Andini mengajukan aturan dari memo Citra (diisi manual)
-    POL-9d3a363d [draft] Mail relay hanya untuk IT
+    POL-405c1f49 [draft] Mail relay hanya untuk IT
     kondisi: {"grantee_department_not_in": ["IT"]} -> BLOCK
     kutipan: "mail relay mail-jkt-01 hanya boleh diakses oleh tim IT"
     pemilik dokumen: Citra Kusuma · tombol untuk Andini: []
@@ -84,15 +84,15 @@ Jam demo: 2026-10-27T10:00:00+07:00 (Selasa)
 [14] Yang tidak berhak mencoba mengesahkan, lalu Citra (pemilik memo) mengesahkan
     ditolak (HTTP 403 not_owner): Aturan ini hanya bisa disahkan pemilik dokumen sumbernya (Citra Kusuma).
     ditolak (HTTP 403 self_approval): Pengusul tidak boleh mengesahkan aturannya sendiri.
-    POL-9d3a363d sekarang active, berlaku mulai 2026-10-27
+    POL-405c1f49 sekarang active, berlaku mulai 2026-10-27
 
 [15] Lina mengajukan akses mail-jkt-01 lagi -> keputusan mengikuti aturan baru
     state=blocked outcome=BLOCKED risiko=MEDIUM
     BLOCK [sop]: Lina Kartika (Marketing) tidak boleh mengakses mail-jkt-01 (policy: IT).
-               ↳ DOC-8513829b: "mail relay mail-jkt-01 hanya boleh diakses oleh tim IT"
-    permintaan sebelumnya (CR-67d8c00ffc) tetap: pending_approval, READY
+               ↳ DOC-a18f7f26: "mail relay mail-jkt-01 hanya boleh diakses oleh tim IT"
+    permintaan sebelumnya (CR-d4b85d4caa) tetap: pending_approval, READY
 
 [16] Verifikasi rantai hash audit log
-    {"ok": true, "checked": 21, "chained": 21, "legacy": 0, "head": "f7312f71972d474bb26953be3ba519ce6ddc928f3dab2a298f4b4219136dbf9a"}
+    {"ok": true, "checked": 21, "chained": 21, "legacy": 0, "head": "f0e3c27f2b1fde73ffbf804e546adf410fbbd3eaed6f0712590f4b9791283c6d"}
 
 Selesai. Jam demo dikembalikan ke waktu nyata.

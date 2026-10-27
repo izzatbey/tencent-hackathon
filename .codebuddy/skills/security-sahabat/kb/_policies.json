@@ -1,5 +1,5 @@
 {
-  "_note": "Seed policy register Pra-CAB. Aturan di sini dimigrasi dari kode cab_rules.py pada 27 Okt 2026 (FRIDAY-PRAYER dan BRANCH-FW-MEMO: 27 Okt, fase 2b) dan dianggap sudah disahkan pemilik dokumen sumbernya saat migrasi (origin: seed). Aturan baru masuk lewat POST /api/policies atau /api/policies/extract dan disahkan lewat aplikasi; statusnya tercatat di audit log, bukan di file ini. Lihat docs/decisions/0004.",
+  "_note": "Seed policy register Pra-CAB. Aturan di sini dimigrasi dari kode cab_rules.py pada 27 Okt 2026 (FRIDAY-PRAYER, BRANCH-FW-MEMO, WMS-WINDOW: 27 Okt, fase 2b) dan dianggap sudah disahkan pemilik dokumen sumbernya saat migrasi (origin: seed). Aturan baru masuk lewat POST /api/policies atau /api/policies/extract dan disahkan lewat aplikasi; statusnya tercatat di audit log, bukan di file ini. Lihat docs/decisions/0004.",
   "version": "2026-10-27",
   "rules": [
     {
@@ -657,6 +657,171 @@
       ],
       "owner": "Andini Pratama",
       "effective_date": "2026-10-01"
+    },
+    {
+      "id": "POL-r001",
+      "title": "Bentrok jendela replikasi WMS",
+      "topic": "availability_window",
+      "check_id": "WMS-WINDOW",
+      "tier": "perusahaan",
+      "subject": {
+        "asset": "fw-edge-mks-01"
+      },
+      "action": "*",
+      "condition": {
+        "schedule_overlaps": {
+          "weekdays": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "from": "23:00",
+          "to": "02:00",
+          "tz": "WIB"
+        }
+      },
+      "effect": "REQUIRE_APPROVER",
+      "approver": "cab_meeting",
+      "approver_sources": [
+        2
+      ],
+      "message": "Jadwal beririsan dengan replikasi {overlap}. Geser jadwal, atau perubahan ini wajib diputuskan CAB.",
+      "pass_title": "Jendela replikasi WMS",
+      "pass_message": "Tidak beririsan dengan replikasi 23:00-02:00 WIB.",
+      "basis": "sop",
+      "sources": [
+        {
+          "type": "doc",
+          "doc_id": "TOPO-WMS-WINDOW",
+          "quote": "Schedule: 23:00 WIB – 02:00 WIB (daily)"
+        },
+        {
+          "type": "doc",
+          "doc_id": "TOPO-WMS-WINDOW",
+          "quote": "Avoid scheduling network changes on fw-edge-mks-01 or vpn-gw-jkt-01 during this window."
+        },
+        {
+          "type": "doc",
+          "doc_id": "SOP-7",
+          "quote": "CAB approval is required for changes that affect the replication window (23:00–02:00 WIB)."
+        }
+      ],
+      "owner": "Andini Pratama",
+      "effective_date": "2026-03-15"
+    },
+    {
+      "id": "POL-r002",
+      "title": "Bentrok jendela replikasi WMS",
+      "topic": "availability_window",
+      "check_id": "WMS-WINDOW",
+      "tier": "perusahaan",
+      "subject": {
+        "asset": "vpn-gw-jkt-01"
+      },
+      "action": "*",
+      "condition": {
+        "schedule_overlaps": {
+          "weekdays": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "from": "23:00",
+          "to": "02:00",
+          "tz": "WIB"
+        }
+      },
+      "effect": "REQUIRE_APPROVER",
+      "approver": "cab_meeting",
+      "approver_sources": [
+        2
+      ],
+      "message": "Jadwal beririsan dengan replikasi {overlap}. Geser jadwal, atau perubahan ini wajib diputuskan CAB.",
+      "pass_title": "Jendela replikasi WMS",
+      "pass_message": "Tidak beririsan dengan replikasi 23:00-02:00 WIB.",
+      "basis": "sop",
+      "sources": [
+        {
+          "type": "doc",
+          "doc_id": "TOPO-WMS-WINDOW",
+          "quote": "Schedule: 23:00 WIB – 02:00 WIB (daily)"
+        },
+        {
+          "type": "doc",
+          "doc_id": "TOPO-WMS-WINDOW",
+          "quote": "Avoid scheduling network changes on fw-edge-mks-01 or vpn-gw-jkt-01 during this window."
+        },
+        {
+          "type": "doc",
+          "doc_id": "SOP-7",
+          "quote": "CAB approval is required for changes that affect the replication window (23:00–02:00 WIB)."
+        }
+      ],
+      "owner": "Andini Pratama",
+      "effective_date": "2026-03-15"
+    },
+    {
+      "id": "POL-r003",
+      "title": "Bentrok jendela replikasi WMS",
+      "topic": "availability_window",
+      "check_id": "WMS-WINDOW",
+      "tier": "perusahaan",
+      "subject": {
+        "asset": "wms-mks-01"
+      },
+      "action": "*",
+      "condition": {
+        "schedule_overlaps": {
+          "weekdays": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "from": "23:00",
+          "to": "02:00",
+          "tz": "WIB"
+        }
+      },
+      "effect": "REQUIRE_APPROVER",
+      "approver": "cab_meeting",
+      "approver_sources": [
+        2
+      ],
+      "message": "Jadwal beririsan dengan replikasi {overlap}. Geser jadwal, atau perubahan ini wajib diputuskan CAB.",
+      "pass_title": "Jendela replikasi WMS",
+      "pass_message": "Tidak beririsan dengan replikasi 23:00-02:00 WIB.",
+      "basis": "sop",
+      "sources": [
+        {
+          "type": "doc",
+          "doc_id": "TOPO-WMS-WINDOW",
+          "quote": "Schedule: 23:00 WIB – 02:00 WIB (daily)"
+        },
+        {
+          "type": "doc",
+          "doc_id": "TOPO-WMS-WINDOW",
+          "quote": "Avoid scheduling network changes on fw-edge-mks-01 or vpn-gw-jkt-01 during this window."
+        },
+        {
+          "type": "doc",
+          "doc_id": "SOP-7",
+          "quote": "CAB approval is required for changes that affect the replication window (23:00–02:00 WIB)."
+        }
+      ],
+      "owner": "Andini Pratama",
+      "effective_date": "2026-03-15"
     }
   ]
 }

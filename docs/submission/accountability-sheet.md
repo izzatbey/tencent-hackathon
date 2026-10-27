@@ -62,6 +62,6 @@ Semua tool masih **mock**: dispatch hanya mencatat "would have sent".
   (pemisahan tugas, CAB setelah rapat, jam kerja Senin–Jumat) — ADR 0003.
 
 Verifikasi sendiri:
-`python -m unittest discover -s backend/tests` (167 tes) ·
+`python -m unittest discover -s backend/tests` (173 tes) ·
 `python backend/tests/verify_matrix.py` (46 kasus) ·
 `python backend/scripts/audit_chain.py --verify backend/logs/audit.jsonl`

@@ -111,7 +111,7 @@ class SeedTest(unittest.TestCase):
         topics = {(r["topic"], r["tier"]) for r in reg.load_seed()}
         self.assertEqual(topics, {("access_scope", "perusahaan"), ("access_scope", "standar"),
                                   ("internet_exposure", "perusahaan"), ("friday_prayer", "perusahaan"),
-                                  ("branch_fw_remote", "perusahaan")})
+                                  ("branch_fw_remote", "perusahaan"), ("availability_window", "perusahaan")})
 
     def test_seed_tidak_diindeks_retrieval(self):
         import search_kb
@@ -262,6 +262,55 @@ class CabMeetingRuleTest(unittest.TestCase):
         self.assertEqual(self.cab(r), [])
 
 
+class WmsWindowRuleTest(unittest.TestCase):
+    """WMS-WINDOW dipindah dari kode ke register (fase 2b): jendela WIB, PASS, satu temuan."""
+
+    HIT = {"start": "2026-11-05T23:30:00+07:00", "end": "2026-11-06T00:30:00+07:00"}
+    MISS = {"start": "2026-11-05T21:00:00+07:00", "end": "2026-11-05T22:00:00+07:00"}
+
+    def pre(self, assets, window, rules=None):
+        cr = dict(ScheduleRuleTest.CHANGE, assets=assets, window=window)
+        return cab_rules.precheck(cr, NOW, rules=rules)
+
+    @staticmethod
+    def wms(pre):
+        return [c for c in pre["checks"] if c["id"] == "WMS-WINDOW"]
+
+    def test_bentrok_replikasi_dari_register_dan_mewajibkan_cab(self):
+        r = self.pre(["vpn-gw-jkt-01"], self.HIT)
+        [chk] = self.wms(r)
+        self.assertEqual((chk["status"], chk["rule_id"], chk["basis"]), ("WARN", "POL-r002", "sop"))
+        self.assertTrue(chk["detail"].startswith("Jadwal beririsan dengan replikasi Kamis 05 Nov 2026 23:00 WIB."))
+        [slot] = [s for s in r["approvals"] if s["slot"] == "cab"]
+        self.assertIn("SOP-7", [c["doc_id"] for c in slot["citations"]])
+
+    def test_tidak_bentrok_tampil_pass_dengan_satu_kutipan(self):
+        [chk] = self.wms(self.pre(["vpn-gw-jkt-01"], self.MISS))
+        self.assertEqual((chk["status"], chk["title"]), ("PASS", "Jendela replikasi WMS"))
+        self.assertEqual([c["doc_id"] for c in chk["citations"]], ["TOPO-WMS-WINDOW"])
+
+    def test_dua_aset_wms_satu_temuan_dan_kutipan_cab_tidak_dobel(self):
+        r = self.pre(["wms-mks-01", "fw-edge-mks-01"], self.HIT)
+        self.assertEqual(len(self.wms(r)), 1)
+        [slot] = [s for s in r["approvals"] if s["slot"] == "cab"]
+        quotes = [c["quote"] for c in slot["citations"]]
+        self.assertEqual(len(quotes), len(set(quotes)))
+
+    def test_jam_jendela_dibaca_di_wib_bukan_waktu_lokal_site(self):
+        # 02:30-03:00 WITA = 01:30-02:00 WIB: kena replikasi walau di Makassar sudah lewat jam 02:00
+        window = {"start": "2026-11-06T02:30:00+08:00", "end": "2026-11-06T03:00:00+08:00"}
+        self.assertEqual(self.wms(self.pre(["wms-mks-01"], window))[0]["status"], "WARN")
+
+    def test_tanpa_jadwal_valid_tidak_dinilai_sama_sekali(self):
+        naive = {"start": "2026-11-05T23:30:00", "end": "2026-11-06T00:30:00"}
+        self.assertEqual(self.wms(self.pre(["vpn-gw-jkt-01"], naive)), [])
+
+    def test_aturan_dicabut_tidak_ada_temuan_maupun_cab(self):
+        rules = [x for x in reg.load_seed() if x["id"] != "POL-r002"]
+        r = self.pre(["vpn-gw-jkt-01"], self.HIT, rules=rules)
+        self.assertEqual((self.wms(r), [s for s in r["approvals"] if s["slot"] == "cab"]), ([], []))
+
+
 # --------------------------------------------------------------------------
 # siklus hidup
 # --------------------------------------------------------------------------
@@ -371,6 +420,8 @@ class ValidationTest(Env, unittest.TestCase):
                     {"weekdays": [4], "from": "25:00", "to": "13:00"},
                     {"weekdays": [4], "from": "11:30", "to": "11:30"},
                     {"weekdays": [4], "from": "11:30"},
+                    {"weekdays": [4], "from": "11:30", "to": "13:00", "tz": "UTC"},
+                    {"weekdays": [4], "from": "11:30", "to": "13:00", "zona": "WIB"},
                     ["11:30", "13:00"]):
             with self.subTest(bad=bad):
                 self.propose_err(self.base(condition={"schedule_overlaps": bad}), "invalid_rule")
