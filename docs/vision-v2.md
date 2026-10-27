@@ -29,31 +29,32 @@ Satu "otak kerja" kepatuhan per perusahaan, yang deterministik dan bisa diaudit.
 | KB perusahaan | 30 dokumen markdown + CMDB + direktori, dipecah manual dengan metadata (`zone`, `restricted`, `owner`, `effective_date`) | upload; konfirmasi metadata; versi |
 | KB global | 14 kontrol `CTRL-xx` (ISO 27001 ↔ NIST CSF, guidance parafrase) | sisa kontrol ISO; GDPR/UU PDP |
 | Retrieval | kata kunci + idf, stdlib, gate sebelum skor (non-interference) | embedding/hybrid untuk KB yang diunggah bebas |
-| Penilaian tiket | `cab_rules.py`: 13 jenis cek, 36 kutipan terverifikasi, label `sop`/`standar`/`interpretasi`/`sistem`, dua tingkat (policy perusahaan → standar global) untuk akses | aturan masih kode; belum bisa diisi dari dokumen yang diunggah |
-| LLM/agent | intake saja; keputusan 100 % kode | ekstraksi aturan dari dokumen; penilaian fallback berbasis RAG |
+| Penilaian tiket | `cab_rules.py` + **policy register v0** (ADR 0004): `ACCESS-SCOPE` dan `EXPOSURE` sudah data (16 aturan seed), dua tingkat perusahaan → standar, kutipan diverifikasi setiap kali dipakai, label `sop`/`standar`/`interpretasi`/`sistem` | cek lain (kelengkapan, risiko, approver SOP-14, jendela waktu, emergency, SoD) masih kode |
+| Policy register | aturan draft → active lewat audit chain; hanya pemilik dokumen sumber yang mengesahkan, bukan pengusul; aturan baru berlaku untuk pengajuan berikutnya | UI; register ikut permission gate bila ada aturan tentang aset restricted |
+| LLM/agent | intake tiket; **ekstraksi aturan dari memo** (usulan + kutipan, divalidasi ke CMDB/direktori); keputusan tetap 100 % kode | ekstraksi diuji dengan FakeProvider, belum dengan Claude sungguhan; penilaian fallback berbasis RAG |
 | Audit | satu rantai hash, replay, verify, fail-closed | — |
 
-Kerangka akuntabilitasnya selesai. Yang belum ada adalah **lapisan policy yang
-diisi data, bukan kode**.
+Kerangka akuntabilitas dan lapisan policy berbasis data (v0) sudah ada. Yang
+belum: upload dokumen utuh, migrasi cek built-in, dan retrieval hybrid.
 
 ## 3. Contoh: "akses VPN ke Server A untuk marketing"
 
-Dengan `ACCESS-SCOPE` (27 Okt) kedua tingkat sudah bisa didemokan
-(`python tools/demo_pracab.py`, langkah 11–12):
+Semua baris di bawah bisa didemokan dengan `python tools/demo_pracab.py`
+(langkah 11–16):
 
 | Situasi | Hasil | Basis | Kutipan |
 | --- | --- | --- | --- |
-| CMDB mencatat `app-erp-prod` hanya untuk IT, Operations, Finance; penerima dari Marketing | **BLOCKED** — "bukan departemen yang boleh mengakses" | `sop` (policy perusahaan) | sel CMDB `allowed_departments` + CTRL-02 |
+| Aturan `POL-s007`: `app-erp-prod` hanya untuk IT, Operations, Finance; penerima dari Marketing | **BLOCKED** — "bukan departemen yang boleh mengakses" | `sop` (policy perusahaan) | sel CMDB `allowed_departments` + CTRL-02 |
 | Penerima dari Finance | PASS, lanjut ke approver biasa | `sop` | sel CMDB |
-| Perusahaan **tidak punya** policy untuk `mail-jkt-01` (kolom kosong) | READY dengan WARN: dinilai dengan standar; owner aset ditambahkan sebagai approver | `standar` (ISO A.5.18 via CTRL-02) | CTRL-02 |
+| Perusahaan **tidak punya** aturan untuk `mail-jkt-01` | READY dengan WARN: aturan standar `POL-g001`; owner aset ditambahkan sebagai approver | `standar` (ISO A.5.18 via CTRL-02) | CTRL-02 |
+| Citra menerbitkan memo "mail-jkt-01 hanya untuk IT"; Andini mengusulkan aturan; Eka dan Andini ditolak saat mencoba mengesahkan; Citra mengesahkan | permintaan **berikutnya** BLOCKED; permintaan sebelumnya tetap READY | `sop` | kutipan memo |
 | Penerima tidak ada di direktori | NEEDS_INFO | `sistem` | — |
 
-Jawabannya tetap jelas di kedua tingkat; yang berbeda adalah **tingkat
-kepastian**, dan sistem menyebutkannya lewat `basis`.
-
-Batasnya hari ini: policy "siapa boleh mengakses apa" baru bisa dinyatakan
-lewat kolom CMDB. Policy lain (jam, eksposur, jenis perubahan) masih kode di
-`cab_rules.py`.
+Jawabannya tetap jelas di setiap tingkat; yang berbeda adalah **tingkat
+kepastian**, dan sistem menyebutkannya lewat `basis`. Kebijakan baru tidak
+butuh perubahan kode: dokumen masuk, aturan diusulkan (manual atau LLM),
+pemilik dokumen mengesahkan, keputusan berikutnya berubah, dan semuanya
+tercatat.
 
 ## 4. Arsitektur target
 
@@ -130,8 +131,9 @@ Tiga peran LLM, semuanya di luar jalur keputusan:
 | Fase | Isi | Target |
 | --- | --- | --- |
 | 0 (selesai 27 Okt) | Pra-CAB, audit hash-chain, adapter LLM, `ACCESS-SCOPE` dua tingkat | submission 1 Nov |
+| 2a (selesai 27 Okt) | Policy register v0: skema, engine, seed (ACCESS-SCOPE + EXPOSURE), siklus hidup, `/api/policies`, ekstraksi LLM dari memo (ADR 0004) | submission 1 Nov |
 | 1 | UI Pra-CAB (Farrez), demo video, accountability sheet, test results | 1 Nov |
-| 2 | Policy register + skema aturan; migrasi cek `cab_rules.py` ke data; engine membaca register | Demo Day 27 Nov |
+| 2b | Migrasi cek built-in lain ke data (jendela waktu, approver SOP-14, memo SOP-7); perluasan `condition`/`effect`; UI register | Demo Day 27 Nov |
 | 3 | Upload KB: chunking, metadata wajib dikonfirmasi, default restricted, versi dokumen | setelah hackathon |
 | 4 | Ekstraksi aturan oleh LLM + pengesahan lewat approval gate; "suntingan manusia → usulan aturan" | setelah hackathon |
 | 5 | Retrieval hybrid (BM25 + embedding); KB global lengkap (ISO 27001 A.5–A.8, NIST, GDPR/UU PDP) | setelah hackathon |

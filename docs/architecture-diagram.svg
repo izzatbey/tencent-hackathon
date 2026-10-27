@@ -2,7 +2,7 @@
 <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#37474f"/></marker></defs>
 <rect width="1820" height="1700" fill="#ffffff"/>
 <text x="24" y="40" font-size="22" font-weight="bold" fill="#1a1a1a" text-anchor="start" >SecuritySahabat — Arsitektur Sistem &amp; Batas Kepercayaan</text>
-<text x="24" y="63" font-size="12" font-weight="normal" fill="#555" text-anchor="start" >Challenge A · The Workplace Brain · Tencent Cloud Hackathon Indonesia 2026 · dua jalur backend (tanya-jawab + Pra-CAB) · status main f4b563a, 27 Okt 2026</text>
+<text x="24" y="63" font-size="12" font-weight="normal" fill="#555" text-anchor="start" >Challenge A · The Workplace Brain · Tencent Cloud Hackathon Indonesia 2026 · dua jalur backend (tanya-jawab + Pra-CAB) + policy register v0 · status main, 27 Okt 2026</text>
 <rect x="1110" y="24" width="26" height="16" rx="3" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
 <text x="1142" y="36" font-size="11" font-weight="normal" fill="#222" text-anchor="start" >sudah ada</text>
 <rect x="1240" y="24" width="26" height="16" rx="3" fill="#fff8e1" stroke="#e0a100" stroke-width="1.5" stroke-dasharray="6 4"/>
@@ -145,19 +145,21 @@
 <text x="237" y="869" font-size="10" font-weight="normal" fill="#37474f" text-anchor="start" font-style="italic">DTO</text>
 <line x1="698" y1="102" x2="698" y2="1094" stroke="#c62828" stroke-width="2.5" stroke-dasharray="10 6"/>
 <text x="716" y="140" font-size="11.5" font-weight="bold" fill="#333" text-anchor="start" >Dua jalur, satu set penjaga bersama:</text>
-<text x="716" y="160" font-size="11" font-weight="normal" fill="#333" text-anchor="start" >injection_guard · pii_masker · permissions.csv</text>
-<text x="716" y="176" font-size="11" font-weight="normal" fill="#333" text-anchor="start" >· knowledge base · audit_chain (satu rantai hash).</text>
-<text x="716" y="192" font-size="11" font-weight="normal" fill="#333" text-anchor="start" ></text>
-<text x="716" y="208" font-size="11" font-weight="normal" fill="#333" text-anchor="start" >Tanya-jawab: menjawab dengan bukti, tidak memutus.</text>
-<text x="716" y="224" font-size="11" font-weight="normal" fill="#333" text-anchor="start" >Pra-CAB: memutus boleh/tidak, risiko, dan approver</text>
-<text x="716" y="240" font-size="11" font-weight="normal" fill="#333" text-anchor="start" >dengan aturan SOP-14 yang dikutip, lalu menahan</text>
-<text x="716" y="256" font-size="11" font-weight="normal" fill="#333" text-anchor="start" >eksekusi sampai approver yang benar setuju.</text>
-<text x="716" y="272" font-size="11" font-weight="normal" fill="#333" text-anchor="start" ></text>
-<text x="716" y="288" font-size="11" font-weight="normal" fill="#333" text-anchor="start" >LLM tidak pernah memutus izin, risiko, approver,</text>
-<text x="716" y="304" font-size="11" font-weight="normal" fill="#333" text-anchor="start" >atau verdict di jalur mana pun.</text>
-<rect x="712" y="350" width="350" height="356" rx="10" fill="#fdf4e8" stroke="#cf9a55" stroke-width="1.5"/>
-<text x="724" y="370" font-size="12" font-weight="bold" fill="#cf9a55" text-anchor="start" >ZONA DATA — knowledge base (read-only)</text>
-<text x="1056" y="344" font-size="10.5" font-weight="bold" fill="#c62828" text-anchor="end" >BATAS ③ isi dokumen = data, bukan instruksi</text>
+<text x="716" y="160" font-size="11" font-weight="normal" fill="#333" text-anchor="start" >guard · PII mask · KB · audit chain bersama.</text>
+<text x="716" y="176" font-size="11" font-weight="normal" fill="#333" text-anchor="start" >Tanya-jawab menjawab dengan bukti; Pra-CAB memutus</text>
+<text x="716" y="192" font-size="11" font-weight="normal" fill="#333" text-anchor="start" >boleh/tidak dari aturan yang dikutip. LLM tidak</text>
+<text x="716" y="208" font-size="11" font-weight="normal" fill="#333" text-anchor="start" >pernah memutus izin, risiko, approver, atau verdict.</text>
+<rect x="712" y="236" width="350" height="470" rx="10" fill="#fdf4e8" stroke="#cf9a55" stroke-width="1.5"/>
+<text x="724" y="256" font-size="12" font-weight="bold" fill="#cf9a55" text-anchor="start" >ZONA DATA — knowledge base + policy register</text>
+<rect x="726" y="262" width="322" height="92" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="726" y="266" width="4" height="84" fill="#2e7d32"/>
+<text x="738" y="281" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >Policy register (ADR 0004)</text>
+<text x="738" y="297" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >kb/_policies.json (16 seed) + event policy.* di log</text>
+<text x="738" y="311" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >draft → active hanya oleh pemilik dokumen sumber</text>
+<text x="738" y="325" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >perusahaan &gt; standar · kutipan dicek tiap dipakai</text>
+<text x="738" y="339" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >usulan dari memo: manual atau LLM (draft)</text>
+<path d="M1048,300 H1070 V470 H1108" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<text x="1056" y="230" font-size="10.5" font-weight="bold" fill="#c62828" text-anchor="end" >BATAS ③ isi dokumen = data, bukan instruksi</text>
 <rect x="726" y="380" width="322" height="50" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
 <rect x="726" y="384" width="4" height="42" fill="#2e7d32"/>
 <text x="738" y="399" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >permissions.csv</text>
@@ -194,10 +196,10 @@
 <line x1="1076" y1="102" x2="1076" y2="1094" stroke="#c62828" stroke-width="2.5" stroke-dasharray="10 6"/>
 <rect x="1090" y="106" width="390" height="984" rx="10" fill="#edf8ef" stroke="#6faa7d" stroke-width="1.5"/>
 <text x="1102" y="126" font-size="12" font-weight="bold" fill="#6faa7d" text-anchor="start" >BACKEND · Pra-CAB (dipercaya)</text>
-<text x="1102" y="140" font-size="10.5" font-weight="normal" fill="#555" text-anchor="start" >keputusan = cab_rules.py · LLM hanya intake</text>
+<text x="1102" y="140" font-size="10.5" font-weight="normal" fill="#555" text-anchor="start" >keputusan = aturan register + cek built-in</text>
 <rect x="1108" y="156" width="354" height="62" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
 <rect x="1108" y="160" width="4" height="54" fill="#2e7d32"/>
-<text x="1120" y="175" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >POST /api/intake · /api/requests</text>
+<text x="1120" y="175" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >/api/intake · /api/requests · /api/policies</text>
 <text x="1120" y="191" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >persona persis permissions.csv</text>
 <text x="1120" y="205" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >tombol UI dari allowed_actions</text>
 <rect x="1108" y="258" width="354" height="52" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
@@ -217,19 +219,19 @@
 <path d="M1285,374 V386" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
 <rect x="1108" y="450" width="354" height="240" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
 <rect x="1108" y="454" width="4" height="232" fill="#2e7d32"/>
-<text x="1120" y="469" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >④ Rule engine SOP-14 (cab_rules)</text>
+<text x="1120" y="469" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >④ Rule engine (cab_rules + policy register)</text>
 <text x="1120" y="485" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >kelengkapan CR (SOP-14 §1, CTRL-12)</text>
 <text x="1120" y="499" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >syarat akses: penerima, role, kedaluwarsa (CTRL-01)</text>
-<text x="1120" y="513" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >eksposur internet hr-data/server-farm/mgmt → BLOCK</text>
+<text x="1120" y="513" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >register: ACCESS-SCOPE · EXPOSURE · aturan memo baru</text>
 <text x="1120" y="527" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >risiko LOW–CRITICAL (§4) → approver (§5)</text>
 <text x="1120" y="541" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >rapat CAB Rabu 14:00 WIB, batas 48 jam (§2)</text>
 <text x="1120" y="555" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >replikasi WMS · shalat Jumat · jam kerja</text>
 <text x="1120" y="569" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >jendela FW cabang (SOP-7) · memo 1 Okt menang</text>
 <text x="1120" y="583" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >emergency (§3) · pemohon ≠ approver</text>
 <text x="1120" y="597" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" ></text>
-<text x="1120" y="611" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >34 kutipan, semuanya diuji ada di sumber</text>
-<text x="1120" y="625" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >tiap cek berlabel basis: sop / interpretasi / sistem</text>
-<text x="1120" y="639" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >hasil disimpan utuh saat submit (replay identik)</text>
+<text x="1120" y="611" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >kutipan built-in + aturan, semua diuji ada di sumber</text>
+<text x="1120" y="625" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >basis: sop / standar / interpretasi / sistem</text>
+<text x="1120" y="639" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >hasil + id &amp; hash aturan disimpan saat submit</text>
 <path d="M1285,438 V450" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
 <rect x="1108" y="706" width="354" height="64" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
 <rect x="1108" y="710" width="4" height="56" fill="#2e7d32"/>
@@ -257,11 +259,11 @@
 <text x="1798" y="230" font-size="10.5" font-weight="bold" fill="#c62828" text-anchor="end" >BATAS ② keluaran LLM hanya draft</text>
 <rect x="1522" y="264" width="268" height="100" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
 <rect x="1522" y="268" width="4" height="92" fill="#2e7d32"/>
-<text x="1534" y="283" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >S1 Intake parser (llm.py)</text>
-<text x="1534" y="299" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >salin teks → field draft + kutipan</text>
-<text x="1534" y="313" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >provider: off (default) · claude</text>
-<text x="1534" y="327" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >· workbuddy (stub) · fake (tes)</text>
-<text x="1534" y="341" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >gagal apa pun → salin teks apa adanya</text>
+<text x="1534" y="283" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >S1 Intake + ekstraksi (llm.py)</text>
+<text x="1534" y="299" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >tiket → field draft + kutipan</text>
+<text x="1534" y="313" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >memo → usulan aturan + kutipan</text>
+<text x="1534" y="327" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >provider: off · claude · workbuddy (stub)</text>
+<text x="1534" y="341" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >gagal → salin apa adanya / 503</text>
 <path d="M1462,284 H1522" fill="none" stroke="#37474f" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ah)" marker-start="url(#ah)"/>
 <rect x="1508" y="760" width="296" height="140" rx="10" fill="#fcecec" stroke="#cf7f7f" stroke-width="1.5"/>
 <text x="1520" y="780" font-size="12" font-weight="bold" fill="#cf7f7f" text-anchor="start" >ZONA AKSI — tool eksternal (mock)</text>
@@ -288,7 +290,7 @@
 <rect x="30" y="1284" width="86" height="20" rx="10" fill="#e8eaf6" stroke="#7986cb"/>
 <text x="73" y="1299" font-size="10.5" font-weight="bold" fill="#283593" text-anchor="middle" >Sumber</text>
 <text x="128" y="1299" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >kutipan verbatim + ID dokumen;</text>
-<text x="128" y="1315" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >34 kutipan aturan Pra-CAB diuji ada di KB</text>
+<text x="128" y="1315" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >kutipan aturan diverifikasi tiap dipakai</text>
 <rect x="30" y="1350" width="86" height="20" rx="10" fill="#e8eaf6" stroke="#7986cb"/>
 <text x="73" y="1365" font-size="10.5" font-weight="bold" fill="#283593" text-anchor="middle" >Izin</text>
 <text x="128" y="1365" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >identitas = persona · gate sebelum retrieval</text>
@@ -296,7 +298,7 @@
 <rect x="30" y="1416" width="86" height="20" rx="10" fill="#e8eaf6" stroke="#7986cb"/>
 <text x="73" y="1431" font-size="10.5" font-weight="bold" fill="#283593" text-anchor="middle" >Persetujuan</text>
 <text x="128" y="1431" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >slot approver SOP-14 · pemohon ≠ approver</text>
-<text x="128" y="1447" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >rapat CAB dulu · mock dispatch + undo</text>
+<text x="128" y="1447" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >aturan disahkan pemilik dokumen · undo</text>
 <rect x="30" y="1482" width="86" height="20" rx="10" fill="#e8eaf6" stroke="#7986cb"/>
 <text x="73" y="1497" font-size="10.5" font-weight="bold" fill="#283593" text-anchor="middle" >Batas</text>
 <text x="128" y="1497" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >"tidak tahu" + SME · injection ditolak/ditandai</text>
@@ -307,9 +309,9 @@
 <text x="128" y="1579" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >aksi yang ditolak ikut dicatat</text>
 <rect x="458" y="1240" width="560" height="410" rx="10" fill="#fafafa" stroke="#bdbdbd" stroke-width="1.2"/>
 <text x="472" y="1264" font-size="13" font-weight="bold" fill="#1a1a1a" text-anchor="start" >Keputusan desain &amp; trade-off</text>
-<text x="472" y="1290" font-size="11" font-weight="bold" fill="#222" text-anchor="start" >1. Keputusan di kode; LLM hanya menafsir/menyalin</text>
-<text x="486" y="1305" font-size="10.5" font-weight="normal" fill="#2e7d32" text-anchor="start" >+ deterministik, teruji</text>
-<text x="486" y="1320" font-size="10.5" font-weight="normal" fill="#b23c17" text-anchor="start" >− pencocokan kata kaku</text>
+<text x="472" y="1290" font-size="11" font-weight="bold" fill="#222" text-anchor="start" >1. Aturan = data; LLM mengusulkan, pemilik mengesahkan</text>
+<text x="486" y="1305" font-size="10.5" font-weight="normal" fill="#2e7d32" text-anchor="start" >+ kebijakan baru tanpa ubah kode, tercatat</text>
+<text x="486" y="1320" font-size="10.5" font-weight="normal" fill="#b23c17" text-anchor="start" >− cek built-in lain masih kode (dimigrasi bertahap)</text>
 <text x="472" y="1341" font-size="11" font-weight="bold" fill="#222" text-anchor="start" >2. Gate sebelum retrieval, non-interference (ADR 0002)</text>
 <text x="486" y="1356" font-size="10.5" font-weight="normal" fill="#2e7d32" text-anchor="start" >+ dokumen terlarang tidak memengaruhi skor/idf</text>
 <text x="486" y="1371" font-size="10.5" font-weight="normal" fill="#b23c17" text-anchor="start" >− pertanyaan di luar data bisa dapat bukti lemah (#7)</text>
@@ -319,7 +321,7 @@
 <text x="472" y="1443" font-size="11" font-weight="bold" fill="#222" text-anchor="start" >4. Kutipan verbatim; PII disamarkan di teks &amp; log</text>
 <text x="486" y="1458" font-size="10.5" font-weight="normal" fill="#2e7d32" text-anchor="start" >+ klaim bisa dicocokkan ke sumber</text>
 <text x="486" y="1473" font-size="10.5" font-weight="normal" fill="#b23c17" text-anchor="start" >− KB tidak boleh memuat PII asli</text>
-<text x="472" y="1494" font-size="11" font-weight="bold" fill="#222" text-anchor="start" >5. State Pra-CAB = putar ulang audit log</text>
+<text x="472" y="1494" font-size="11" font-weight="bold" fill="#222" text-anchor="start" >5. State CR &amp; register = putar ulang audit log</text>
 <text x="486" y="1509" font-size="10.5" font-weight="normal" fill="#2e7d32" text-anchor="start" >+ restart aman, replay identik</text>
 <text x="486" y="1524" font-size="10.5" font-weight="normal" fill="#b23c17" text-anchor="start" >− satu file log = satu server</text>
 <text x="472" y="1545" font-size="11" font-weight="bold" fill="#222" text-anchor="start" >6. Interpretasi SOP diberi label, bukan disamarkan</text>
@@ -335,13 +337,13 @@
 <text x="1044" y="1330" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• Tes #2: shalat Jumat tidak terambil di /api/ask</text>
 <text x="1044" y="1349" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >   (Pra-CAB sudah mengeceknya)</text>
 <text x="1044" y="1368" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• Belum: S4 web, dua Budi (#9), WIB/WITA (#10),</text>
-<text x="1044" y="1387" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >   "server yang itu" (#14), UI Pra-CAB</text>
-<text x="1044" y="1406" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• Provider WorkBuddy masih stub</text>
+<text x="1044" y="1387" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >   "server yang itu" (#14), UI Pra-CAB &amp; register</text>
+<text x="1044" y="1406" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• WorkBuddy stub · ekstraksi belum dicoba Claude asli</text>
 <text x="1044" y="1425" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• Persona tanpa login · data libur nasional belum ada</text>
 <text x="1044" y="1444" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• Konflik data: SOP-7 vs direktori soal Hendra</text>
 <text x="1044" y="1463" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >   Wijaya → ditampilkan sebagai warning</text>
 <rect x="1422" y="1240" width="382" height="410" rx="10" fill="#fafafa" stroke="#bdbdbd" stroke-width="1.2"/>
-<text x="1436" y="1264" font-size="13" font-weight="bold" fill="#1a1a1a" text-anchor="start" >Tes (27 Okt, main f4b563a)</text>
+<text x="1436" y="1264" font-size="13" font-weight="bold" fill="#1a1a1a" text-anchor="start" >Tes (27 Okt, main)</text>
 <text x="1436" y="1290" font-size="10.5" font-weight="bold" fill="#333" text-anchor="start" >Matriks brief 20 kasus — docs/testing.md</text>
 <rect x="1436.0" y="1300" width="212.4" height="18" fill="#2e7d32"/>
 <rect x="1648.4" y="1300" width="17.7" height="18" fill="#e0a100"/>
@@ -356,12 +358,12 @@
 <rect x="1616" y="1346" width="10" height="10" fill="#9e9e9e"/>
 <text x="1631" y="1355" font-size="10.5" font-weight="normal" fill="#222" text-anchor="start" >Belum: 5</text>
 <text x="1436" y="1396" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >Regresi verify_matrix: 46 kasus, 0 gagal</text>
-<text x="1436" y="1414" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >Unit test: 124 lulus, 8 expectedFailure</text>
+<text x="1436" y="1414" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >Unit test: 153 lulus, 8 expectedFailure</text>
 <text x="1436" y="1432" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >   (kegagalan yang diketahui, sengaja tetap tercatat)</text>
-<text x="1436" y="1450" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >Pra-CAB (test_pracab.py): 40 tes</text>
+<text x="1436" y="1450" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >Pra-CAB 44 tes · policy register 24 tes</text>
 <text x="1436" y="1468" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >#18/#19 di matriks = jalur /api/ask; versi Pra-CAB</text>
 <text x="1436" y="1486" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >   (dispatch ditolak sebelum approval, undo 60 dtk)</text>
 <text x="1436" y="1504" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >   diuji di test_pracab.py</text>
-<text x="24" y="1676" font-size="10.5" font-weight="normal" fill="#666" text-anchor="start" >Sumber: adjusted_brief.md, docs/architecture.md, docs/testing.md, docs/pracab-api.md, ADR 0001–0003, MEMORY.md — repo izzatbey/tencent-hackathon @ f4b563a.</text>
+<text x="24" y="1676" font-size="10.5" font-weight="normal" fill="#666" text-anchor="start" >Sumber: adjusted_brief.md, docs/architecture.md, docs/testing.md, docs/pracab-api.md, ADR 0001–0004, MEMORY.md — repo izzatbey/tencent-hackathon, main 27 Okt 2026.</text>
 <text x="24" y="1692" font-size="10.5" font-weight="normal" fill="#666" text-anchor="start" >Handbook: 5 aturan akuntabilitas &amp; syarat diagram (komponen, batas kepercayaan, trade-off). Kotak "usulan" belum disepakati tim.</text>
 </svg>

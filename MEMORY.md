@@ -110,15 +110,23 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
 - **Tujuan akhir = CAB decision brain** (`docs/vision-v2.md`): KB perusahaan di
   atas KB global (ISO/NIST/GDPR), aturan jadi data (policy register), LLM
   mengusulkan aturan dan manusia mengesahkan. Jangan merombak sebelum 1 Nov.
-- `ACCESS-SCOPE`: kolom `allowed_departments` di CMDB = policy siapa boleh
-  mengakses aset (tingkat 1). Kolom kosong (`mail-jkt-01`, sengaja) = tidak ada
-  policy internal → `basis: standar` (CTRL-02) + owner jadi approver (tingkat 2).
-  Persona Marketing untuk contoh: Lina Kartika (direktori saja, bukan permissions).
+- **Policy register v0** (ADR 0004, `policy_register.py`): `ACCESS-SCOPE` dan
+  `EXPOSURE` sudah data di `kb/_policies.json` (16 aturan seed; awalan `_`
+  supaya tidak diindeks `search_kb`). Perubahan aturan = event `policy.*` di
+  audit chain. Hanya pemilik dokumen sumber yang mengesahkan, bukan pengusul.
+  Kolom `allowed_departments` CMDB tetap ada sebagai **sumber kutipan** aturan
+  seed; kalau kolomnya diubah, perbarui juga seed-nya. `mail-jkt-01` sengaja
+  tanpa aturan perusahaan → aturan standar `POL-g001`. Persona Marketing:
+  Lina Kartika (direktori saja, bukan permissions).
+- Jangan tambah cek per-aset baru sebagai kode di `cab_rules.py`; tambahkan
+  sebagai aturan register.
 
 ## Belum dikerjakan (per 27 Okt)
 
-- Pra-CAB: UI frontend; klarifikasi "dua Budi" di intake; usulan jendela waktu
-  alternatif; data hari libur nasional (belum ada di dataset); provider WorkBuddy.
+- Pra-CAB: UI frontend (termasuk register); klarifikasi "dua Budi" di intake;
+  usulan jendela waktu alternatif; data hari libur nasional (belum ada di
+  dataset); provider WorkBuddy; ekstraksi aturan belum dicoba dengan Claude
+  sungguhan; migrasi cek built-in lain ke register.
 - Tes #7: pertanyaan di luar data tetap mendapat bukti tak relevan (butuh
   ambang relevansi atau S4).
 - S1 parser LLM dan S4 answer synthesizer untuk `/api/ask`; S5 approval gate

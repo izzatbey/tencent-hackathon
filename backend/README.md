@@ -12,12 +12,15 @@
 | `scripts/cab_rules.py` | Rule engine Pra-CAB (SOP-14 + SOP-7, CTRL-01/09/12, topologi) |
 | `scripts/cab_request.py` | Model change request, state machine, store dari audit log |
 | `scripts/cab_intake.py` | Teks bebas → draft field CR (LLM, dengan pengaman) |
+| `scripts/policy_register.py` | Policy register: skema aturan, engine, siklus hidup di audit chain (ADR 0004) |
+| `scripts/policy_intake.py` | Memo/SOP → usulan aturan oleh LLM (kutipan wajib, divalidasi ke CMDB/direktori) |
 | `api/server.py` | HTTP API tipis (stdlib): `POST /api/ask`, `GET /api/personas`, routing Pra-CAB |
 | `api/cab_api.py` | Endpoint Pra-CAB — kontrak: [docs/pracab-api.md](../docs/pracab-api.md) |
 | `tests/verify_matrix.py` | 46 kasus regresi |
 | `tests/test_accountability.py` | Edge case per 5 aturan akuntabilitas (unittest) |
 | `tests/test_api.py` | DTO, audit log, validasi, HTTP |
 | `tests/test_pracab.py` | Audit chain, adapter LLM, aturan SOP-14, state machine, intake, HTTP |
+| `tests/test_policy.py` | Policy register: seed, precedence, siklus hidup, validasi, ekstraksi LLM, HTTP |
 | `config.json` | Parameter yang bisa di-tune (lihat `skill/SKILL.md` §Konfigurasi) |
 
 Lokasi KB: `--kb-root` → env `SECURITY_SAHABAT_KB` → `kb_root` di config →

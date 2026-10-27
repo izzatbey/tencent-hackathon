@@ -4,7 +4,10 @@ Pra-CAB memeriksa change request (perubahan atau pemberian akses) terhadap
 SOP-14 dan dokumen terkait, menentukan risiko dan approver, lalu menahan
 eksekusi sampai approver yang benar menyetujui. Semua keputusan dari kode
 (`backend/scripts/cab_rules.py`); LLM hanya membantu menyalin teks bebas ke
-field draft.
+field draft. Aturan perusahaan per aset (siapa boleh mengakses apa, larangan
+eksposur internet, dan aturan baru dari memo) disimpan sebagai data di
+**policy register** dan disahkan pemilik dokumennya; lihat bagian
+[Policy register](#policy-register) dan ADR 0004.
 
 Persona dikirim sebagai `user` (nama persis di `knowledge-base/kb/permissions.csv`,
 mis. `"Ragil Wibowo"`). Belum ada login: API mempercayai nama ini (ADR 0001).
@@ -29,6 +32,13 @@ Body POST wajib `Content-Type: application/json`, maksimal 64 KB.
 | POST | `/api/requests/{id}/cancel` | `{user, reason?}` | `cancelled` |
 | GET | `/api/audit/verify` | – | `{ok, checked, chained, head}` atau `{ok:false, line, reason}` |
 | POST | `/api/demo/clock` | `{now: ISO \| null}` | hanya bila server `--demo`; untuk "maju ke rapat CAB" |
+| GET | `/api/policies` | `?user=&status=` | `{policies: [aturan]}`; `status` opsional |
+| GET | `/api/policies/{id}` | `?user=` | satu aturan + dokumen sumber + `allowed_actions` |
+| POST | `/api/policies` | `{user, rule, source?}` | usulan manual → `draft` |
+| POST | `/api/policies/extract` | `{user, title, text, owner}` | LLM mengusulkan aturan dari dokumen → `draft` |
+| POST | `/api/policies/{id}/approve` | `{user}` | `active`; hanya pemilik dokumen sumber, bukan pengusul |
+| POST | `/api/policies/{id}/reject` | `{user, reason}` | `rejected` |
+| POST | `/api/policies/{id}/retire` | `{user, reason}` | `retired` |
 
 `channel`: `form` · `chat` · `email` · `ticket` · `voice`.
 
@@ -100,11 +110,17 @@ ID cek: `ASSETS` `FIELDS` `ACCESS` `ACCESS-SCOPE` `INJECTION` `EXPOSURE` `RISK`
 `WMS-WINDOW` `FRIDAY-PRAYER` `BRANCH-FW-WINDOW` `BRANCH-FW-MEMO` `EMERGENCY`
 `LEAD-TIME` `SOD`.
 
-`ACCESS-SCOPE` (hanya `type: access`): departemen penerima dicocokkan dengan
-kolom `allowed_departments` aset di `kb/cmdb.csv`. Tidak cocok → `BLOCK`
-(kutipan CMDB + CTRL-02). Kolom kosong → tidak ada policy internal → `WARN`
-dengan `basis: standar` (CTRL-02 / ISO A.5.18) dan owner aset ditambahkan
-sebagai approver. Penerima tidak ada di `kb/directory.csv` → `NEEDS_INFO`.
+`ACCESS-SCOPE` dan `EXPOSURE` datang dari policy register, jadi cek itu membawa
+`rule_id` (mis. `"POL-s007"`). `ACCESS-SCOPE` (hanya `type: access`):
+departemen penerima dicocokkan dengan aturan aset itu. Tidak cocok → `BLOCK`.
+Aset tanpa aturan perusahaan → aturan standar `POL-g001`: `WARN` dengan
+`basis: standar` (CTRL-02 / ISO A.5.18) dan owner aset ditambahkan sebagai
+approver. Penerima tidak ada di `kb/directory.csv` → `NEEDS_INFO`.
+
+`precheck.policies[]` mendaftar aturan register yang dievaluasi:
+`{id, topic, tier, asset, triggered, rule_sha256}`. Hash ini mengikat
+keputusan ke isi aturan saat itu, jadi aturan yang kemudian diganti tidak
+mengubah keputusan lama.
 
 ## Slot persetujuan (`approvals`)
 
@@ -127,15 +143,67 @@ sebagai approver. Penerima tidak ada di `kb/directory.csv` → `NEEDS_INFO`.
 `warning` bila sumber bertentangan. `undo_until` = batas undo; `retro_due` =
 batas review CAB untuk emergency.
 
+## Policy register
+
+Aturan perusahaan sebagai data. Register efektif = seed `kb/_policies.json`
+(16 aturan yang dimigrasi dari kode, `origin: seed`) + event `policy.*` di
+audit log. Hanya aturan `active` yang tanggal berlakunya sudah tiba yang
+dipakai precheck; aturan yang baru disahkan langsung berlaku untuk pengajuan
+**berikutnya**, bukan untuk CR yang sudah diajukan.
+
+```json
+{"id": "POL-0619aa20", "status": "draft", "origin": "manual",
+ "title": "Mail relay hanya untuk IT", "topic": "access_scope", "check_id": "ACCESS-SCOPE",
+ "tier": "perusahaan", "subject": {"asset": "mail-jkt-01"}, "action": "access",
+ "condition": {"grantee_department_not_in": ["IT"]}, "effect": "BLOCK",
+ "message": "{grantee} ({department}) tidak boleh mengakses {asset} (policy: {allowed}).",
+ "pass_message": "{grantee} ({department}) boleh mengakses {asset}.",
+ "sources": [{"type": "submitted", "doc_id": "DOC-45b3bc3f", "quote": "mail relay mail-jkt-01 hanya boleh diakses oleh tim IT"}],
+ "owner": "Citra Kusuma", "effective_date": null, "proposed_by": "Andini Pratama",
+ "source_documents": [{"doc_id": "DOC-45b3bc3f", "title": "Memo mail relay", "owner": "Citra Kusuma", "sha256": "..."}],
+ "allowed_actions": [], "history": [...]}
+```
+
+| Field | Nilai |
+| --- | --- |
+| `tier` | `perusahaan` menutup `standar` untuk topik & aset yang sama |
+| `subject` | salah satu/lebih: `asset`, `zone`, `site`, `asset_type` (nilai dari CMDB, atau `"*"`) |
+| `action` | `"*"` · `access` · `change` |
+| `condition` | `grantee_department_in` / `_not_in` (departemen di direktori) · `exposure_in` · `ports_any` · `change_kind_in`; semua harus benar |
+| `effect` | `BLOCK` · `WARN` · `REQUIRE_APPROVER` (+ `approver`: `"asset_owner"` atau `{"role": ...}`) |
+| `message`, `pass_message`, `title` | placeholder: `{asset} {zone} {site} {grantee} {department} {allowed} {owner}` |
+| `sources[]` | `{type: doc, doc_id, quote}` · `{type: cmdb, asset, field}` · `{type: chat, ts, quote}` · `{type: submitted, doc_id, quote}` |
+| `owner` | persona pemilik dokumen sumber: satu-satunya yang bisa mengesahkan/menolak/memensiunkan |
+| `status` | `draft` → `active` → `superseded` / `retired`; atau `draft` → `rejected` |
+
+Aturan pembuktian:
+
+- Kutipan diverifikasi saat diusulkan, saat disahkan, dan setiap kali aturan
+  dipakai. Bila sumbernya hilang, aturan tidak dipakai dan precheck memuat
+  `WARN` (`basis: sistem`), tidak diam-diam diabaikan.
+- Pengusul tidak boleh mengesahkan aturannya sendiri. Percobaan yang ditolak
+  dicatat sebagai `policy.denied`.
+- `POST /api/policies` dengan `source` membuat dokumen sumber baru dulu
+  (teks disamarkan PII-nya); kutipan `type: submitted` tanpa `doc_id` menunjuk
+  ke dokumen itu. Aturan yang bentuknya salah ditolak sebelum dokumen disimpan.
+- Dokumen yang memuat instruksi ke AI/sistem ditolak (`source_injection`) dan
+  tidak pernah dikirim ke LLM.
+- `/extract` mengembalikan `{doc_id, proposed[], dropped[{title, quote, reason}],
+  notes[], llm}`. Usulan tanpa kutipan persis, aset/departemen yang tidak ada,
+  atau jenis yang belum didukung engine v0 masuk `dropped`. LLM mati → `503
+  llm_unavailable` dan tidak ada yang disimpan.
+
 ## Galat
 
 `{"error": {"code", "message"}}`. Kode yang perlu ditangani UI:
 
 | HTTP | code | Arti |
 | --- | --- | --- |
-| 400 | `invalid_field` `unknown_field` `invalid_fields` `reason_required` `unknown_slot` `invalid_meeting` `invalid_intake` `invalid_channel` | masukan salah |
-| 403 | `unknown_actor` `not_requester` `not_assignee` `self_approval` `not_allowed` `not_cab_chair` | persona tidak berhak |
+| 400 | `invalid_field` `unknown_field` `invalid_fields` `reason_required` `unknown_slot` `invalid_meeting` `invalid_intake` `invalid_channel` `invalid_rule` `unknown_reference` `unverified_source` `source_injection` `invalid_source` `invalid_status` `invalid_supersedes` | masukan salah |
+| 403 | `unknown_actor` `not_requester` `not_assignee` `self_approval` `not_allowed` `not_cab_chair` `not_owner` | persona tidak berhak |
 | 404 | `not_found` | tidak ada **atau** tidak boleh dilihat (sengaja sama) |
-| 409 | `not_draft` `not_pending` `not_approved` `already_approved` `meeting_not_held` `undo_expired` `not_editable` `not_cancellable` `not_dispatched` `not_in_review` `stale` | urutan/state salah |
+| 409 | `not_draft` `not_pending` `not_approved` `already_approved` `meeting_not_held` `undo_expired` `not_editable` `not_cancellable` `not_dispatched` `not_in_review` `stale` `not_active` | urutan/state salah |
+| 503 | `llm_unavailable` | `/api/policies/extract` tanpa LLM aktif |
 
-Setiap aksi yang ditolak tetap tercatat di audit log sebagai event `denied`.
+Setiap aksi yang ditolak tetap tercatat di audit log sebagai event `denied`
+(`cab.denied` atau `policy.denied`).
