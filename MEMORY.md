@@ -69,7 +69,7 @@ Sudah ada dan teruji (main):
   aturan dari memo oleh LLM (diuji dengan FakeProvider).
 - Audit log berantai hash bersama untuk semua jalur (`audit_chain.py`).
 - Demo end-to-end tanpa UI: `python tools/demo_pracab.py` (16 langkah).
-- Tes: 183 unit test (8 `expectedFailure` disengaja), 46 regresi.
+- Tes: 187 unit test (8 `expectedFailure` disengaja), 46 regresi.
 
 Belum diverifikasi: ekstraksi aturan dengan Claude sungguhan (`pip install
 anthropic` + `ANTHROPIC_API_KEY`, lalu `SECURITY_SAHABAT_LLM=claude` dan
@@ -98,8 +98,13 @@ Prioritas berikutnya, urut:
    Sisa di kode = cek lintas aset (risiko, approver SOP-14, SoD, kelengkapan,
    lead time, emergency, injection): butuh skema baru (aturan per CR, bukan
    per aset); jangan dipaksakan sebelum 1 Nov.
-5. Repo private vs syarat handbook "source code public atau ekspor workflow
-   WorkBuddy": putuskan sebelum submit (lihat bagian Repo di bawah).
+5. **Diputuskan 27 Okt (Izzat): jalur ekspor workflow WorkBuddy + bukti
+   pemakaian, repo tetap privat.** Paket: `python tools/export_submission.py`
+   (repo harus bersih) → `dist/submission/SecuritySahabat-workbuddy-export.zip`.
+   Checklist semua item handbook + bukti yang masih kurang (rekam sesi
+   `/security-sahabat`, dialog izin, Request ID): `docs/submission/README.md`.
+   WorkBuddy web tidak punya ekspor/share tugas; skill belum terpasang di akun
+   Izzat (uji online dulu dari akun lain).
 
 ## Peta backend
 
@@ -141,7 +146,7 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
 - **Repo:** `izzatbey/tencent-hackathon`, **harus tetap private** —
   `knowledge-base/source/topology.md` §6 berisi teks restricted asli.
   Handbook meminta source code public **atau** ekspor workflow WorkBuddy
-  dengan bukti pemakaian: belum diputuskan jalur mana.
+  dengan bukti pemakaian: dipilih ekspor WorkBuddy (lihat prioritas #5).
 - **Alur git:** Farrez kerja di branch `farrez/...` + PR; Izzat kadang langsung
   ke `main`. Selalu `git fetch` dan cek file yang disentuh kedua sisi sebelum
   push; selesaikan conflict dengan mempertahankan perubahan kedua pihak, lalu
@@ -210,7 +215,7 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
 - `python backend/tests/verify_matrix.py` — **46 kasus, wajib 0 gagal**
   sebelum commit (phase2 13, phase3 14, injection 10, pii 4, ctx 1, leak 4).
 - `python -m unittest discover -s backend/tests` — core + API + Pra-CAB
-  (`test_pracab.py`) + policy register (`test_policy.py`); 183 tes per 27 Okt.
+  (`test_pracab.py`) + policy register (`test_policy.py`); 187 tes per 27 Okt.
   Kegagalan yang diketahui ditulis `@unittest.expectedFailure` (tes #7 SLA
   crane, spesifikasi `test_brief_pending.py`). Status matriks brief dan
   katalog edge case: `docs/testing.md`.

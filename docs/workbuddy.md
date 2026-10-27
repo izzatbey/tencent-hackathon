@@ -136,6 +136,10 @@ Sebelum publish, sadari:
 
 ## 4. Bukti pemakaian untuk submission
 
+Jalur yang dipilih (27 Okt): ekspor workflow WorkBuddy, repo tetap privat.
+Paket dan checklist: [submission/README.md](submission/README.md); asal-usul
+kode dari tugas skill-creator: [submission/workbuddy-provenance.md](submission/workbuddy-provenance.md).
+
 | Bukti | Cara mendapatkannya |
 | --- | --- |
 | Skill dibuat di WorkBuddy | Riwayat tugas skill-creator awal (MEMORY.md, "Asal-usul kode") |
