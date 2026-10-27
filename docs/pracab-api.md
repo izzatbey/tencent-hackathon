@@ -110,8 +110,11 @@ ID cek: `ASSETS` `FIELDS` `ACCESS` `ACCESS-SCOPE` `INJECTION` `EXPOSURE` `RISK`
 `WMS-WINDOW` `FRIDAY-PRAYER` `BRANCH-FW-WINDOW` `BRANCH-FW-MEMO` `EMERGENCY`
 `LEAD-TIME` `SOD`.
 
-`ACCESS-SCOPE`, `EXPOSURE`, dan `FRIDAY-PRAYER` datang dari policy register,
-jadi cek itu membawa `rule_id` (mis. `"POL-s007"`). Urutannya di `checks[]`
+`ACCESS-SCOPE`, `EXPOSURE`, `FRIDAY-PRAYER`, dan `BRANCH-FW-MEMO` datang dari
+policy register, jadi cek itu membawa `rule_id` (mis. `"POL-s007"`).
+`BRANCH-FW-MEMO` (`POL-m001`, firewall Makassar, berlaku sejak 1 Okt 2026):
+`WARN` + wajib keputusan rapat CAB; alasannya digabung ke slot `cab` yang sama
+dengan alasan lain (mis. bentrok replikasi WMS). Urutannya di `checks[]`
 mengikuti blok register (setelah `ACCESS`), bukan urutan jendela waktu lain.
 `FRIDAY-PRAYER` (`POL-w001` Jakarta, `POL-w002` Makassar): jadwal beririsan
 dengan jam salat Jumat waktu lokal site aset → `WARN`; satu peringatan per
@@ -150,7 +153,7 @@ batas review CAB untuk emergency.
 ## Policy register
 
 Aturan perusahaan sebagai data. Register efektif = seed `kb/_policies.json`
-(18 aturan yang dimigrasi dari kode, `origin: seed`) + event `policy.*` di
+(19 aturan yang dimigrasi dari kode, `origin: seed`) + event `policy.*` di
 audit log. Hanya aturan `active` yang tanggal berlakunya sudah tiba yang
 dipakai precheck; aturan yang baru disahkan langsung berlaku untuk pengajuan
 **berikutnya**, bukan untuk CR yang sudah diajukan.
@@ -174,7 +177,7 @@ dipakai precheck; aturan yang baru disahkan langsung berlaku untuk pengajuan
 | `subject` | salah satu/lebih: `asset`, `zone`, `site`, `asset_type` (nilai dari CMDB, atau `"*"`) |
 | `action` | `"*"` · `access` · `change` |
 | `condition` | `grantee_department_in` / `_not_in` (departemen di direktori) · `exposure_in` · `ports_any` · `change_kind_in` · `schedule_overlaps: {weekdays: [0=Senin..6=Minggu], from: "HH:MM", to: "HH:MM"}` (jadwal CR beririsan jendela harian itu, waktu lokal site aset); semua harus benar |
-| `effect` | `BLOCK` · `WARN` · `REQUIRE_APPROVER` (+ `approver`: `"asset_owner"` atau `{"role": ...}`) |
+| `effect` | `BLOCK` · `WARN` · `REQUIRE_APPROVER` (+ `approver`: `"asset_owner"`, `"cab_meeting"` (wajib rapat CAB), atau `{"role": ...}`; opsional `approver_sources`: indeks `sources` yang dikutip di slot approver, default semua) |
 | `message`, `pass_message`, `title` | placeholder: `{asset} {zone} {site} {grantee} {department} {allowed} {owner} {overlap}` (`{overlap}` = awal jendela `schedule_overlaps` yang kena) |
 | `sources[]` | `{type: doc, doc_id, quote}` · `{type: cmdb, asset, field}` · `{type: chat, ts, quote}` · `{type: submitted, doc_id, quote}` |
 | `owner` | persona pemilik dokumen sumber: satu-satunya yang bisa mengesahkan/menolak/memensiunkan |

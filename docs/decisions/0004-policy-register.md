@@ -44,7 +44,8 @@ mengesahkan aturan itu.
 | `ACCESS-SCOPE` | kode membaca kolom `allowed_departments` CMDB | 12 aturan per aset (kutipan sel CMDB + CTRL-02) + 1 aturan standar `POL-g001` |
 | `EXPOSURE` | kode + `SENSITIVE_ZONES` | 3 aturan per segmen (kutipan TOPO-SEGMENTS + CTRL-09) |
 | `FRIDAY-PRAYER` (fase 2b, 27 Okt) | kode + `PRAYER` | 2 aturan per site (`POL-w001`, `POL-w002`) dengan kondisi baru `schedule_overlaps`; kutipan TOPO-PRAYER-TIMES |
-| Lainnya (kelengkapan, risiko, approver SOP-14, jendela WMS & firewall cabang, memo SOP-7, emergency, SoD) | kode | tetap kode ("built-in"), dimigrasi bertahap |
+| `BRANCH-FW-MEMO` (fase 2b, 27 Okt) | kode + kunci `memo.*` | 1 aturan `POL-m001` (subjek firewall Makassar, berlaku 1 Okt 2026) dengan approver baru `cab_meeting` dan `approver_sources` |
+| Lainnya (kelengkapan, risiko, approver SOP-14, jendela WMS & firewall cabang, emergency, SoD) | kode | tetap kode ("built-in"), dimigrasi bertahap |
 
 Semua tes Pra-CAB lama lulus tanpa diubah setelah migrasi ACCESS-SCOPE dan
 EXPOSURE. Untuk FRIDAY-PRAYER, kesetaraan dibuktikan dengan membandingkan
@@ -52,6 +53,20 @@ EXPOSURE. Untuk FRIDAY-PRAYER, kesetaraan dibuktikan dengan membandingkan
 sesudah migrasi: identik, kecuali `rule_id` dan `policies[]` yang memang
 bertambah. Dua tes yang mendaftar isi register ikut diperbarui (daftar topik
 seed; aturan yang dievaluasi untuk aset Jakarta).
+
+Untuk BRANCH-FW-MEMO matriksnya diperlebar menjadi 1.020 kombinasi (ditambah
+firmware upgrade dan emergency, supaya slot CAB dari risiko HIGH, dari memo
+pada risiko MEDIUM, dan emergency tanpa CAB ikut teruji): identik, termasuk
+urutan kutipan di slot CAB. Tiga perubahan yang disengaja:
+
+- Subjek `{asset_type: Firewall, site: Makassar}` menggantikan "Firewall dan
+  bukan Jakarta"; sama untuk CMDB sekarang. Firewall cabang baru butuh aturan
+  sendiri.
+- Aturan berlaku sejak 1 Okt 2026 (tanggal memo); pengajuan bertanggal lebih
+  awal kembali ke SOP-7. Kode lama menerapkan memo tanpa melihat tanggal.
+- Bila kutipan memo hilang, kode lama turun ke peringatan MFA dari CMDB saja.
+  Sekarang berlaku aturan umum register: aturan tidak dipakai, `WARN` agar
+  owner meninjau, dan tidak ada slot CAB tambahan.
 
 Kondisi `schedule_overlaps` dievaluasi per aset dalam waktu lokal site-nya;
 engine menyaring pesan yang identik, jadi aturan per site/zona tidak

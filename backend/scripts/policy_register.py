@@ -15,6 +15,10 @@ Satu aturan:
                to: "HH:MM"} = jadwal CR beririsan dengan jendela harian itu,
                waktu lokal site aset
     effect     BLOCK | WARN | REQUIRE_APPROVER
+    approver   (REQUIRE_APPROVER) "asset_owner" | "cab_meeting" | {role}.
+               "cab_meeting" = wajib keputusan rapat CAB; precheck menggabungkannya
+               ke satu slot CAB. approver_sources = indeks `sources` yang menjadi
+               kutipan slot itu (default: semua)
     sources    kutipan yang diverifikasi ulang setiap kali aturan dipakai:
                {type: doc, doc_id, quote} | {type: cmdb, asset, field, quote?}
                | {type: chat, ts, quote} | {type: submitted, doc_id, quote}
@@ -43,6 +47,7 @@ import pii_masker as pii  # noqa: E402
 TIERS = ("perusahaan", "standar")
 ACTIONS = ("*", "access", "change")
 EFFECTS = ("BLOCK", "WARN", "REQUIRE_APPROVER")
+APPROVER_KINDS = ("asset_owner", "cab_meeting")
 BASES = ("sop", "standar", "interpretasi", "sistem")
 SUBJECT_FIELDS = {"asset": "asset_id", "zone": "zone", "site": "site", "asset_type": "type"}
 LIST_CONDITIONS = ("grantee_department_in", "grantee_department_not_in", "exposure_in",
@@ -72,7 +77,7 @@ def rule_hash(rule):
 
 
 RULE_KEYS = ("id", "title", "topic", "check_id", "tier", "subject", "action", "condition", "effect",
-             "approver", "approver_label", "message", "pass_title", "pass_message", "basis", "sources",
+             "approver", "approver_label", "approver_sources", "message", "pass_title", "pass_message", "basis", "sources",
              "owner", "effective_date", "supersedes")
 
 
@@ -158,10 +163,12 @@ def validate_rule(rule, refs):
 
     if out["effect"] == "REQUIRE_APPROVER":
         approver = rule.get("approver")
-        if approver != "asset_owner" and not (isinstance(approver, dict) and set(approver) == {"role"}):
-            _bad("invalid_rule", "approver harus \"asset_owner\" atau {\"role\": ...}.")
+        if approver not in APPROVER_KINDS and not (isinstance(approver, dict) and set(approver) == {"role"}):
+            _bad("invalid_rule", "approver harus \"asset_owner\", \"cab_meeting\", atau {\"role\": ...}.")
         out["approver"] = approver
         out["approver_label"] = _text(rule, "approver_label", 80, required=False)
+    elif rule.get("approver_sources") is not None:
+        _bad("invalid_rule", "approver_sources hanya untuk effect REQUIRE_APPROVER.")
     for key, limit in (("pass_title", 200), ("pass_message", 400)):
         value = _text(rule, key, limit, required=False)
         if value:
@@ -175,6 +182,12 @@ def validate_rule(rule, refs):
         if not isinstance(src, dict) or src.get("type") not in SOURCE_TYPES:
             _bad("invalid_rule", "Setiap source butuh type: %s." % ", ".join(SOURCE_TYPES))
         out["sources"].append({k: v for k, v in src.items() if k in ("type", "doc_id", "asset", "field", "ts", "quote")})
+    picks = rule.get("approver_sources")
+    if picks is not None:
+        if (not isinstance(picks, list) or not picks or len(set(picks)) != len(picks)
+                or any(isinstance(i, bool) or not isinstance(i, int) or not 0 <= i < len(sources) for i in picks)):
+            _bad("invalid_rule", "approver_sources harus indeks unik ke sources (0-%d)." % (len(sources) - 1))
+        out["approver_sources"] = list(picks)
 
     owner = rule.get("owner")
     if owner not in refs["people"]:
@@ -355,6 +368,13 @@ def evaluate(cr, assets, ctx, day):
                                 rule["title"].format_map(fields),
                                 rule["message"].format_map(fields), basis, cites, rule["id"]))
                     if rule["effect"] == "REQUIRE_APPROVER":
+                        picked = [cites[i] for i in rule["approver_sources"]] if rule.get("approver_sources") else cites
+                        if rule["approver"] == "cab_meeting":
+                            # penanda; precheck menggabungkan semua alasan CAB ke satu slot rapat
+                            slots.append({"slot": "cab", "label": rule.get("approver_label") or "Keputusan rapat CAB",
+                                          "assignee": None, "kind": "cab_meeting", "mode": "tertulis",
+                                          "citations": picked, "rule_id": rule["id"]})
+                            continue
                         who = (kb_facts.owner_name(asset.get("owner")) if rule["approver"] == "asset_owner"
                                else ctx.person(rule["approver"]["role"]))
                         if who:
@@ -362,7 +382,7 @@ def evaluate(cr, assets, ctx, day):
                                           else "policy:%s" % rule["id"],
                                           "label": rule.get("approver_label") or "Approver aturan %s" % rule["id"],
                                           "assignee": who, "kind": "person", "mode": "tertulis",
-                                          "citations": cites, "rule_id": rule["id"]})
+                                          "citations": picked, "rule_id": rule["id"]})
                 elif rule.get("pass_message"):
                     show(_check(rule["check_id"], "PASS",
                                 (rule.get("pass_title") or rule["title"]).format_map(fields),

@@ -110,7 +110,8 @@ class SeedTest(unittest.TestCase):
     def test_seed_mencakup_aturan_yang_dulu_kode(self):
         topics = {(r["topic"], r["tier"]) for r in reg.load_seed()}
         self.assertEqual(topics, {("access_scope", "perusahaan"), ("access_scope", "standar"),
-                                  ("internet_exposure", "perusahaan"), ("friday_prayer", "perusahaan")})
+                                  ("internet_exposure", "perusahaan"), ("friday_prayer", "perusahaan"),
+                                  ("branch_fw_remote", "perusahaan")})
 
     def test_seed_tidak_diindeks_retrieval(self):
         import search_kb
@@ -195,6 +196,70 @@ class ScheduleRuleTest(unittest.TestCase):
     def test_bukan_jumat_atau_tanpa_zona_waktu_tidak_ditandai(self):
         self.assertEqual(self.pre(["mail-jkt-01"], "2026-11-05T11:45:00+07:00", "2026-11-05T12:15:00+07:00"), [])
         self.assertEqual(self.pre(["mail-jkt-01"], "2026-11-06T11:45:00", "2026-11-06T12:15:00"), [])
+
+
+class CabMeetingRuleTest(unittest.TestCase):
+    """BRANCH-FW-MEMO dipindah dari kode ke register (fase 2b): approver rapat CAB."""
+
+    # Kamis 21:30-22:30 WITA: di jendela SOP-7, tidak kena replikasi WMS; config_change = MEDIUM
+    WINDOW = {"start": "2026-11-05T21:30:00+08:00", "end": "2026-11-05T22:30:00+08:00"}
+    MEMO_CAB = "Approval verbal tidak cukup lagi, wajib CAB written approval."
+
+    def pre(self, rules=None, at=NOW, **over):
+        cr = dict(ScheduleRuleTest.CHANGE, assets=["fw-edge-mks-01"], window=self.WINDOW)
+        cr.update(over)
+        return cab_rules.precheck(cr, at, rules=rules)
+
+    @staticmethod
+    def memo(pre):
+        return [c for c in pre["checks"] if c["id"] == "BRANCH-FW-MEMO"]
+
+    @staticmethod
+    def cab(pre):
+        return [s for s in pre["approvals"] if s["slot"] == "cab"]
+
+    def test_memo_datang_dari_register_dan_menambah_slot_cab(self):
+        r = self.pre()
+        [chk] = self.memo(r)
+        self.assertEqual((chk["status"], chk["rule_id"], chk["basis"]), ("WARN", "POL-m001", "sop"))
+        self.assertEqual(len(chk["citations"]), 4)
+        self.assertEqual(r["risk"]["level"], "MEDIUM")
+        [slot] = self.cab(r)
+        # slot CAB hanya mengutip kalimat memo yang mewajibkan CAB (approver_sources)
+        self.assertEqual([c["quote"] for c in slot["citations"]], [self.MEMO_CAB])
+        self.assertEqual(slot["assignee"], "Indah Permatasari")
+        self.assertIsNotNone(r["cab_meeting"])
+
+    def test_alasan_cab_dari_kode_dan_register_jadi_satu_slot(self):
+        # 23:30-00:30 WIB beririsan dengan replikasi WMS: SOP-7 + memo, satu slot CAB
+        r = self.pre(window={"start": "2026-11-05T23:30:00+07:00", "end": "2026-11-06T00:30:00+07:00"})
+        [slot] = self.cab(r)
+        self.assertEqual([c["doc_id"] for c in slot["citations"]], ["SOP-7", "CHAT 2026-10-01T09:00"])
+
+    def test_aturan_dicabut_tidak_ada_peringatan_maupun_cab(self):
+        r = self.pre(rules=[x for x in reg.load_seed() if x["id"] != "POL-m001"])
+        self.assertEqual((self.memo(r), self.cab(r), r["cab_meeting"]), ([], [], None))
+
+    def test_sebelum_memo_berlaku_kembali_ke_sop_7(self):
+        r = self.pre(at=datetime.fromisoformat("2026-09-30T10:00:00+07:00"))
+        self.assertEqual((self.memo(r), self.cab(r)), ([], []))
+
+    def test_firewall_jakarta_tidak_terkena(self):
+        self.assertEqual(self.memo(self.pre(assets=["fw-edge-jkt-01"])), [])
+
+    def test_emergency_tetap_ditandai_tanpa_rapat_cab(self):
+        r = self.pre(emergency=True)
+        self.assertEqual(len(self.memo(r)), 1)
+        self.assertEqual((self.cab(r), r["cab_meeting"]), ([], None))
+
+    def test_kutipan_memo_hilang_dilaporkan_dan_cab_tidak_ditambahkan(self):
+        rules = json.loads(json.dumps(reg.load_seed()))
+        rule = next(x for x in rules if x["id"] == "POL-m001")
+        rule["sources"][2]["quote"] = "kalimat yang tidak pernah ada"
+        r = self.pre(rules=rules)
+        [chk] = self.memo(r)
+        self.assertEqual((chk["status"], chk["basis"], chk["rule_id"]), ("WARN", "sistem", "POL-m001"))
+        self.assertEqual(self.cab(r), [])
 
 
 # --------------------------------------------------------------------------
@@ -311,6 +376,15 @@ class ValidationTest(Env, unittest.TestCase):
                 self.propose_err(self.base(condition={"schedule_overlaps": bad}), "invalid_rule")
         rule = self.policies.propose(self.who(ANDINI), self.base(condition={"schedule_overlaps": ok}))
         self.assertEqual((rule["status"], rule["condition"]), ("draft", {"schedule_overlaps": ok}))
+
+    def test_approver_rapat_cab_dan_pilihan_kutipan_divalidasi(self):
+        cab = dict(effect="REQUIRE_APPROVER", approver="cab_meeting", action="change", condition={})
+        for picks in ([1], [True], [0, 0], [], "0"):
+            with self.subTest(picks=picks):
+                self.propose_err(self.base(approver_sources=picks, **cab), "invalid_rule")
+        self.propose_err(self.base(approver_sources=[0]), "invalid_rule")  # bukan REQUIRE_APPROVER
+        rule = self.policies.propose(self.who(ANDINI), self.base(approver_sources=[0], **cab))
+        self.assertEqual((rule["approver"], rule["approver_sources"]), ("cab_meeting", [0]))
 
     def test_kutipan_yang_tidak_ada_di_sumber_ditolak(self):
         self.propose_err(self.base(sources=[{"type": "doc", "doc_id": "CTRL-02", "quote": "semua boleh akses"}]),

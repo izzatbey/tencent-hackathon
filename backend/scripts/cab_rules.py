@@ -15,7 +15,8 @@ Setiap cek: {id, status, title, detail, basis, citations}
 Outcome (urutan prioritas): BLOCKED > NEEDS_INFO > NEEDS_REVISION > READY
 
 Cek yang berupa aturan perusahaan per aset (ACCESS-SCOPE, EXPOSURE,
-FRIDAY-PRAYER, dan aturan baru yang disahkan lewat aplikasi) datang dari policy register
+FRIDAY-PRAYER, BRANCH-FW-MEMO, dan aturan baru yang disahkan lewat aplikasi)
+datang dari policy register
 (policy_register.py). Cek lain di modul ini masih kode ("built-in") dan
 dimigrasi bertahap; lihat docs/decisions/0004.
 """
@@ -46,7 +47,6 @@ OFFICE_HOURS = {"Jakarta": ((8, 0), (17, 0)), "Makassar": ((8, 0), (17, 0)),
                 "Jayapura": ((7, 30), (16, 30))}
 WEEKDAYS = {0, 1, 2, 3, 4}
 CAB_WEEKDAY, CAB_TIME, CAB_LEAD = 2, time(14, 0), timedelta(hours=48)
-MEMO_TS = "2026-10-01T09:00:00+07:00"
 
 STATUS_RANK = {"INFO": 0, "PASS": 0, "WARN": 1, "FAIL": 2, "NEEDS_INFO": 3, "BLOCK": 4}
 
@@ -71,11 +71,7 @@ SOURCES = {
     "wms.avoid": ("doc", "TOPO-WMS-WINDOW", "Avoid scheduling network changes on fw-edge-mks-01 or vpn-gw-jkt-01 during this window."),
     "sop7.cab": ("doc", "SOP-7", "CAB approval is required for changes that affect the replication window (23:00–02:00 WIB)."),
     "sop7.window": ("doc", "SOP-7", "Remote maintenance of branch firewalls is allowed any weekday (Monday–Friday) between 21:00 and 06:00 local branch time."),
-    "sop7.verbal": ("doc", "SOP-7", "Verbal approval from the on-call IT admin or ops manager is sufficient for routine maintenance"),
     "sop7.notify": ("doc", "SOP-7", "Notify the branch coordinator (Hendra Wijaya for Makassar) by phone before commencing maintenance."),
-    "memo.cab": ("chat", MEMO_TS, "Approval verbal tidak cukup lagi, wajib CAB written approval."),
-    "memo.mfa": ("chat", MEMO_TS, "Wajib via jump-host dengan MFA."),
-    "cmdb.fw-mks.mfa": ("cmdb", "fw-edge-mks-01", "notes", "Remote changes require MFA jump-host."),
     "office.Jakarta": ("doc", "TOPO-OFFICE-HOURS", "Jakarta HQ: 08:00 – 17:00 WIB"),
     "office.Makassar": ("doc", "TOPO-OFFICE-HOURS", "Makassar Branch: 08:00 – 17:00 WITA"),
     "office.Jayapura": ("doc", "TOPO-OFFICE-HOURS", "Jayapura Branch: 07:30 – 16:30 WIT"),
@@ -234,13 +230,13 @@ def approval_slots(level, assets, cr, ctx):
     if level == "MEDIUM":
         slots = [person("owner:%s" % o, "System owner", o, ["sop14.appr.medium"]) for o in owners]
         return slots + [person("it_admin", "IT Admin", it_admin, ["sop14.appr.medium"])]
-    return [cab_slot(chair, ["sop14.appr.high"], ctx),
+    return [cab_slot(chair, ctx.cites("sop14.appr.high")),
             person("cab_chair", "HR Manager (acting CAB chair)", chair, ["sop14.appr.high"])]
 
 
-def cab_slot(chair, keys, ctx):
+def cab_slot(chair, citations):
     return {"slot": "cab", "label": "Keputusan rapat CAB (dicatat CAB chair)", "assignee": chair,
-            "kind": "cab_meeting", "mode": "tertulis", "citations": ctx.cites(*keys)}
+            "kind": "cab_meeting", "mode": "tertulis", "citations": list(citations)}
 
 
 def precheck(cr, submitted_at, root=None, ctx=None, rules=None, submitted=None):
@@ -248,7 +244,7 @@ def precheck(cr, submitted_at, root=None, ctx=None, rules=None, submitted=None):
     register (kb/_policies.json) yang dipakai."""
     ctx = ctx or Context(root, rules=rules, submitted=submitted)
     checks = []
-    extra_cab = []           # alasan tambahan yang mewajibkan keputusan CAB
+    extra_cab = []           # kutipan alasan tambahan yang mewajibkan keputusan CAB
     emergency = bool(cr.get("emergency"))
 
     # --- aset -------------------------------------------------------------
@@ -314,7 +310,7 @@ def precheck(cr, submitted_at, root=None, ctx=None, rules=None, submitted=None):
         if WMS_ASSETS & set(asset_ids):
             hit = daily_overlap(start, end, wib, (23, 0), (2, 0))
             if hit:
-                extra_cab.append("sop7.cab")
+                extra_cab += ctx.cites("sop7.cab")
                 checks.append(_check("WMS-WINDOW", "WARN", "Bentrok jendela replikasi WMS",
                                      "Jadwal beririsan dengan replikasi %s. Geser jadwal, atau perubahan "
                                      "ini wajib diputuskan CAB." % fmt(hit[0], "WIB"), "sop",
@@ -338,21 +334,6 @@ def precheck(cr, submitted_at, root=None, ctx=None, rules=None, submitted=None):
                                      "Seluruh jadwal di dalam jendela Senin-Jumat 21:00-06:00 waktu %s."
                                      % a["site"], "interpretasi", ctx.cites("sop7.window")))
 
-    # --- memo 1 Oktober: firewall cabang wajib CAB tertulis + MFA -------------
-    if any(a.get("type") == "Firewall" and a.get("site") != "Jakarta" for a in assets):
-        try:
-            memo = ctx.cites("memo.cab", "memo.mfa")
-        except kb_facts.CitationError:
-            memo = []
-        keys = ctx.cites("sop7.verbal", "cmdb.fw-mks.mfa") + memo
-        if memo:
-            extra_cab.append("memo.cab")
-        checks.append(_check("BRANCH-FW-MEMO", "WARN", "SOP-7 sudah digantikan memo 1 Okt 2026",
-                             "SOP-7 masih mengizinkan persetujuan lisan, tetapi memo IT 1 Okt 2026 (lebih baru) "
-                             "mewajibkan persetujuan CAB tertulis dan akses lewat jump-host + MFA. Yang dipakai: memo."
-                             if memo else "Akses remote wajib lewat jump-host + MFA (CMDB).",
-                             "sop", keys))
-
     # --- persetujuan -----------------------------------------------------------
     slots = approval_slots(level, assets, cr, ctx)
     cab_meeting = None
@@ -362,14 +343,17 @@ def precheck(cr, submitted_at, root=None, ctx=None, rules=None, submitted=None):
                              "retroaktif CAB paling lambat 48 jam setelah eksekusi.", "sop",
                              ctx.cites("sop14.emergency", "ctrl12.emergency")))
     else:
-        # approver tambahan dari policy register (mis. owner aset untuk standar A.5.18)
+        # approver tambahan dari policy register (mis. owner aset untuk standar A.5.18);
+        # aturan yang mewajibkan rapat CAB (mis. memo 1 Okt) digabung ke satu slot CAB
         have = {s["assignee"] for s in slots}
         for s in policy_slots:
-            if s["assignee"] not in have:
+            if s["kind"] == "cab_meeting":
+                extra_cab += s["citations"]
+            elif s["assignee"] not in have:
                 slots.append(s)
                 have.add(s["assignee"])
         if extra_cab and not any(s["slot"] == "cab" for s in slots):
-            slots.append(cab_slot(ctx.person("HR Manager"), extra_cab, ctx))
+            slots.append(cab_slot(ctx.person("HR Manager"), extra_cab))
         if any(s["slot"] == "cab" for s in slots):
             meeting = next_cab_meeting(submitted_at)
             cab_meeting = {"at": meeting.isoformat(), "label": fmt(meeting, "WIB")}

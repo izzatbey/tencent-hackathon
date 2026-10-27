@@ -85,7 +85,7 @@ untuk UI, skill WorkBuddy/Claude dari engine yang sama.
 
 ## Status & bukti
 
-- 159 unit test + 46 kasus regresi, semuanya hijau; kegagalan yang diketahui
+- 167 unit test + 46 kasus regresi, semuanya hijau; kegagalan yang diketahui
   ditulis apa adanya (`expectedFailure`).
 - Matriks 20 tes brief: 16 lulus, 1 sebagian, 2 gagal, 5 belum dibangun di
   jalur tanya-jawab — `docs/test-results/README.md`.

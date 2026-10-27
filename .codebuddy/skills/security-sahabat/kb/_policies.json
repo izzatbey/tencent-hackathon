@@ -1,5 +1,5 @@
 {
-  "_note": "Seed policy register Pra-CAB. Aturan di sini dimigrasi dari kode cab_rules.py pada 27 Okt 2026 (FRIDAY-PRAYER: 27 Okt, fase 2b) dan dianggap sudah disahkan pemilik dokumen sumbernya saat migrasi (origin: seed). Aturan baru masuk lewat POST /api/policies atau /api/policies/extract dan disahkan lewat aplikasi; statusnya tercatat di audit log, bukan di file ini. Lihat docs/decisions/0004.",
+  "_note": "Seed policy register Pra-CAB. Aturan di sini dimigrasi dari kode cab_rules.py pada 27 Okt 2026 (FRIDAY-PRAYER dan BRANCH-FW-MEMO: 27 Okt, fase 2b) dan dianggap sudah disahkan pemilik dokumen sumbernya saat migrasi (origin: seed). Aturan baru masuk lewat POST /api/policies atau /api/policies/extract dan disahkan lewat aplikasi; statusnya tercatat di audit log, bukan di file ini. Lihat docs/decisions/0004.",
   "version": "2026-10-27",
   "rules": [
     {
@@ -612,6 +612,51 @@
       ],
       "owner": "Andini Pratama",
       "effective_date": "2026-09-15"
+    },
+    {
+      "id": "POL-m001",
+      "title": "SOP-7 sudah digantikan memo 1 Okt 2026",
+      "topic": "branch_fw_remote",
+      "check_id": "BRANCH-FW-MEMO",
+      "tier": "perusahaan",
+      "subject": {
+        "asset_type": "Firewall",
+        "site": "Makassar"
+      },
+      "action": "*",
+      "condition": {},
+      "effect": "REQUIRE_APPROVER",
+      "approver": "cab_meeting",
+      "approver_sources": [
+        2
+      ],
+      "message": "SOP-7 masih mengizinkan persetujuan lisan, tetapi memo IT 1 Okt 2026 (lebih baru) mewajibkan persetujuan CAB tertulis dan akses lewat jump-host + MFA. Yang dipakai: memo.",
+      "basis": "sop",
+      "sources": [
+        {
+          "type": "doc",
+          "doc_id": "SOP-7",
+          "quote": "Verbal approval from the on-call IT admin or ops manager is sufficient for routine maintenance"
+        },
+        {
+          "type": "cmdb",
+          "asset": "fw-edge-mks-01",
+          "field": "notes",
+          "quote": "Remote changes require MFA jump-host."
+        },
+        {
+          "type": "chat",
+          "ts": "2026-10-01T09:00:00+07:00",
+          "quote": "Approval verbal tidak cukup lagi, wajib CAB written approval."
+        },
+        {
+          "type": "chat",
+          "ts": "2026-10-01T09:00:00+07:00",
+          "quote": "Wajib via jump-host dengan MFA."
+        }
+      ],
+      "owner": "Andini Pratama",
+      "effective_date": "2026-10-01"
     }
   ]
 }
