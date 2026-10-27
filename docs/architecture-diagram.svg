@@ -1,0 +1,269 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1250" width="1600" height="1250" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#37474f"/></marker><marker id="ahs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#37474f"/></marker><marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6a1b9a"/></marker></defs>
+<rect width="1600" height="1250" fill="#ffffff"/>
+<text x="24" y="42" font-size="22" font-weight="bold" fill="#1a1a1a" text-anchor="start" >SecuritySahabat — Arsitektur Sistem &amp; Batas Kepercayaan</text>
+<text x="24" y="66" font-size="12" font-weight="normal" fill="#555" text-anchor="start" >Challenge A · The Workplace Brain · Tencent Cloud Hackathon Indonesia 2026 · target arsitektur submission, status per 27 Okt 2026</text>
+<rect x="1040" y="26" width="26" height="16" rx="3" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<text x="1072" y="38" font-size="11" font-weight="normal" fill="#222" text-anchor="start" >sudah ada</text>
+<rect x="1190" y="26" width="26" height="16" rx="3" fill="#fff8e1" stroke="#e0a100" stroke-width="1.5" stroke-dasharray="6 4"/>
+<text x="1222" y="38" font-size="11" font-weight="normal" fill="#222" text-anchor="start" >direncanakan</text>
+<rect x="1340" y="26" width="26" height="16" rx="3" fill="#f3f3f3" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="3 3"/>
+<text x="1372" y="38" font-size="11" font-weight="normal" fill="#222" text-anchor="start" >usulan (belum di brief)</text>
+<line x1="1040" y1="62" x2="1066" y2="62" stroke="#c62828" stroke-width="2.5" stroke-dasharray="7 4"/>
+<text x="1072" y="66" font-size="11" font-weight="normal" fill="#222" text-anchor="start" >batas kepercayaan (trust boundary)</text>
+<path d="M1340,62 h26" stroke="#37474f" stroke-width="1.6" marker-end="url(#ah)"/>
+<text x="1372" y="66" font-size="11" font-weight="normal" fill="#222" text-anchor="start" >alur data · putus-putus = rencana</text>
+<rect x="16" y="90" width="296" height="1085" rx="10" fill="#eef3fc" stroke="#7f9cc9" stroke-width="1.5"/>
+<text x="28" y="110" font-size="12" font-weight="bold" fill="#7f9cc9" text-anchor="start" >ZONA PENGGUNA</text>
+<text x="28" y="125" font-size="10.5" font-weight="normal" fill="#555" text-anchor="start" >masukan tidak dipercaya</text>
+<rect x="36" y="140" width="250" height="62" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="36" y="144" width="4" height="54" fill="#2e7d32"/>
+<text x="48" y="159" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >Karyawan</text>
+<text x="48" y="175" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >9 persona demo · Bahasa id / en / campur</text>
+<rect x="36" y="232" width="190" height="76" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="36" y="236" width="4" height="68" fill="#2e7d32"/>
+<text x="48" y="251" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >Web UI · Svelte 5</text>
+<text x="48" y="267" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >pilih persona</text>
+<text x="48" y="281" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >ketik pertanyaan</text>
+<rect x="30" y="340" width="268" height="330" rx="10" fill="#f3eefc" stroke="#9b84d0" stroke-width="1.5"/>
+<text x="42" y="360" font-size="12" font-weight="bold" fill="#9b84d0" text-anchor="start" >WorkBuddy · jalur Skill</text>
+<text x="42" y="375" font-size="10.5" font-weight="normal" fill="#555" text-anchor="start" >LLM di platform; keluarannya tidak dipercaya</text>
+<rect x="44" y="392" width="240" height="56" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="44" y="396" width="4" height="48" fill="#2e7d32"/>
+<text x="56" y="411" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >Chat WorkBuddy</text>
+<text x="56" y="427" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >karyawan bertanya lewat agent</text>
+<rect x="44" y="470" width="240" height="106" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="44" y="474" width="4" height="98" fill="#2e7d32"/>
+<text x="56" y="489" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >Agent + SKILL.md</text>
+<text x="56" y="505" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >security-sahabat.skill</text>
+<text x="56" y="519" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >memanggil CLI process_query()</text>
+<text x="56" y="533" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >menulis jawaban sesuai</text>
+<text x="56" y="547" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >answer-playbook (S4 versi Skill)</text>
+<text x="44" y="600" font-size="10.5" font-weight="normal" fill="#5e4b8b" text-anchor="start" >Jawaban hanya boleh dari JSON hasil</text>
+<text x="44" y="614" font-size="10.5" font-weight="normal" fill="#5e4b8b" text-anchor="start" >pipeline; tanpa bukti → Template 3</text>
+<text x="44" y="628" font-size="10.5" font-weight="normal" fill="#5e4b8b" text-anchor="start" >"tidak tahu" + SME.</text>
+<rect x="36" y="960" width="200" height="104" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="36" y="964" width="4" height="96" fill="#2e7d32"/>
+<text x="48" y="979" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >Web UI · jawaban</text>
+<text x="48" y="995" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >kutipan verbatim + ID sumber</text>
+<text x="48" y="1009" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >badge flag konflik / risiko</text>
+<text x="48" y="1023" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >SME eskalasi</text>
+<text x="48" y="1037" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >layar konfirmasi S5</text>
+<path d="M120,202 V232" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<path d="M262,202 V392" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<path d="M164,448 V470" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<line x1="326" y1="86" x2="326" y2="1179" stroke="#c62828" stroke-width="2.5" stroke-dasharray="10 6"/>
+<rect x="340" y="90" width="404" height="1085" rx="10" fill="#edf8ef" stroke="#6faa7d" stroke-width="1.5"/>
+<text x="352" y="110" font-size="12" font-weight="bold" fill="#6faa7d" text-anchor="start" >ZONA BACKEND — kode deterministik (dipercaya)</text>
+<text x="352" y="125" font-size="10.5" font-weight="normal" fill="#555" text-anchor="start" >izin, routing &amp; validasi = code/rules · tanpa LLM</text>
+<rect x="358" y="150" width="178" height="64" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="358" y="154" width="4" height="56" fill="#2e7d32"/>
+<text x="370" y="169" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >HTTP API (masuk)</text>
+<text x="370" y="185" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >POST /api/ask</text>
+<text x="370" y="199" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >≤2000 char · ≤16 KB</text>
+<rect x="548" y="150" width="178" height="64" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="548" y="154" width="4" height="56" fill="#2e7d32"/>
+<text x="560" y="169" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >CLI search_kb.py</text>
+<text x="560" y="185" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >pintu masuk jalur Skill</text>
+<rect x="350" y="232" width="384" height="482" rx="8" fill="none" stroke="#6faa7d" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="360" y="249" font-size="11" font-weight="bold" fill="#3d7a4c" text-anchor="start" >process_query() — urutan tidak boleh ditukar</text>
+<rect x="358" y="258" width="368" height="52" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="358" y="262" width="4" height="44" fill="#2e7d32"/>
+<text x="370" y="277" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >① Injection guard (query)</text>
+<text x="370" y="293" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >NFKC + buang Cf · BLOCK → INJECTION rc 4</text>
+<rect x="358" y="322" width="368" height="52" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="358" y="326" width="4" height="44" fill="#2e7d32"/>
+<text x="370" y="341" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >② PII mask</text>
+<text x="370" y="357" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >NIK · HP · email · EMP-ID · IP</text>
+<path d="M542,310 V322" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<rect x="358" y="386" width="368" height="52" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="358" y="390" width="4" height="44" fill="#2e7d32"/>
+<text x="370" y="405" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >③ Identitas + Permission gate (S2)</text>
+<text x="370" y="421" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >zona &amp; allowed_projects · SEBELUM retrieval</text>
+<path d="M542,374 V386" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<rect x="358" y="450" width="368" height="52" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="358" y="454" width="4" height="44" fill="#2e7d32"/>
+<text x="370" y="469" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >④ Retrieval (S3)</text>
+<text x="370" y="485" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >keyword · hanya dokumen yang lolos gate</text>
+<path d="M542,438 V450" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<rect x="358" y="514" width="368" height="52" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="358" y="518" width="4" height="44" fill="#2e7d32"/>
+<text x="370" y="533" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >⑤ Injection guard (evidence)</text>
+<text x="370" y="549" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >instruksi di dalam dokumen → karantina</text>
+<path d="M542,502 V514" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<rect x="358" y="578" width="368" height="52" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="358" y="582" width="4" height="44" fill="#2e7d32"/>
+<text x="370" y="597" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >⑥ Flag konflik</text>
+<text x="370" y="613" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >CONFLICT · SUPERSEDED · REVIEW · RISK</text>
+<path d="M542,566 V578" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<rect x="358" y="642" width="368" height="52" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="358" y="646" width="4" height="44" fill="#2e7d32"/>
+<text x="370" y="661" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >Status router</text>
+<text x="370" y="677" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >OK 0 · NO_MATCH 3 · RESTRICTED 2 · INJECTION 4</text>
+<path d="M542,630 V642" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<path d="M447,214 V258" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<path d="M637,214 V258" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<rect x="358" y="740" width="178" height="70" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="358" y="744" width="4" height="62" fill="#2e7d32"/>
+<text x="370" y="759" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >Template tetap</text>
+<text x="370" y="775" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >NO_MATCH · RESTRICTED</text>
+<text x="370" y="789" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >· INJECTION — tanpa LLM</text>
+<path d="M447,694 V740" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<text x="452" y="730" font-size="10" font-weight="normal" fill="#37474f" text-anchor="start" font-style="italic">non-OK</text>
+<rect x="548" y="830" width="178" height="72" rx="6" fill="#f3f3f3" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="3 3"/>
+<rect x="548" y="834" width="4" height="64" fill="#8a8a8a"/>
+<text x="560" y="849" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >Citation verifier</text>
+<text x="560" y="865" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >kutipan = substring</text>
+<text x="560" y="879" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >verbatim KB; gagal → NO_MATCH</text>
+<rect x="548" y="922" width="178" height="62" rx="6" fill="#fff8e1" stroke="#e0a100" stroke-width="1.5" stroke-dasharray="6 4"/>
+<rect x="548" y="926" width="4" height="54" fill="#e0a100"/>
+<text x="560" y="941" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >S5 Approval gate</text>
+<text x="560" y="957" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >hanya intent = aksi</text>
+<text x="560" y="971" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >nol eksekusi tanpa setuju</text>
+<path d="M637,902 V922" fill="none" stroke="#37474f" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ah)"/>
+<text x="644" y="915" font-size="10" font-weight="normal" fill="#37474f" text-anchor="start" font-style="italic">intent = aksi</text>
+<rect x="358" y="1004" width="368" height="62" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="358" y="1008" width="4" height="54" fill="#2e7d32"/>
+<text x="370" y="1023" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >HTTP API (keluar) — filter DTO</text>
+<text x="370" y="1039" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >RESTRICTED → NO_MATCH, payload identik · buang</text>
+<text x="370" y="1053" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >allowed_projects, dropped, mask_log, kb_root</text>
+<path d="M447,810 V1004" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<path d="M548,866 H500 V1004" fill="none" stroke="#37474f" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ah)"/>
+<path d="M637,984 V1004" fill="none" stroke="#37474f" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ah)"/>
+<text x="644" y="998" font-size="10" font-weight="normal" fill="#37474f" text-anchor="start" font-style="italic">layar konfirmasi</text>
+<rect x="358" y="1090" width="368" height="66" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="358" y="1094" width="4" height="58" fill="#2e7d32"/>
+<text x="370" y="1109" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >S6 Audit log · append-only JSONL per q_id</text>
+<text x="370" y="1125" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >pertanyaan tersamar · status internal &amp; publik · doc_id</text>
+<text x="370" y="1139" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >· hash jawaban · status approval (replay: rencana)</text>
+<path d="M542,1066 V1090" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<text x="552" y="1082" font-size="10" font-weight="normal" fill="#37474f" text-anchor="start" font-style="italic">setiap tahap menulis baris</text>
+<path d="M226,270 H306 V182 H358" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<text x="232" y="263" font-size="10" font-weight="normal" fill="#37474f" text-anchor="start" font-style="italic">pertanyaan</text>
+<text x="232" y="284" font-size="10" font-weight="normal" fill="#37474f" text-anchor="start" font-style="italic">+ persona</text>
+<path d="M284,500 H316 V141 H637 V150" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<text x="560" y="137" font-size="10" font-weight="normal" fill="#37474f" text-anchor="start" font-style="italic">panggil CLI</text>
+<path d="M358,668 H306 V560 H284" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<text x="300" y="686" font-size="10" font-weight="normal" fill="#37474f" text-anchor="end" font-style="italic">JSON: status, hits, flags</text>
+<path d="M358,1035 H236" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<text x="308" y="1028" font-size="10" font-weight="normal" fill="#37474f" text-anchor="end" font-style="italic">ResponseDTO</text>
+<text x="332" y="1172" font-size="10.5" font-weight="bold" fill="#c62828" text-anchor="start" >BATAS ① masukan pengguna/agent tidak dipercaya; yang keluar hanya DTO aman</text>
+<line x1="760" y1="86" x2="760" y2="1179" stroke="#c62828" stroke-width="2.5" stroke-dasharray="10 6"/>
+<rect x="776" y="240" width="372" height="112" rx="10" fill="#f3eefc" stroke="#9b84d0" stroke-width="1.5"/>
+<text x="788" y="260" font-size="12" font-weight="bold" fill="#9b84d0" text-anchor="start" >ZONA LLM — interpretasi</text>
+<rect x="790" y="268" width="344" height="72" rx="6" fill="#fff8e1" stroke="#e0a100" stroke-width="1.5" stroke-dasharray="6 4"/>
+<rect x="790" y="272" width="4" height="64" fill="#e0a100"/>
+<text x="802" y="287" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >S1 Intake parser (LLM)</text>
+<text x="802" y="303" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >ekstrak topik · aset · intent dari pertanyaan tersamar</text>
+<text x="802" y="317" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >keluaran = petunjuk retrieval &amp; intent, BUKAN izin</text>
+<path d="M726,348 H790" fill="none" stroke="#37474f" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ah)"/>
+<text x="1140" y="236" font-size="10.5" font-weight="bold" fill="#c62828" text-anchor="end" >BATAS ② identitas &amp; izin tidak pernah dari LLM</text>
+<rect x="776" y="380" width="372" height="248" rx="10" fill="#fdf4e8" stroke="#cf9a55" stroke-width="1.5"/>
+<text x="788" y="400" font-size="12" font-weight="bold" fill="#cf9a55" text-anchor="start" >ZONA DATA — knowledge base (read-only)</text>
+<rect x="790" y="408" width="344" height="50" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="790" y="412" width="4" height="42" fill="#2e7d32"/>
+<text x="802" y="427" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >permissions.csv</text>
+<text x="802" y="443" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >9 persona · zona · allowed_projects</text>
+<rect x="790" y="468" width="344" height="76" rx="6" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
+<rect x="790" y="472" width="4" height="68" fill="#2e7d32"/>
+<text x="802" y="487" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >knowledge-base/kb/</text>
+<text x="802" y="503" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >controls 14 (CTRL-xx) · sops 5 (SOP-x) · topology 10</text>
+<text x="802" y="517" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >restricted/ metadata proyek terbatas</text>
+<text x="802" y="531" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >dokumen ber-ID stabil → kutipan</text>
+<rect x="790" y="556" width="344" height="60" rx="6" fill="#fff8e1" stroke="#e0a100" stroke-width="1.5" stroke-dasharray="6 4"/>
+<rect x="790" y="560" width="4" height="52" fill="#e0a100"/>
+<text x="802" y="575" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >cmdb · chat_exports · contacts</text>
+<text x="802" y="591" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >belum di-index: memo Okt (SOP-7), "dua Budi"</text>
+<path d="M726,412 H790" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<path d="M790,476 H726" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<text x="1140" y="376" font-size="10.5" font-weight="bold" fill="#c62828" text-anchor="end" >BATAS ③ isi dokumen = data, bukan instruksi</text>
+<rect x="776" y="660" width="372" height="128" rx="10" fill="#f3eefc" stroke="#9b84d0" stroke-width="1.5"/>
+<text x="788" y="680" font-size="12" font-weight="bold" fill="#9b84d0" text-anchor="start" >ZONA LLM — sintesis jawaban (web)</text>
+<rect x="790" y="690" width="344" height="84" rx="6" fill="#fff8e1" stroke="#e0a100" stroke-width="1.5" stroke-dasharray="6 4"/>
+<rect x="790" y="694" width="4" height="76" fill="#e0a100"/>
+<text x="802" y="709" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >S4 Answer synthesizer</text>
+<text x="802" y="725" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >input: bukti yang lolos gate + answer-playbook saja</text>
+<text x="802" y="739" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >tanpa tool, tanpa retrieval · bahasa penanya</text>
+<text x="802" y="753" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >flag konflik + "tidak tahu" bila bukti kosong</text>
+<path d="M726,668 H748 V732 H790" fill="none" stroke="#37474f" stroke-width="1.6"  marker-end="url(#ah)"/>
+<text x="732" y="662" font-size="10" font-weight="normal" fill="#37474f" text-anchor="start" font-style="italic">OK</text>
+<path d="M836,774 V866 H726" fill="none" stroke="#37474f" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ah)"/>
+<text x="842" y="846" font-size="10" font-weight="normal" fill="#37474f" text-anchor="start" font-style="italic">jawaban + kutipan</text>
+<text x="1140" y="656" font-size="10.5" font-weight="bold" fill="#c62828" text-anchor="end" >BATAS ② keluaran LLM diverifikasi sebelum keluar</text>
+<rect x="776" y="905" width="372" height="110" rx="10" fill="#fcecec" stroke="#cf7f7f" stroke-width="1.5"/>
+<text x="788" y="925" font-size="12" font-weight="bold" fill="#cf7f7f" text-anchor="start" >ZONA AKSI — sistem eksternal (mock)</text>
+<rect x="790" y="933" width="344" height="68" rx="6" fill="#fff8e1" stroke="#e0a100" stroke-width="1.5" stroke-dasharray="6 4"/>
+<rect x="790" y="937" width="4" height="60" fill="#e0a100"/>
+<text x="802" y="952" font-size="12.5" font-weight="bold" fill="#222" text-anchor="start" >Mock tools · email · tiket · kalender</text>
+<text x="802" y="968" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >dipanggil hanya oleh rencana yang disetujui</text>
+<text x="802" y="982" font-size="10.5" font-weight="normal" fill="#444" text-anchor="start" >log "would have sent" · undo 60 detik</text>
+<path d="M726,953 H790" fill="none" stroke="#37474f" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ah)"/>
+<text x="1140" y="901" font-size="10.5" font-weight="bold" fill="#c62828" text-anchor="end" >BATAS ④ tidak ada aksi tanpa persetujuan manusia</text>
+<text x="780" y="1050" font-size="11" font-weight="bold" fill="#333" text-anchor="start" >Alur Skill &amp; web memakai inti yang sama:</text>
+<text x="780" y="1066" font-size="11" font-weight="normal" fill="#333" text-anchor="start" >process_query() → bukti terfilter → jawaban berkutipan.</text>
+<text x="780" y="1086" font-size="11" font-weight="normal" fill="#333" text-anchor="start" >Jalur web: jawaban LLM (S4) wajib lewat Citation verifier;</text>
+<text x="780" y="1102" font-size="11" font-weight="normal" fill="#333" text-anchor="start" >sampai S4 ada, API mengirim answer = null (hanya bukti).</text>
+<text x="780" y="1122" font-size="11" font-weight="normal" fill="#333" text-anchor="start" >RESTRICTED_SILENCED tidak pernah sampai ke browser.</text>
+<rect x="1166" y="90" width="418" height="188" rx="10" fill="#fafafa" stroke="#bdbdbd" stroke-width="1.2"/>
+<text x="1180" y="112" font-size="13" font-weight="bold" fill="#1a1a1a" text-anchor="start" >5 aturan akuntabilitas → komponen</text>
+<rect x="1180" y="125" width="78" height="19" rx="9" fill="#e8eaf6" stroke="#7986cb"/>
+<text x="1219" y="139" font-size="10.5" font-weight="bold" fill="#283593" text-anchor="middle" >Sumber</text>
+<text x="1266" y="139" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >④ ID dokumen stabil · kutipan verbatim · verifier</text>
+<rect x="1180" y="152" width="78" height="19" rx="9" fill="#e8eaf6" stroke="#7986cb"/>
+<text x="1219" y="166" font-size="10.5" font-weight="bold" fill="#283593" text-anchor="middle" >Izin</text>
+<text x="1266" y="166" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >③ gate sebelum retrieval · filter DTO · restricted = tidak ada</text>
+<rect x="1180" y="179" width="78" height="19" rx="9" fill="#e8eaf6" stroke="#7986cb"/>
+<text x="1219" y="193" font-size="10.5" font-weight="bold" fill="#283593" text-anchor="middle" >Persetujuan</text>
+<text x="1266" y="193" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >S5 approval gate → mock tools (aksi saja)</text>
+<rect x="1180" y="206" width="78" height="19" rx="9" fill="#e8eaf6" stroke="#7986cb"/>
+<text x="1219" y="220" font-size="10.5" font-weight="bold" fill="#283593" text-anchor="middle" >Batas</text>
+<text x="1266" y="220" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >Template "tidak tahu" + SME · ①⑤ tolak injection</text>
+<rect x="1180" y="233" width="78" height="19" rx="9" fill="#e8eaf6" stroke="#7986cb"/>
+<text x="1219" y="247" font-size="10.5" font-weight="bold" fill="#283593" text-anchor="middle" >Catatan</text>
+<text x="1266" y="247" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >S6 audit JSONL per q_id: lihat · putuskan · lakukan</text>
+<rect x="1166" y="294" width="418" height="474" rx="10" fill="#fafafa" stroke="#bdbdbd" stroke-width="1.2"/>
+<text x="1180" y="316" font-size="13" font-weight="bold" fill="#1a1a1a" text-anchor="start" >Keputusan desain &amp; trade-off</text>
+<text x="1180" y="340" font-size="11" font-weight="bold" fill="#222" text-anchor="start" >1. Izin &amp; routing di kode; LLM hanya tafsir + sintesis</text>
+<text x="1194" y="356" font-size="10.5" font-weight="normal" fill="#2e7d32" text-anchor="start" >+ deterministik, teruji 44 kasus regresi</text>
+<text x="1194" y="371" font-size="10.5" font-weight="normal" fill="#b23c17" text-anchor="start" >− pencocokan kata kaku → S1 LLM untuk parafrase</text>
+<text x="1180" y="402" font-size="11" font-weight="bold" fill="#222" text-anchor="start" >2. Gate SEBELUM retrieval, bukan filter sesudahnya</text>
+<text x="1194" y="418" font-size="10.5" font-weight="normal" fill="#2e7d32" text-anchor="start" >+ dokumen terlarang tak pernah masuk konteks LLM</text>
+<text x="1194" y="433" font-size="10.5" font-weight="normal" fill="#b23c17" text-anchor="start" >− retrieval diulang tiap izin berubah (murah di KB kecil)</text>
+<text x="1180" y="464" font-size="11" font-weight="bold" fill="#222" text-anchor="start" >3. Restricted diperlakukan = tidak ada</text>
+<text x="1194" y="480" font-size="10.5" font-weight="normal" fill="#2e7d32" text-anchor="start" >+ dikirim sebagai NO_MATCH dengan payload identik</text>
+<text x="1194" y="495" font-size="10.5" font-weight="normal" fill="#b23c17" text-anchor="start" >− beda respons Garuda vs Falcon masih bocor (ADR 0002)</text>
+<text x="1180" y="526" font-size="11" font-weight="bold" fill="#222" text-anchor="start" >4. Retrieval keyword stdlib, tanpa vector DB</text>
+<text x="1194" y="542" font-size="10.5" font-weight="normal" fill="#2e7d32" text-anchor="start" >+ nol dependensi, hasil bisa dijelaskan</text>
+<text x="1194" y="557" font-size="10.5" font-weight="normal" fill="#b23c17" text-anchor="start" >− recall terbatas; tes #7 dapat bukti tak relevan</text>
+<text x="1180" y="588" font-size="11" font-weight="bold" fill="#222" text-anchor="start" >5. Kutipan verbatim; PII disamarkan di pertanyaan &amp; log</text>
+<text x="1194" y="604" font-size="10.5" font-weight="normal" fill="#2e7d32" text-anchor="start" >+ setiap klaim bisa dicocokkan ke teks sumber</text>
+<text x="1194" y="619" font-size="10.5" font-weight="normal" fill="#b23c17" text-anchor="start" >− kutipan tak di-mask → KB tidak boleh memuat PII asli</text>
+<text x="1180" y="650" font-size="11" font-weight="bold" fill="#222" text-anchor="start" >6. Dua permukaan (Skill &amp; web), satu inti</text>
+<text x="1194" y="666" font-size="10.5" font-weight="normal" fill="#2e7d32" text-anchor="start" >+ perilaku sama di WorkBuddy dan web app</text>
+<text x="1194" y="681" font-size="10.5" font-weight="normal" fill="#b23c17" text-anchor="start" >− S4 web belum ada; web kini hanya menampilkan bukti</text>
+<text x="1180" y="712" font-size="11" font-weight="bold" fill="#222" text-anchor="start" >7. Persona dipilih di UI, tanpa login</text>
+<text x="1194" y="728" font-size="10.5" font-weight="normal" fill="#2e7d32" text-anchor="start" >+ demo cepat ganti persona</text>
+<text x="1194" y="743" font-size="10.5" font-weight="normal" fill="#b23c17" text-anchor="start" >− siapa pun bisa mengaku persona; produksi → SSO</text>
+<rect x="1166" y="782" width="418" height="112" rx="10" fill="#fafafa" stroke="#bdbdbd" stroke-width="1.2"/>
+<text x="1180" y="804" font-size="13" font-weight="bold" fill="#1a1a1a" text-anchor="start" >Celah yang diketahui — diungkap, tidak disembunyikan</text>
+<text x="1180" y="826" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• Existence leak lewat beda respons — ADR 0002, menunggu keputusan</text>
+<text x="1180" y="844" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• Tes #7 (SLA crane): pertanyaan di luar data dapat bukti tak relevan</text>
+<text x="1180" y="862" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• Belum ada: S1, S4 web, S5, replay audit, index cmdb/chat/contacts</text>
+<text x="1180" y="880" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• API mempercayai user/role dari request (persona picker demo)</text>
+<rect x="1166" y="908" width="418" height="267" rx="10" fill="#fafafa" stroke="#bdbdbd" stroke-width="1.2"/>
+<text x="1180" y="930" font-size="13" font-weight="bold" fill="#1a1a1a" text-anchor="start" >Matriks tes brief (20 kasus) — docs/testing.md, 27 Okt</text>
+<rect x="1180.0" y="942" width="175.5" height="18" fill="#2e7d32"/>
+<rect x="1355.5" y="942" width="58.5" height="18" fill="#e0a100"/>
+<rect x="1414.0" y="942" width="19.5" height="18" fill="#c62828"/>
+<rect x="1433.5" y="942" width="136.5" height="18" fill="#9e9e9e"/>
+<rect x="1180" y="971" width="10" height="10" fill="#2e7d32"/>
+<text x="1195" y="980" font-size="10.5" font-weight="normal" fill="#222" text-anchor="start" >Lulus: 9</text>
+<rect x="1380" y="971" width="10" height="10" fill="#e0a100"/>
+<text x="1395" y="980" font-size="10.5" font-weight="normal" fill="#222" text-anchor="start" >Sebagian: 3</text>
+<rect x="1180" y="987" width="10" height="10" fill="#c62828"/>
+<text x="1195" y="996" font-size="10.5" font-weight="normal" fill="#222" text-anchor="start" >Gagal: 1</text>
+<rect x="1380" y="987" width="10" height="10" fill="#9e9e9e"/>
+<text x="1395" y="996" font-size="10.5" font-weight="normal" fill="#222" text-anchor="start" >Belum dibangun/dites: 7</text>
+<text x="24" y="1200" font-size="10.5" font-weight="normal" fill="#666" text-anchor="start" >Sumber: adjusted_brief.md (S1–S6, §6), docs/architecture.md, docs/testing.md, docs/decisions/0001–0002, MEMORY.md — repo izzatbey/tencent-hackathon @ 45bdd6d.</text>
+<text x="24" y="1216" font-size="10.5" font-weight="normal" fill="#666" text-anchor="start" >Handbook: 5 aturan akuntabilitas &amp; syarat diagram (komponen, batas kepercayaan, trade-off). Kotak "usulan" = tambahan dari diagram ini, belum disepakati tim.</text>
+</svg>
