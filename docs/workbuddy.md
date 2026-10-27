@@ -45,11 +45,27 @@ python tools/pack_skill.py --project
 `backend/tests/test_skill_sync.py` menjadi merah bila salinan di `.codebuddy`
 tertinggal dari sumbernya.
 
+Bukti dari kode WorkBuddy yang terpasang (dicek 27 Okt 2026 di
+`resources/app.asar.unpacked/cli/dist/codebuddy-lite-wb.mjs`, agen bawaan
+aplikasi):
+
+- Pemuat skill memindai `<folder kerja>/.codebuddy/skills` sebagai sumber
+  "project", lalu folder skill pengguna dan konektor.
+- Nama folder proyek diambil dari `product.json` WorkBuddy; tidak ada
+  override, jadi tetap `.codebuddy`.
+- Pemindaian proyek hanya dilewati bila `CODEBUDDY_LIBRARY_RUNTIME=1`;
+  aplikasi tidak menyetel variabel itu.
+
+Yang belum terbukti saat runtime: CLI yang sama minta login sendiri bila
+dijalankan di luar aplikasi, jadi tes sungguhan harus lewat aplikasinya.
+`product.json` juga mengaktifkan `SkillSecurityScan`; dokumentasi menyebut
+pemindaian dilakukan saat memasang dari marketplace, dan skill ini memuat
+contoh teks injection (di `injection_guard.py` dan `verify_matrix.py`), jadi
+perhatikan bila muncul peringatan.
+
 Cara lain bila project skill tidak terbaca: impor `dist/security-sahabat.skill`
 (zip) lewat panel Skills, atau salin foldernya ke folder skill pengguna lalu
-restart WorkBuddy. Belum diverifikasi di aplikasi: apakah WorkBuddy versi
-internasional membaca `.codebuddy/skills` dari folder tugas. Cek sekali dengan
-membuka repo, lalu catat hasilnya di sini.
+restart WorkBuddy.
 
 ## 3. Link live lewat WorkBuddy Sites (poin bonus)
 
