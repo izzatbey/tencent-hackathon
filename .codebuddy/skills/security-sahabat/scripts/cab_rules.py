@@ -15,7 +15,8 @@ Setiap cek: {id, status, title, detail, basis, citations}
 Outcome (urutan prioritas): BLOCKED > NEEDS_INFO > NEEDS_REVISION > READY
 
 Cek yang berupa aturan perusahaan per aset (ACCESS-SCOPE, EXPOSURE,
-FRIDAY-PRAYER, BRANCH-FW-MEMO, WMS-WINDOW, dan aturan baru yang disahkan lewat aplikasi)
+FRIDAY-PRAYER, BRANCH-FW-MEMO, WMS-WINDOW, BRANCH-FW-WINDOW, dan aturan baru yang
+disahkan lewat aplikasi)
 datang dari policy register
 (policy_register.py). Cek lain di modul ini masih kode ("built-in") dan
 dimigrasi bertahap; lihat docs/decisions/0004.
@@ -65,7 +66,6 @@ SOURCES = {
     "ctrl01.access": ("doc", "CTRL-01", "any change granting new network or system access must name the requester, the authorizing role, and an expiry date."),
     "ctrl09.nat": ("doc", "CTRL-09", "Port forwarding or NAT rules exposing internal services to the internet must be classified as HIGH or CRITICAL risk."),
     "ctrl09.ssh": ("doc", "CTRL-09", "SSH (port 22) from the internet to any internal server is classified as CRITICAL risk"),
-    "sop7.window": ("doc", "SOP-7", "Remote maintenance of branch firewalls is allowed any weekday (Monday–Friday) between 21:00 and 06:00 local branch time."),
     "sop7.notify": ("doc", "SOP-7", "Notify the branch coordinator (Hendra Wijaya for Makassar) by phone before commencing maintenance."),
     "office.Jakarta": ("doc", "TOPO-OFFICE-HOURS", "Jakarta HQ: 08:00 – 17:00 WIB"),
     "office.Makassar": ("doc", "TOPO-OFFICE-HOURS", "Makassar Branch: 08:00 – 17:00 WITA"),
@@ -115,7 +115,6 @@ class Context:
 # --------------------------------------------------------------------------
 parse_time = kb_facts.parse_time
 daily_overlap = kb_facts.daily_overlap
-inside_daily = kb_facts.inside_daily
 fmt = kb_facts.fmt
 
 
@@ -298,23 +297,6 @@ def precheck(cr, submitted_at, root=None, ctx=None, rules=None, submitted=None):
                          "; ".join("%s: %s" % (r["level"], r["criterion"]) for r in reasons),
                          "sop" if all(r["basis"] == "sop" for r in reasons) else "interpretasi",
                          [c for r in reasons for c in r["citations"]]))
-
-    # --- jendela waktu --------------------------------------------------------
-    if window:
-        branch_fw = [a for a in assets if a.get("type") == "Firewall" and a.get("site") != "Jakarta"]
-        for a in branch_fw:
-            local = kb_facts.site_tz(a["site"])
-            if not inside_daily(start, end, local, (21, 0), (6, 0), WEEKDAYS):
-                checks.append(_check("BRANCH-FW-WINDOW", "WARN" if emergency else "FAIL",
-                                     "Di luar jendela maintenance firewall cabang",
-                                     "%s hanya boleh dikerjakan Senin-Jumat 21:00-06:00 waktu %s%s."
-                                     % (a["asset_id"], a["site"],
-                                        "; emergency wajib persetujuan lisan IT Admin + ops manager"
-                                        if emergency else ""), "interpretasi", ctx.cites("sop7.window")))
-            else:
-                checks.append(_check("BRANCH-FW-WINDOW", "PASS", "Jendela maintenance firewall cabang",
-                                     "Seluruh jadwal di dalam jendela Senin-Jumat 21:00-06:00 waktu %s."
-                                     % a["site"], "interpretasi", ctx.cites("sop7.window")))
 
     # --- persetujuan -----------------------------------------------------------
     slots = approval_slots(level, assets, cr, ctx)

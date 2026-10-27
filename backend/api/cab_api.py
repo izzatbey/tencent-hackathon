@@ -118,7 +118,8 @@ def handles(path):
 # policy register
 # --------------------------------------------------------------------------
 POLICY_VIEW = ("id", "title", "topic", "check_id", "tier", "subject", "action", "condition", "effect",
-               "approver", "approver_label", "message", "pass_title", "pass_message", "basis", "sources",
+               "approver", "approver_label", "approver_sources", "message", "pass_title", "pass_message",
+               "emergency_effect", "emergency_message", "basis", "sources",
                "owner", "effective_date", "supersedes", "status", "origin", "proposed_by", "proposed_at",
                "approved_by", "approved_at", "superseded_by", "rejected_by", "retired_by", "reason", "history")
 

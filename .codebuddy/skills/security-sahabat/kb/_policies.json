@@ -1,5 +1,5 @@
 {
-  "_note": "Seed policy register Pra-CAB. Aturan di sini dimigrasi dari kode cab_rules.py pada 27 Okt 2026 (FRIDAY-PRAYER, BRANCH-FW-MEMO, WMS-WINDOW: 27 Okt, fase 2b) dan dianggap sudah disahkan pemilik dokumen sumbernya saat migrasi (origin: seed). Aturan baru masuk lewat POST /api/policies atau /api/policies/extract dan disahkan lewat aplikasi; statusnya tercatat di audit log, bukan di file ini. Lihat docs/decisions/0004.",
+  "_note": "Seed policy register Pra-CAB. Aturan di sini dimigrasi dari kode cab_rules.py pada 27 Okt 2026 (FRIDAY-PRAYER, BRANCH-FW-MEMO, WMS-WINDOW, BRANCH-FW-WINDOW: 27 Okt, fase 2b) dan dianggap sudah disahkan pemilik dokumen sumbernya saat migrasi (origin: seed). Aturan baru masuk lewat POST /api/policies atau /api/policies/extract dan disahkan lewat aplikasi; statusnya tercatat di audit log, bukan di file ini. Lihat docs/decisions/0004.",
   "version": "2026-10-27",
   "rules": [
     {
@@ -818,6 +818,47 @@
           "type": "doc",
           "doc_id": "SOP-7",
           "quote": "CAB approval is required for changes that affect the replication window (23:00–02:00 WIB)."
+        }
+      ],
+      "owner": "Andini Pratama",
+      "effective_date": "2026-03-15"
+    },
+    {
+      "id": "POL-f001",
+      "title": "Di luar jendela maintenance firewall cabang",
+      "topic": "maintenance_window",
+      "check_id": "BRANCH-FW-WINDOW",
+      "tier": "perusahaan",
+      "subject": {
+        "asset_type": "Firewall",
+        "site": "Makassar"
+      },
+      "action": "*",
+      "condition": {
+        "schedule_not_within": {
+          "weekdays": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "from": "21:00",
+          "to": "06:00"
+        }
+      },
+      "effect": "FAIL",
+      "emergency_effect": "WARN",
+      "message": "{asset} hanya boleh dikerjakan Senin-Jumat 21:00-06:00 waktu {site}.",
+      "emergency_message": "{asset} hanya boleh dikerjakan Senin-Jumat 21:00-06:00 waktu {site}; emergency wajib persetujuan lisan IT Admin + ops manager.",
+      "pass_title": "Jendela maintenance firewall cabang",
+      "pass_message": "Seluruh jadwal di dalam jendela Senin-Jumat 21:00-06:00 waktu {site}.",
+      "basis": "interpretasi",
+      "sources": [
+        {
+          "type": "doc",
+          "doc_id": "SOP-7",
+          "quote": "Remote maintenance of branch firewalls is allowed any weekday (Monday–Friday) between 21:00 and 06:00 local branch time."
         }
       ],
       "owner": "Andini Pratama",

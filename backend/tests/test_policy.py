@@ -111,7 +111,8 @@ class SeedTest(unittest.TestCase):
         topics = {(r["topic"], r["tier"]) for r in reg.load_seed()}
         self.assertEqual(topics, {("access_scope", "perusahaan"), ("access_scope", "standar"),
                                   ("internet_exposure", "perusahaan"), ("friday_prayer", "perusahaan"),
-                                  ("branch_fw_remote", "perusahaan"), ("availability_window", "perusahaan")})
+                                  ("branch_fw_remote", "perusahaan"), ("availability_window", "perusahaan"),
+                                  ("maintenance_window", "perusahaan")})
 
     def test_seed_tidak_diindeks_retrieval(self):
         import search_kb
@@ -311,6 +312,72 @@ class WmsWindowRuleTest(unittest.TestCase):
         self.assertEqual((self.wms(r), [s for s in r["approvals"] if s["slot"] == "cab"]), ([], []))
 
 
+class FirewallWindowRuleTest(unittest.TestCase):
+    """BRANCH-FW-WINDOW dipindah dari kode ke register (fase 2b): seluruhnya di
+    dalam jendela, efek FAIL, dan efek berbeda saat emergency."""
+
+    INSIDE = {"start": "2026-11-05T21:30:00+08:00", "end": "2026-11-05T22:30:00+08:00"}   # Kamis malam WITA
+    OUTSIDE = {"start": "2026-11-05T14:00:00+08:00", "end": "2026-11-05T15:00:00+08:00"}  # Kamis siang WITA
+
+    def pre(self, window, rules=None, **over):
+        cr = dict(ScheduleRuleTest.CHANGE, assets=["fw-edge-mks-01"], window=window)
+        cr.update(over)
+        return cab_rules.precheck(cr, NOW, rules=rules)
+
+    @staticmethod
+    def fw(pre):
+        return [c for c in pre["checks"] if c["id"] == "BRANCH-FW-WINDOW"]
+
+    def test_di_luar_jendela_fail_dari_register(self):
+        r = self.pre(self.OUTSIDE)
+        [chk] = self.fw(r)
+        self.assertEqual((chk["status"], chk["rule_id"], chk["basis"]), ("FAIL", "POL-f001", "interpretasi"))
+        self.assertEqual(chk["detail"], "fw-edge-mks-01 hanya boleh dikerjakan Senin-Jumat 21:00-06:00 waktu Makassar.")
+        self.assertEqual(r["outcome"], "NEEDS_REVISION")
+
+    def test_emergency_turun_jadi_warn_dengan_pesan_emergency(self):
+        [chk] = self.fw(self.pre(self.OUTSIDE, emergency=True))
+        self.assertEqual(chk["status"], "WARN")
+        self.assertTrue(chk["detail"].endswith("; emergency wajib persetujuan lisan IT Admin + ops manager."))
+
+    def test_seluruhnya_di_dalam_jendela_pass(self):
+        [chk] = self.fw(self.pre(self.INSIDE))
+        self.assertEqual((chk["status"], chk["title"]), ("PASS", "Jendela maintenance firewall cabang"))
+        self.assertEqual([c["doc_id"] for c in chk["citations"]], ["SOP-7"])
+
+    def test_hari_awal_jendela_menentukan(self):
+        friday_night = {"start": "2026-11-06T21:00:00+08:00", "end": "2026-11-07T02:00:00+08:00"}
+        saturday_night = {"start": "2026-11-07T21:30:00+08:00", "end": "2026-11-07T22:30:00+08:00"}
+        self.assertEqual(self.fw(self.pre(friday_night))[0]["status"], "PASS")
+        self.assertEqual(self.fw(self.pre(saturday_night))[0]["status"], "FAIL")
+
+    def test_melewati_batas_jendela_sedikit_pun_fail(self):
+        early = {"start": "2026-11-05T20:59:00+08:00", "end": "2026-11-05T22:00:00+08:00"}
+        self.assertEqual(self.fw(self.pre(early))[0]["status"], "FAIL")
+
+    def test_jendela_dibaca_di_waktu_lokal_cabang(self):
+        # 20:30-21:30 WIB = 21:30-22:30 WITA: di dalam jendela Makassar
+        in_wib = {"start": "2026-11-05T20:30:00+07:00", "end": "2026-11-05T21:30:00+07:00"}
+        self.assertEqual(self.fw(self.pre(in_wib))[0]["status"], "PASS")
+
+    def test_tanpa_jadwal_valid_tidak_dinilai(self):
+        self.assertEqual(self.fw(self.pre({"start": "2026-11-05T21:30:00", "end": "2026-11-05T22:30:00"})), [])
+
+    def test_aturan_dicabut_tidak_ada_temuan(self):
+        r = self.pre(self.OUTSIDE, rules=[x for x in reg.load_seed() if x["id"] != "POL-f001"])
+        self.assertEqual(self.fw(r), [])
+
+
+class PolicyViewTest(Env, unittest.TestCase):
+
+    def test_field_aturan_baru_ikut_terkirim_ke_ui(self):
+        view = cab_api.policy_view(self.policies, self.policies.get("POL-f001"), self.who(ANDINI))
+        self.assertEqual((view["emergency_effect"], view["effect"]), ("WARN", "FAIL"))
+        self.assertIn("emergency wajib", view["emergency_message"])
+        memo = cab_api.policy_view(self.policies, self.policies.get("POL-m001"), self.who(ANDINI))
+        self.assertEqual((memo["approver"], memo["approver_sources"]), ("cab_meeting", [2]))
+
+
 # --------------------------------------------------------------------------
 # siklus hidup
 # --------------------------------------------------------------------------
@@ -427,6 +494,18 @@ class ValidationTest(Env, unittest.TestCase):
                 self.propose_err(self.base(condition={"schedule_overlaps": bad}), "invalid_rule")
         rule = self.policies.propose(self.who(ANDINI), self.base(condition={"schedule_overlaps": ok}))
         self.assertEqual((rule["status"], rule["condition"]), ("draft", {"schedule_overlaps": ok}))
+
+    def test_efek_fail_jendela_dan_emergency_divalidasi(self):
+        within = {"schedule_not_within": {"weekdays": [0, 1, 2, 3, 4], "from": "21:00", "to": "06:00"}}
+        self.propose_err(self.base(condition={"schedule_not_within": {"weekdays": [9], "from": "21:00",
+                                                                      "to": "06:00"}}), "invalid_rule")
+        self.propose_err(self.base(condition=within, effect="FAIL", emergency_effect="ALLOW"), "invalid_rule")
+        self.propose_err(self.base(condition=within, effect="REQUIRE_APPROVER", approver="cab_meeting",
+                                   emergency_effect="WARN"), "invalid_rule")
+        rule = self.policies.propose(self.who(ANDINI), self.base(condition=within, effect="FAIL",
+                                                                emergency_effect="WARN",
+                                                                emergency_message="Emergency: {asset}."))
+        self.assertEqual((rule["effect"], rule["emergency_effect"]), ("FAIL", "WARN"))
 
     def test_approver_rapat_cab_dan_pilihan_kutipan_divalidasi(self):
         cab = dict(effect="REQUIRE_APPROVER", approver="cab_meeting", action="change", condition={})

@@ -14,8 +14,11 @@ Satu aturan:
                schedule_overlaps {weekdays: [0=Senin..6=Minggu], from: "HH:MM",
                to: "HH:MM", tz?: WIB|WITA|WIT} = jadwal CR beririsan dengan
                jendela harian itu; jam dibaca di `tz`, default waktu lokal site
-               aset. CR tanpa jadwal valid: aturan jadwal tidak dinilai
-    effect     BLOCK | WARN | REQUIRE_APPROVER
+               aset. schedule_not_within (bentuk sama) = jadwal CR TIDAK
+               seluruhnya di dalam satu kejadian jendela itu. CR tanpa jadwal
+               valid: aturan jadwal tidak dinilai
+    effect     BLOCK | FAIL | WARN | REQUIRE_APPROVER. emergency_effect /
+               emergency_message (opsional) dipakai bila CR emergency
     approver   (REQUIRE_APPROVER) "asset_owner" | "cab_meeting" | {role}.
                "cab_meeting" = wajib keputusan rapat CAB; precheck menggabungkannya
                ke satu slot CAB. approver_sources = indeks `sources` yang menjadi
@@ -47,7 +50,8 @@ import pii_masker as pii  # noqa: E402
 
 TIERS = ("perusahaan", "standar")
 ACTIONS = ("*", "access", "change")
-EFFECTS = ("BLOCK", "WARN", "REQUIRE_APPROVER")
+EFFECTS = ("BLOCK", "FAIL", "WARN", "REQUIRE_APPROVER")
+EMERGENCY_EFFECTS = ("BLOCK", "FAIL", "WARN")
 APPROVER_KINDS = ("asset_owner", "cab_meeting")
 BASES = ("sop", "standar", "interpretasi", "sistem")
 SUBJECT_FIELDS = {"asset": "asset_id", "zone": "zone", "site": "site", "asset_type": "type"}
@@ -55,10 +59,11 @@ LIST_CONDITIONS = ("grantee_department_in", "grantee_department_not_in", "exposu
                    "ports_any", "change_kind_in")
 GRANTEE_CONDITIONS = ("grantee_department_in", "grantee_department_not_in")
 SCHEDULE_CONDITION = "schedule_overlaps"
-CONDITIONS = LIST_CONDITIONS + (SCHEDULE_CONDITION,)
+SCHEDULE_CONDITIONS = (SCHEDULE_CONDITION, "schedule_not_within")
+CONDITIONS = LIST_CONDITIONS + SCHEDULE_CONDITIONS
 HM_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 SOURCE_TYPES = ("doc", "cmdb", "chat", "submitted")
-STATUS_EFFECT = {"BLOCK": "BLOCK", "WARN": "WARN", "REQUIRE_APPROVER": "WARN"}
+STATUS_EFFECT = {"BLOCK": "BLOCK", "FAIL": "FAIL", "WARN": "WARN", "REQUIRE_APPROVER": "WARN"}
 ID_RE = re.compile(r"^POL-[0-9a-z]{4,12}$")
 CHECK_ID_RE = re.compile(r"^[A-Z][A-Z0-9-]{1,30}$")
 TOPIC_RE = re.compile(r"^[a-z][a-z0-9_]{1,40}$")
@@ -78,8 +83,8 @@ def rule_hash(rule):
 
 
 RULE_KEYS = ("id", "title", "topic", "check_id", "tier", "subject", "action", "condition", "effect",
-             "approver", "approver_label", "approver_sources", "message", "pass_title", "pass_message", "basis", "sources",
-             "owner", "effective_date", "supersedes")
+             "approver", "approver_label", "approver_sources", "message", "pass_title", "pass_message",
+             "emergency_effect", "emergency_message", "basis", "sources", "owner", "effective_date", "supersedes")
 
 
 def seed_path(root=None):
@@ -146,7 +151,7 @@ def validate_rule(rule, refs):
     if not isinstance(condition, dict) or set(condition) - set(CONDITIONS):
         _bad("invalid_rule", "condition hanya boleh berisi %s." % ", ".join(CONDITIONS))
     for key, value in condition.items():
-        if key == SCHEDULE_CONDITION:
+        if key in SCHEDULE_CONDITIONS:
             _validate_schedule(value)
             continue
         if not isinstance(value, list) or not value or len(value) > 20:
@@ -160,7 +165,7 @@ def validate_rule(rule, refs):
             _bad("invalid_rule", "condition.ports_any harus angka port.")
     if condition and any(k in GRANTEE_CONDITIONS for k in condition) and out["action"] != "access":
         _bad("invalid_rule", "Kondisi departemen penerima hanya untuk action access.")
-    out["condition"] = {k: dict(v) if k == SCHEDULE_CONDITION else list(v) for k, v in condition.items()}
+    out["condition"] = {k: dict(v) if k in SCHEDULE_CONDITIONS else list(v) for k, v in condition.items()}
 
     if out["effect"] == "REQUIRE_APPROVER":
         approver = rule.get("approver")
@@ -170,10 +175,16 @@ def validate_rule(rule, refs):
         out["approver_label"] = _text(rule, "approver_label", 80, required=False)
     elif rule.get("approver_sources") is not None:
         _bad("invalid_rule", "approver_sources hanya untuk effect REQUIRE_APPROVER.")
-    for key, limit in (("pass_title", 200), ("pass_message", 400)):
+    for key, limit in (("pass_title", 200), ("pass_message", 400), ("emergency_message", 400)):
         value = _text(rule, key, limit, required=False)
         if value:
             out[key] = value
+    if rule.get("emergency_effect") is not None:
+        if rule["emergency_effect"] not in EMERGENCY_EFFECTS:
+            _bad("invalid_rule", "emergency_effect harus salah satu dari %s." % ", ".join(EMERGENCY_EFFECTS))
+        if out["effect"] == "REQUIRE_APPROVER":
+            _bad("invalid_rule", "emergency_effect tidak berlaku untuk REQUIRE_APPROVER.")
+        out["emergency_effect"] = rule["emergency_effect"]
 
     sources = rule.get("sources")
     if not isinstance(sources, list) or not 1 <= len(sources) <= 6:
@@ -281,9 +292,10 @@ def cr_window(cr):
     return (start, end) if start and end and start < end else None
 
 
-def schedule_hit(cond, cr, asset):
-    """Kejadian pertama jendela `cond` yang beririsan dengan jadwal CR. Jam
-    jendela dibaca di zona `cond.tz` bila ada, selain itu waktu lokal site aset."""
+def _schedule_args(cond, cr, asset):
+    """(start, end, zona, from, to, weekdays) untuk helper waktu kb_facts, atau
+    None bila CR tanpa jadwal valid. Jam jendela dibaca di zona `cond.tz` bila
+    ada, selain itu waktu lokal site aset."""
     window = cr_window(cr)
     if not window:
         return None
@@ -292,14 +304,27 @@ def schedule_hit(cond, cr, asset):
         return tuple(int(x) for x in text.split(":"))
 
     zone = kb_facts.tz(cond["tz"]) if cond.get("tz") else kb_facts.site_tz(asset.get("site"))
-    return kb_facts.daily_overlap(window[0], window[1], zone,
-                                  hm(cond["from"]), hm(cond["to"]), set(cond["weekdays"]))
+    return window[0], window[1], zone, hm(cond["from"]), hm(cond["to"]), set(cond["weekdays"])
+
+
+def schedule_hit(cond, cr, asset):
+    """Kejadian pertama jendela `cond` yang beririsan dengan jadwal CR."""
+    args = _schedule_args(cond, cr, asset)
+    return kb_facts.daily_overlap(*args) if args else None
+
+
+def schedule_within(cond, cr, asset):
+    """True bila jadwal CR seluruhnya di dalam satu kejadian jendela `cond`."""
+    args = _schedule_args(cond, cr, asset)
+    return bool(args) and kb_facts.inside_daily(*args)
 
 
 def holds(condition, cr, department, asset=None):
     for key, values in condition.items():
         if key == SCHEDULE_CONDITION:
             ok = schedule_hit(values, cr, asset or {}) is not None
+        elif key == "schedule_not_within":
+            ok = cr_window(cr) is not None and not schedule_within(values, cr, asset or {})
         elif key == "grantee_department_in":
             ok = (department or "").lower() in {str(v).lower() for v in values}
         elif key == "grantee_department_not_in":
@@ -342,7 +367,7 @@ def evaluate(cr, assets, ctx, day):
             fits = [r for r in rules if r["topic"] == topic and applies(r, cr, asset)]
             chosen = [r for r in fits if r["tier"] == "perusahaan"] or [r for r in fits if r["tier"] == "standar"]
             for rule in chosen:
-                if SCHEDULE_CONDITION in rule["condition"] and not cr_window(cr):
+                if any(k in SCHEDULE_CONDITIONS for k in rule["condition"]) and not cr_window(cr):
                     continue  # tanpa jadwal valid aturan jadwal tidak bisa dinilai; FIELDS sudah memintanya
                 if any(k in GRANTEE_CONDITIONS for k in rule["condition"]):
                     if not grantee:
@@ -374,10 +399,14 @@ def evaluate(cr, assets, ctx, day):
                 used.append({"id": rule["id"], "topic": topic, "tier": rule["tier"], "asset": asset["asset_id"],
                              "triggered": triggered, "rule_sha256": rule_hash(rule)})
                 if triggered:
-                    show(_check(rule["check_id"], STATUS_EFFECT[rule["effect"]],
-                                rule["title"].format_map(fields),
-                                rule["message"].format_map(fields), basis, cites, rule["id"]))
-                    if rule["effect"] == "REQUIRE_APPROVER":
+                    # emergency boleh menurunkan efek (mis. FAIL -> WARN) dan mengganti pesannya
+                    urgent = bool(cr.get("emergency"))
+                    effect = rule.get("emergency_effect") if urgent and rule.get("emergency_effect") else rule["effect"]
+                    message = rule.get("emergency_message") if urgent and rule.get("emergency_message") \
+                        else rule["message"]
+                    show(_check(rule["check_id"], STATUS_EFFECT[effect], rule["title"].format_map(fields),
+                                message.format_map(fields), basis, cites, rule["id"]))
+                    if effect == "REQUIRE_APPROVER":
                         picked = [cites[i] for i in rule["approver_sources"]] if rule.get("approver_sources") else cites
                         if rule["approver"] == "cab_meeting":
                             # penanda; precheck menggabungkan semua alasan CAB ke satu slot rapat

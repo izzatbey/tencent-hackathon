@@ -64,12 +64,12 @@ Sudah ada dan teruji (main):
 - Pra-CAB (ADR 0003): intake LLM → normalisasi + PII mask → scan injection →
   precheck (`cab_rules.py` + policy register) → state machine + approval per
   slot (SoD, rapat CAB dulu) → mock dispatch + undo 60 dtk → audit.
-- Policy register v0 (ADR 0004): 22 aturan seed, siklus hidup draft → active
+- Policy register v0 (ADR 0004): 23 aturan seed, siklus hidup draft → active
   → superseded/retired, hanya pemilik dokumen yang mengesahkan, ekstraksi
   aturan dari memo oleh LLM (diuji dengan FakeProvider).
 - Audit log berantai hash bersama untuk semua jalur (`audit_chain.py`).
 - Demo end-to-end tanpa UI: `python tools/demo_pracab.py` (16 langkah).
-- Tes: 173 unit test (8 `expectedFailure` disengaja), 46 regresi.
+- Tes: 183 unit test (8 `expectedFailure` disengaja), 46 regresi.
 
 Belum diverifikasi: ekstraksi aturan dengan Claude sungguhan (`pip install
 anthropic` + `ANTHROPIC_API_KEY`, lalu `SECURITY_SAHABAT_LLM=claude` dan
@@ -91,12 +91,13 @@ Prioritas berikutnya, urut:
    `FRIDAY-PRAYER` (`POL-w001/w002`, kondisi baru `schedule_overlaps`) dan
    `BRANCH-FW-MEMO` (`POL-m001`, approver baru `cab_meeting` +
    `approver_sources`; berlaku sejak 1 Okt), dan `WMS-WINDOW`
-   (`POL-r001..r003`, `tz: WIB`, PASS, dedupe per isi temuan). Sisa yang
-   per aset: `BRANCH-FW-WINDOW` (butuh kondisi "seluruhnya di dalam jendela",
-   status FAIL yang turun jadi WARN saat emergency — dua hal baru di skema).
-   Matriks baseline sekarang 1.530 kasus (`--wide --wms`). Risiko, approver
-   SOP-14, SoD, kelengkapan = lintas aset, bukan aturan per aset; jangan
-   dipaksakan ke skema sekarang.
+   (`POL-r001..r003`, `tz: WIB`, PASS, dedupe per isi temuan), dan
+   `BRANCH-FW-WINDOW` (`POL-f001`, kondisi `schedule_not_within`, efek
+   `FAIL`, `emergency_effect`/`emergency_message`). **Semua cek per aset
+   sudah data.** Matriks baseline terakhir 2.295 kasus (`--wide --wms --fw`).
+   Sisa di kode = cek lintas aset (risiko, approver SOP-14, SoD, kelengkapan,
+   lead time, emergency, injection): butuh skema baru (aturan per CR, bukan
+   per aset); jangan dipaksakan sebelum 1 Nov.
 5. Repo private vs syarat handbook "source code public atau ekspor workflow
    WorkBuddy": putuskan sebelum submit (lihat bagian Repo di bawah).
 
@@ -209,7 +210,7 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
 - `python backend/tests/verify_matrix.py` — **46 kasus, wajib 0 gagal**
   sebelum commit (phase2 13, phase3 14, injection 10, pii 4, ctx 1, leak 4).
 - `python -m unittest discover -s backend/tests` — core + API + Pra-CAB
-  (`test_pracab.py`) + policy register (`test_policy.py`); 173 tes per 27 Okt.
+  (`test_pracab.py`) + policy register (`test_policy.py`); 183 tes per 27 Okt.
   Kegagalan yang diketahui ditulis `@unittest.expectedFailure` (tes #7 SLA
   crane, spesifikasi `test_brief_pending.py`). Status matriks brief dan
   katalog edge case: `docs/testing.md`.
@@ -246,7 +247,7 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
   atas KB global (ISO/NIST/GDPR), aturan jadi data (policy register), LLM
   mengusulkan aturan dan manusia mengesahkan. Jangan merombak sebelum 1 Nov.
 - **Policy register v0** (ADR 0004, `policy_register.py`): `ACCESS-SCOPE` dan
-  `EXPOSURE` sudah data di `kb/_policies.json` (22 aturan seed; awalan `_`
+  `EXPOSURE` sudah data di `kb/_policies.json` (23 aturan seed; awalan `_`
   supaya tidak diindeks `search_kb`). Perubahan aturan = event `policy.*` di
   audit chain. Hanya pemilik dokumen sumber yang mengesahkan, bukan pengusul.
   Kolom `allowed_departments` CMDB tetap ada sebagai **sumber kutipan** aturan

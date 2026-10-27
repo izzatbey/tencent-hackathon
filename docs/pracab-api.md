@@ -110,8 +110,12 @@ ID cek: `ASSETS` `FIELDS` `ACCESS` `ACCESS-SCOPE` `INJECTION` `EXPOSURE` `RISK`
 `WMS-WINDOW` `FRIDAY-PRAYER` `BRANCH-FW-WINDOW` `BRANCH-FW-MEMO` `EMERGENCY`
 `LEAD-TIME` `SOD`.
 
-`ACCESS-SCOPE`, `EXPOSURE`, `FRIDAY-PRAYER`, `BRANCH-FW-MEMO`, dan `WMS-WINDOW`
-datang dari policy register, jadi cek itu membawa `rule_id` (mis. `"POL-s007"`).
+`ACCESS-SCOPE`, `EXPOSURE`, `FRIDAY-PRAYER`, `BRANCH-FW-MEMO`, `WMS-WINDOW`, dan
+`BRANCH-FW-WINDOW` datang dari policy register, jadi cek itu membawa `rule_id`
+(mis. `"POL-s007"`). `BRANCH-FW-WINDOW` (`POL-f001`, firewall Makassar):
+jadwal tidak seluruhnya di dalam Senin-Jumat 21:00-06:00 waktu Makassar →
+`FAIL` (`WARN` + pesan persetujuan lisan saat emergency); seluruhnya di dalam →
+`PASS`. Basisnya `interpretasi`.
 `WMS-WINDOW` (`POL-r001..r003`, satu per aset WMS): jadwal beririsan dengan
 replikasi 23:00-02:00 **WIB** → `WARN` + wajib rapat CAB; tidak beririsan →
 `PASS`; CR tanpa jadwal valid → tidak muncul. Satu temuan per CR walau asetnya
@@ -157,7 +161,7 @@ batas review CAB untuk emergency.
 ## Policy register
 
 Aturan perusahaan sebagai data. Register efektif = seed `kb/_policies.json`
-(22 aturan yang dimigrasi dari kode, `origin: seed`) + event `policy.*` di
+(23 aturan yang dimigrasi dari kode, `origin: seed`) + event `policy.*` di
 audit log. Hanya aturan `active` yang tanggal berlakunya sudah tiba yang
 dipakai precheck; aturan yang baru disahkan langsung berlaku untuk pengajuan
 **berikutnya**, bukan untuk CR yang sudah diajukan.
@@ -180,8 +184,9 @@ dipakai precheck; aturan yang baru disahkan langsung berlaku untuk pengajuan
 | `tier` | `perusahaan` menutup `standar` untuk topik & aset yang sama |
 | `subject` | salah satu/lebih: `asset`, `zone`, `site`, `asset_type` (nilai dari CMDB, atau `"*"`) |
 | `action` | `"*"` · `access` · `change` |
-| `condition` | `grantee_department_in` / `_not_in` (departemen di direktori) · `exposure_in` · `ports_any` · `change_kind_in` · `schedule_overlaps: {weekdays: [0=Senin..6=Minggu], from: "HH:MM", to: "HH:MM", tz?: "WIB"|"WITA"|"WIT"}` (jadwal CR beririsan jendela harian itu; jam dibaca di `tz`, default waktu lokal site aset; CR tanpa jadwal valid tidak dinilai); semua harus benar |
-| `effect` | `BLOCK` · `WARN` · `REQUIRE_APPROVER` (+ `approver`: `"asset_owner"`, `"cab_meeting"` (wajib rapat CAB), atau `{"role": ...}`; opsional `approver_sources`: indeks `sources` yang dikutip di slot approver, default semua) |
+| `condition` | `grantee_department_in` / `_not_in` (departemen di direktori) · `exposure_in` · `ports_any` · `change_kind_in` · `schedule_overlaps: {weekdays: [0=Senin..6=Minggu], from: "HH:MM", to: "HH:MM", tz?: "WIB"|"WITA"|"WIT"}` (jadwal CR beririsan jendela harian itu; jam dibaca di `tz`, default waktu lokal site aset) · `schedule_not_within` (bentuk sama; jadwal CR tidak seluruhnya di dalam satu kejadian jendela itu). CR tanpa jadwal valid: aturan jadwal tidak dinilai; semua harus benar |
+| `emergency_effect`, `emergency_message` | opsional; dipakai menggantikan `effect`/`message` bila CR emergency (mis. `FAIL` → `WARN`); tidak untuk `REQUIRE_APPROVER` |
+| `effect` | `BLOCK` · `FAIL` (outcome `NEEDS_REVISION`) · `WARN` · `REQUIRE_APPROVER` (+ `approver`: `"asset_owner"`, `"cab_meeting"` (wajib rapat CAB), atau `{"role": ...}`; opsional `approver_sources`: indeks `sources` yang dikutip di slot approver, default semua) |
 | `message`, `pass_message`, `title` | placeholder: `{asset} {zone} {site} {grantee} {department} {allowed} {owner} {overlap}` (`{overlap}` = awal jendela `schedule_overlaps` yang kena) |
 | `sources[]` | `{type: doc, doc_id, quote}` · `{type: cmdb, asset, field}` · `{type: chat, ts, quote}` · `{type: submitted, doc_id, quote}` |
 | `owner` | persona pemilik dokumen sumber: satu-satunya yang bisa mengesahkan/menolak/memensiunkan |

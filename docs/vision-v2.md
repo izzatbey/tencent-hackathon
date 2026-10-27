@@ -29,7 +29,7 @@ Satu "otak kerja" kepatuhan per perusahaan, yang deterministik dan bisa diaudit.
 | KB perusahaan | 30 dokumen markdown + CMDB + direktori, dipecah manual dengan metadata (`zone`, `restricted`, `owner`, `effective_date`) | upload; konfirmasi metadata; versi |
 | KB global | 14 kontrol `CTRL-xx` (ISO 27001 ↔ NIST CSF, guidance parafrase) | sisa kontrol ISO; GDPR/UU PDP |
 | Retrieval | kata kunci + idf, stdlib, gate sebelum skor (non-interference) | embedding/hybrid untuk KB yang diunggah bebas |
-| Penilaian tiket | `cab_rules.py` + **policy register v0** (ADR 0004): `ACCESS-SCOPE`, `EXPOSURE`, `FRIDAY-PRAYER`, `BRANCH-FW-MEMO`, dan `WMS-WINDOW` sudah data (22 aturan seed), dua tingkat perusahaan → standar, kutipan diverifikasi setiap kali dipakai, label `sop`/`standar`/`interpretasi`/`sistem` | cek lain (kelengkapan, risiko, approver SOP-14, jendela waktu, emergency, SoD) masih kode |
+| Penilaian tiket | `cab_rules.py` + **policy register v0** (ADR 0004): semua cek per aset (`ACCESS-SCOPE`, `EXPOSURE`, `FRIDAY-PRAYER`, `BRANCH-FW-MEMO`, `WMS-WINDOW`, `BRANCH-FW-WINDOW`) sudah data (23 aturan seed), dua tingkat perusahaan → standar, kutipan diverifikasi setiap kali dipakai, label `sop`/`standar`/`interpretasi`/`sistem` | cek lintas aset (kelengkapan, risiko, approver SOP-14, emergency, SoD, lead time) masih kode |
 | Policy register | aturan draft → active lewat audit chain; hanya pemilik dokumen sumber yang mengesahkan, bukan pengusul; aturan baru berlaku untuk pengajuan berikutnya | UI; register ikut permission gate bila ada aturan tentang aset restricted |
 | LLM/agent | intake tiket; **ekstraksi aturan dari memo** (usulan + kutipan, divalidasi ke CMDB/direktori); keputusan tetap 100 % kode | ekstraksi diuji dengan FakeProvider, belum dengan Claude sungguhan; penilaian fallback berbasis RAG |
 | Audit | satu rantai hash, replay, verify, fail-closed | — |
@@ -133,7 +133,7 @@ Tiga peran LLM, semuanya di luar jalur keputusan:
 | 0 (selesai 27 Okt) | Pra-CAB, audit hash-chain, adapter LLM, `ACCESS-SCOPE` dua tingkat | submission 1 Nov |
 | 2a (selesai 27 Okt) | Policy register v0: skema, engine, seed (ACCESS-SCOPE + EXPOSURE), siklus hidup, `/api/policies`, ekstraksi LLM dari memo (ADR 0004) | submission 1 Nov |
 | 1 | UI Pra-CAB (Farrez), demo video, accountability sheet, test results | 1 Nov |
-| 2b | Migrasi cek built-in lain ke data (jendela waktu, approver SOP-14, memo SOP-7); perluasan `condition`/`effect`; UI register | Demo Day 27 Nov |
+| 2b | Migrasi cek built-in ke data: semua cek per aset selesai 27 Okt (salat Jumat, memo SOP-7, jendela WMS, jendela firewall cabang; `condition`/`effect` diperluas). Sisa: approver SOP-14 dan risiko (lintas aset, butuh skema baru); UI register | Demo Day 27 Nov |
 | 3 | Upload KB: chunking, metadata wajib dikonfirmasi, default restricted, versi dokumen | setelah hackathon |
 | 4 | Ekstraksi aturan oleh LLM + pengesahan lewat approval gate; "suntingan manusia → usulan aturan" | setelah hackathon |
 | 5 | Retrieval hybrid (BM25 + embedding); KB global lengkap (ISO 27001 A.5–A.8, NIST, GDPR/UU PDP) | setelah hackathon |

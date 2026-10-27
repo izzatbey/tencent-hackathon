@@ -46,7 +46,8 @@ mengesahkan aturan itu.
 | `FRIDAY-PRAYER` (fase 2b, 27 Okt) | kode + `PRAYER` | 2 aturan per site (`POL-w001`, `POL-w002`) dengan kondisi baru `schedule_overlaps`; kutipan TOPO-PRAYER-TIMES |
 | `BRANCH-FW-MEMO` (fase 2b, 27 Okt) | kode + kunci `memo.*` | 1 aturan `POL-m001` (subjek firewall Makassar, berlaku 1 Okt 2026) dengan approver baru `cab_meeting` dan `approver_sources` |
 | `WMS-WINDOW` (fase 2b, 27 Okt) | kode + `WMS_ASSETS` | 3 aturan per aset `POL-r001..r003` (jendela 23:00-02:00 dengan `tz: WIB`, PASS lewat `pass_message`, approver `cab_meeting`) |
-| Lainnya (kelengkapan, risiko, approver SOP-14, jendela firewall cabang, emergency, SoD) | kode | tetap kode ("built-in"), dimigrasi bertahap |
+| `BRANCH-FW-WINDOW` (fase 2b, 27 Okt) | kode + `inside_daily` | 1 aturan `POL-f001` dengan kondisi baru `schedule_not_within`, efek baru `FAIL`, dan `emergency_effect: WARN` + `emergency_message` |
+| Lainnya (kelengkapan, risiko, approver SOP-14, emergency, SoD, injection, lead time) | kode | tetap kode: lintas aset, bukan aturan per aset |
 
 Semua tes Pra-CAB lama lulus tanpa diubah setelah migrasi ACCESS-SCOPE dan
 EXPOSURE. Untuk FRIDAY-PRAYER, kesetaraan dibuktikan dengan membandingkan
@@ -82,6 +83,13 @@ juga digabung tanpa duplikat. Perbedaan yang disengaja: aturan berlaku sejak
 tanpa tanggal. Cakupan `wms-mks-01` tetap tafsiran tim seperti di kode lama
 (TOPO-WMS-WINDOW hanya menyebut fw-edge-mks-01 dan vpn-gw-jkt-01) dan basisnya
 dibiarkan `sop` agar keluaran tetap sama; perlu dikonfirmasi owner.
+
+Untuk BRANCH-FW-WINDOW matriksnya 2.295 kombinasi (ditambah jadwal tepat
+21:00-06:00, mulai 20:59, selesai 06:01, Jumat malam sampai Sabtu, Sabtu malam,
+Minggu malam ke Senin, jadwal ditulis dalam WIB, dua malam): identik, termasuk
+144 FAIL, 96 WARN emergency, dan 120 PASS. Aturan berlaku sejak 2026-03-15
+(SOP-7); subjeknya firewall Makassar seperti `POL-m001`. Semua cek per aset
+kini berupa data; yang tersisa di `cab_rules.py` adalah cek lintas aset.
 
 Urutan alasan di slot CAB mengikuti urutan topik (alfabetis): topik WMS
 `availability_window` sengaja diurutkan sebelum memo `branch_fw_remote`, sama
