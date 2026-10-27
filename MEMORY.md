@@ -36,7 +36,7 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
   `backend/`, lalu KB di `backend/kb/` → fallback `knowledge-base/kb/`
   (`REPO_KB` di `search_kb.py`). Jangan pindahkan `scripts/` keluar `backend/`.
 - `tools/pack_skill.py` merakit `dist/security-sahabat.skill` dari `skill/` +
-  `backend/` + `knowledge-base/kb/` (44 file). `knowledge-base/source/` sengaja
+  `backend/` + `knowledge-base/kb/` (52 file per 27 Okt). `knowledge-base/source/` sengaja
   tidak ikut. `dist/` di-gitignore.
 - `process_query()` di `backend/scripts/search_kb.py` = satu-satunya pintu
   masuk. Urutan tidak boleh ditukar: injection guard → PII mask → identitas +
@@ -69,7 +69,8 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
 
 - `python backend/tests/verify_matrix.py` — **44 kasus, wajib 0 gagal**
   sebelum commit (phase2 13, phase3 14, injection 10, pii 4, ctx 1, leak 2).
-- `python -m unittest discover -s backend/tests` — core + API. Kegagalan yang
+- `python -m unittest discover -s backend/tests` — core + API + Pra-CAB
+  (`test_pracab.py`). Kegagalan yang
   diketahui ditulis `@unittest.expectedFailure` (existence leak versi Inggris,
   tes #7 SLA crane). Status matriks brief: `docs/testing.md`.
 - Frontend: `npm run check`, `npm test`, `npm run e2e` di `frontend/`.
@@ -84,14 +85,31 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
 - Injection guard menormalkan Unicode (NFKC + buang karakter Cf) sebelum
   memindai; PII masker mengenali NIK/HP berspasi, bertitik, bertanda hubung.
 
+## Keputusan 27 Okt (Izzat): Pra-CAB
+
+- Fitur utama backend = **Pra-CAB** (change request dicek terhadap SOP-14,
+  dirutekan ke approver, ditahan sampai disetujui). Detail: `docs/decisions/0003`,
+  kontrak frontend: `docs/pracab-api.md`.
+- Keputusan selalu dari `cab_rules.py`; LLM (`llm.py`) hanya untuk intake
+  teks bebas. Default `SECURITY_SAHABAT_LLM=off`; uji coba pakai `claude`,
+  nanti WorkBuddy.
+- State CR = putar ulang audit log berantai hash (`audit_chain.py`). Jangan
+  menulis state di luar `CabStore._emit`.
+- Setiap cek punya `basis` (`sop`/`interpretasi`/`sistem`); interpretasi wajib
+  diberi label, bukan disamarkan sebagai bunyi SOP.
+- `kb/cmdb.csv` dan `kb/directory.csv` (tanpa email/telepon) ditambahkan ke KB.
+
 ## Belum dikerjakan (per 27 Okt)
+
+- Pra-CAB: UI frontend; klarifikasi "dua Budi" di intake; usulan jendela waktu
+  alternatif; data hari libur nasional (belum ada di dataset); provider WorkBuddy.
 
 - **Existence leak lewat beda respons** ("Project Garuda" dibungkam, "Project
   Falcon" dijawab): opsi di `docs/decisions/0002`, menunggu Izzat + Farrez.
 - Tes #7: pertanyaan di luar data tetap mendapat bukti tak relevan (butuh
   ambang relevansi atau S4).
-- S1 parser LLM, S4 answer synthesizer untuk web app, S5 approval gate,
-  replay audit log (log JSONL per `q_id` sudah ditulis API).
+- S4 answer synthesizer untuk `/api/ask`. (S1 intake LLM, S5 approval gate, dan
+  replay audit log sudah ada untuk Pra-CAB; `/api/ask` belum memakai S1.)
 - Indexing `cmdb.csv`, `chat_exports.jsonl`; klarifikasi "dua Budi"
   (`contacts.csv`, brief test #9).
 - Autentikasi: API mempercayai `user`/`role` dari request (pemilih persona demo).

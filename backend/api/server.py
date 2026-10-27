@@ -6,15 +6,17 @@ Membungkus process_query() dan hanya mengeluarkan field yang aman ke browser
 
     python backend/api/server.py                     # 127.0.0.1:8787
     python backend/api/server.py --static frontend/dist   # sekalian melayani UI hasil build
+    python backend/api/server.py --demo              # + POST /api/demo/clock
 
 Endpoint:
     POST /api/ask       {"question": "...", "user": null, "role": null}
     GET  /api/personas  daftar persona demo (nama + role saja)
     GET  /api/health
+    Pra-CAB (change request): lihat api/cab_api.py
 
-Setiap pertanyaan dicatat ke audit log JSONL (env SECURITY_SAHABAT_AUDIT_LOG,
-default backend/logs/audit.jsonl). Log hanya memuat pertanyaan yang sudah
-disamarkan, tidak pernah teks mentahnya.
+Setiap pertanyaan dan setiap event Pra-CAB dicatat ke satu audit log JSONL
+berantai hash (env SECURITY_SAHABAT_AUDIT_LOG, default backend/logs/audit.jsonl).
+Log hanya memuat teks yang sudah disamarkan, tidak pernah teks mentahnya.
 """
 
 import argparse
@@ -22,7 +24,6 @@ import hashlib
 import json
 import os
 import sys
-import threading
 import uuid
 from datetime import datetime, timezone
 from http import HTTPStatus
@@ -31,10 +32,14 @@ from pathlib import Path
 
 BACKEND = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cab_api  # noqa: E402
 import permissions as perm  # noqa: E402
 import search_kb  # noqa: E402
+from audit_chain import AuditChain  # noqa: E402
+from cab_request import CabError  # noqa: E402
 
-MAX_BODY = 16 * 1024
+MAX_BODY = 64 * 1024
 MAX_DRAIN = 1024 * 1024
 MAX_QUESTION = 2000
 MAX_NAME = 80
@@ -63,7 +68,7 @@ class ApiError(Exception):
 # --------------------------------------------------------------------------
 # request -> process_query -> response
 # --------------------------------------------------------------------------
-def parse_request(body, content_type):
+def parse_json(body, content_type):
     if "application/json" not in (content_type or "").lower():
         raise ApiError(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "unsupported_media_type",
                        "Kirim body sebagai application/json.")
@@ -73,7 +78,11 @@ def parse_request(body, content_type):
         raise ApiError(HTTPStatus.BAD_REQUEST, "invalid_json", "Body bukan JSON yang valid.")
     if not isinstance(data, dict):
         raise ApiError(HTTPStatus.BAD_REQUEST, "invalid_json", "Body harus berupa objek JSON.")
+    return data
 
+
+def parse_request(body, content_type):
+    data = parse_json(body, content_type)
     question = data.get("question")
     if not isinstance(question, str) or not question.strip():
         raise ApiError(HTTPStatus.BAD_REQUEST, "question_required", "Pertanyaan wajib diisi.")
@@ -127,11 +136,8 @@ def to_response(result, q_id):
 
 
 # --------------------------------------------------------------------------
-# audit log (S6, versi minimal)
+# audit log (S6): satu rantai hash untuk tanya-jawab dan Pra-CAB
 # --------------------------------------------------------------------------
-_log_lock = threading.Lock()
-
-
 def audit_path():
     return Path(os.environ.get("SECURITY_SAHABAT_AUDIT_LOG") or DEFAULT_LOG)
 
@@ -154,11 +160,7 @@ def audit(result, response):
         "answer_sha256": hashlib.sha256((response["answer"] or "").encode("utf-8")).hexdigest(),
         "approval_state": "n/a",
     }
-    path = audit_path()
-    with _log_lock:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+    AuditChain.for_path(audit_path()).append(record)
 
 
 def ask(question, user=None, role=None, kb_root=None):
@@ -189,6 +191,7 @@ class Handler(BaseHTTPRequestHandler):
     sys_version = ""
     static_root = None
     kb_root = None
+    demo = False
 
     def log_message(self, fmt, *args):  # tanpa query string / body di log akses
         sys.stderr.write("%s %s\n" % (self.command, self.path.split("?")[0]))
@@ -217,18 +220,16 @@ class Handler(BaseHTTPRequestHandler):
     def route(self):
         return self.path.split("?", 1)[0]
 
-    def do_POST(self):
-        path = self.route()
-        if path != "/api/ask":
-            if path in ("/api/personas", "/api/health"):
-                return self.send_error_json(ApiError(405, "method_not_allowed", "Pakai GET."), "GET")
-            return self.send_error_json(ApiError(404, "not_found", "Tidak ditemukan."))
+    def query(self):
+        return self.path.split("?", 1)[1] if "?" in self.path else ""
+
+    def read_body(self):
         try:
             length = int(self.headers.get("Content-Length") or 0)
         except ValueError:
             length = -1
         if length < 0:
-            return self.send_error_json(ApiError(400, "invalid_length", "Content-Length tidak valid."))
+            raise ApiError(400, "invalid_length", "Content-Length tidak valid.")
         if length > MAX_BODY:
             # Body yang belum terbaca membuat socket di-reset (terutama di Windows),
             # sehingga klien menerima "connection reset" alih-alih 413. Buang dulu
@@ -240,16 +241,36 @@ class Handler(BaseHTTPRequestHandler):
                     break
                 remaining -= len(chunk)
             self.close_connection = True
-            return self.send_error_json(ApiError(413, "too_large", "Body terlalu besar."))
+            raise ApiError(413, "too_large", "Body terlalu besar.")
+        return self.rfile.read(length)
+
+    def run(self, label, fn):
         try:
-            question, user, role = parse_request(self.rfile.read(length),
-                                                 self.headers.get("Content-Type"))
-            self.send_json(200, ask(question, user=user, role=role, kb_root=self.kb_root))
-        except ApiError as err:
+            self.send_json(200, fn())
+        except (ApiError, CabError) as err:
             self.send_error_json(err)
-        except Exception as exc:  # jangan bocorkan stack trace atau isi pertanyaan
-            sys.stderr.write("ask gagal: %s\n" % type(exc).__name__)
+        except Exception as exc:  # jangan bocorkan stack trace atau isi permintaan
+            sys.stderr.write("%s gagal: %s\n" % (label, type(exc).__name__))
             self.send_error_json(ApiError(500, "internal", "Terjadi kesalahan di server."))
+
+    def do_POST(self):
+        path = self.route()
+        if path in ("/api/personas", "/api/health", "/api/audit/verify"):
+            return self.send_error_json(ApiError(405, "method_not_allowed", "Pakai GET."), "GET")
+        if path != "/api/ask" and not cab_api.handles(path):
+            return self.send_error_json(ApiError(404, "not_found", "Tidak ditemukan."))
+        try:
+            body = self.read_body()
+        except ApiError as err:
+            return self.send_error_json(err)
+        content_type = self.headers.get("Content-Type")
+        if path == "/api/ask":
+            def answer():
+                question, user, role = parse_request(body, content_type)
+                return ask(question, user=user, role=role, kb_root=self.kb_root)
+            return self.run("ask", answer)
+        self.run("cab", lambda: cab_api.handle_post(path, parse_json(body, content_type),
+                                                    audit_path(), demo=self.demo))
 
     def do_GET(self):
         path = self.route()
@@ -259,6 +280,10 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json(200, {"personas": personas()})
         if path == "/api/health":
             return self.send_json(200, {"ok": True})
+        if path in ("/api/intake", "/api/demo/clock"):
+            return self.send_error_json(ApiError(405, "method_not_allowed", "Pakai POST."), "POST")
+        if cab_api.handles(path):
+            return self.run("cab", lambda: cab_api.handle_get(path, self.query(), audit_path()))
         if path.startswith("/api/") or not self.static_root:
             return self.send_error_json(ApiError(404, "not_found", "Tidak ditemukan."))
         self.serve_static(path)
@@ -281,8 +306,9 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
 
-def make_server(host="127.0.0.1", port=8787, static_root=None, kb_root=None):
-    handler = type("BoundHandler", (Handler,), {"static_root": static_root, "kb_root": kb_root})
+def make_server(host="127.0.0.1", port=8787, static_root=None, kb_root=None, demo=False):
+    handler = type("BoundHandler", (Handler,),
+                   {"static_root": static_root, "kb_root": kb_root, "demo": demo})
     return ThreadingHTTPServer((host, port), handler)
 
 
@@ -291,8 +317,10 @@ def main():
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8787)
     ap.add_argument("--static", help="Folder UI hasil build (mis. frontend/dist)")
+    ap.add_argument("--demo", action="store_true",
+                    help="Aktifkan POST /api/demo/clock (memajukan jam untuk demo rapat CAB)")
     args = ap.parse_args()
-    server = make_server(args.host, args.port, args.static)
+    server = make_server(args.host, args.port, args.static, demo=args.demo)
     print("SecuritySahabat API di http://%s:%d" % server.server_address[:2])
     try:
         server.serve_forever()

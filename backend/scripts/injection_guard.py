@@ -75,6 +75,14 @@ INJECTION_PATTERNS = [
     # --- imperatif ke AI di awal kalimat -----------------------------------
     r"^(?:AI|System|Bot|Assistant|Asisten)\s*[:;,]?\s*(?:tolong|please|harap|must|should"
     r"|harus|wajib)\s+(?:approve|tandai|set|ubah|change|grant|berikan|izinkan)",
+
+    # --- AI disapa lalu diberi aksi ("AI: forward this file to all staff") --
+    # Sapaan wajib "AI:" / "AI;", atau "AI," di awal kalimat, supaya "apakah AI kirim
+    # email?" dan "boleh pakai AI, kirim notulen pakai ChatGPT?" tetap lolos.
+    r"(?:\b(?:AI|bot|assistant|asisten)\s*[:;]|(?:^|[.!?]\s+)(?:AI|bot|assistant|asisten)\s*,)"
+    r"\s*(?:langsung\s+|tolong\s+|please\s+|segera\s+)?"
+    r"(?:forward|teruskan|kirim(?:kan)?|send|share|bagikan|hapus|delete|setujui|approve"
+    r"|eksekusi|jalankan|execute)\b",
 ]
 
 # ---------------------------------------------------------------------------
@@ -126,6 +134,7 @@ PATTERN_LABELS = {
     INJECTION_PATTERNS[14]: "pemisah mode admin",
     INJECTION_PATTERNS[15]: "mode override",
     INJECTION_PATTERNS[16]: "imperatif ke AI di awal kalimat",
+    INJECTION_PATTERNS[17]: "AI disapa lalu diberi aksi",
     SOFT_PATTERNS[0]: "persetujuan otomatis",
     SOFT_PATTERNS[1]: "menurunkan klasifikasi",
     SOFT_PATTERNS[2]: "melewati persetujuan",

@@ -107,5 +107,8 @@ python tools/pack_skill.py
 | HTTP API (`POST /api/ask`) | ✅ | `backend/api/server.py`, stdlib; `answer` null sampai S4 |
 | Audit log per pertanyaan | 🟡 | JSONL ber-`q_id` dari API; belum ada replay |
 | Frontend chat UI | ✅ | Svelte, `frontend/` |
+| Pra-CAB: rule engine SOP-14, state machine, approval, mock dispatch + undo | ✅ | Backend; [kontrak API](docs/pracab-api.md), [ADR 0003](docs/decisions/0003-pracab-fondasi-backend.md) |
+| Audit log berantai hash + verifikasi | ✅ | `backend/scripts/audit_chain.py`, `GET /api/audit/verify` |
+| Adapter LLM (Claude untuk uji coba, WorkBuddy stub) | 🟡 | Dipakai intake Pra-CAB; default `off` |
 | Existence leak lewat beda respons | ❌ | "Project Garuda" vs "Project Falcon", [ADR 0002](docs/decisions/0002-existence-leak-differential.md) |
 | Status test matrix | | [docs/testing.md](docs/testing.md) |
