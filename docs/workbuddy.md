@@ -87,7 +87,17 @@ Temuan dan tindak lanjut:
 1. **Pemicu skill terlalu sempit.** Deskripsi hanya menyebut pola
    "boleh/tidak boleh", policy, dan akses. Sekarang ditambah pertanyaan
    "siapa owner", "apa itu proyek X", "siapa kontak/SME"; `test_skill_sync.py`
-   menjaganya. Belum diuji ulang di WorkBuddy (perlu unggah ulang zip).
+   menjaganya. Uji ulang setelah unggah zip baru (PR #5), tanpa `/`:
+
+   | Pertanyaan | Skill | Hasil |
+   | --- | --- | --- |
+   | Sari: siapa owner Proyek Garuda? | Ditemukan agen lewat pencarian alat (2 menit 5 detik) | Lulus, Garuda tidak bocor |
+   | Andini: siapa owner Proyek Garuda? | Tidak (16 detik, tanpa alat) | Gagal: jawaban umum "tidak punya akses", padahal Andini berhak |
+
+   Dua uji ini makan sekitar 7,9 kredit (341 menjadi 333,08). Kesimpulannya,
+   pemanggilan otomatis tetap untung-untungan di model Hy4. Untuk demo dan
+   pemakaian serius, panggil skill dengan `/security-sahabat`; cara itu lulus
+   di semua uji.
 2. **Bahasa jawaban.** Instruksi sistem model Hy4 memaksa Mandarin, mengalahkan
    `answer-playbook.md`. Tidak ada pengaturan bahasa jawaban di akun. Cara yang
    terbukti: tulis "Jawab dalam bahasa Indonesia" di pertanyaan. Untuk demo,
