@@ -107,6 +107,13 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
 - Setiap cek punya `basis` (`sop`/`interpretasi`/`sistem`); interpretasi wajib
   diberi label, bukan disamarkan sebagai bunyi SOP.
 - `kb/cmdb.csv` dan `kb/directory.csv` (tanpa email/telepon) ditambahkan ke KB.
+- **Tujuan akhir = CAB decision brain** (`docs/vision-v2.md`): KB perusahaan di
+  atas KB global (ISO/NIST/GDPR), aturan jadi data (policy register), LLM
+  mengusulkan aturan dan manusia mengesahkan. Jangan merombak sebelum 1 Nov.
+- `ACCESS-SCOPE`: kolom `allowed_departments` di CMDB = policy siapa boleh
+  mengakses aset (tingkat 1). Kolom kosong (`mail-jkt-01`, sengaja) = tidak ada
+  policy internal → `basis: standar` (CTRL-02) + owner jadi approver (tingkat 2).
+  Persona Marketing untuk contoh: Lina Kartika (direktori saja, bukan permissions).
 
 ## Belum dikerjakan (per 27 Okt)
 

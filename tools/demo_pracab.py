@@ -11,7 +11,9 @@ rapat CAB"):
 Alur: Ragil mengajukan upgrade firmware firewall Makassar -> precheck SOP-14
 -> dispatch sebelum disetujui ditolak -> CAB belum rapat ditolak -> jam maju
 ke rapat CAB -> Indah menyetujui -> dispatch ke mock tool -> undo -> verifikasi
-audit log. Lalu satu contoh yang diblokir: SSH dari internet ke HR DB.
+audit log. Lalu tiga contoh akses: SSH dari internet ke HR DB (diblokir),
+akses ERP untuk Marketing (diblokir oleh policy di CMDB), dan akses aset
+tanpa policy internal (dinilai dengan standar global, owner ikut menyetujui).
 Semua CR yang dibuat tercatat di audit log server.
 """
 
@@ -22,7 +24,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-RAGIL, INDAH, ANDINI = "Ragil Wibowo", "Indah Permatasari", "Andini Pratama"
+RAGIL, INDAH, ANDINI, EKA = "Ragil Wibowo", "Indah Permatasari", "Andini Pratama", "Eka Putri"
 NOW = "2026-10-27T10:00:00+07:00"        # Selasa; rapat CAB terdekat yang sah: Rabu 4 Nov
 AFTER_MEETING = "2026-11-04T15:00:00+07:00"
 
@@ -42,6 +44,15 @@ SSH_HR = {
     "reason": "Vendor perlu akses", "impact": "-", "implementation_plan": "Tambah rule NAT",
     "rollback_plan": "Hapus rule NAT",
     "window": {"start": "2026-10-27T22:00:00+07:00", "end": "2026-10-27T23:00:00+07:00"},
+}
+# "Tolong kepada bagian infrastruktur, untuk pihak marketing diberikan akses VPN ke server A"
+ACCESS = {
+    "type": "access", "change_kind": "access_grant", "title": "Akses VPN ke ERP untuk Marketing",
+    "description": "Tolong bagian infrastruktur memberi tim marketing akses VPN ke app-erp-prod",
+    "reason": "Kampanye Q4 perlu data stok", "impact": "Akun VPN baru", "implementation_plan": "Buat akun VPN + grup akses",
+    "rollback_plan": "Cabut akun",
+    "access": {"grantee": "Lina Kartika", "authorizing_role": "Team Lead", "expires_at": "2026-12-31"},
+    "window": {"start": "2026-11-09T10:00:00+07:00", "end": "2026-11-09T11:00:00+07:00"},
 }
 
 
@@ -65,6 +76,16 @@ class Api:
 
 def step(n, text):
     print("\n[%d] %s" % (n, text))
+
+
+def show_scope(cr):
+    pre = cr["precheck"]
+    print("    state=%s outcome=%s risiko=%s" % (cr["state"], pre["outcome"], pre["risk"]["level"]))
+    for c in pre["checks"]:
+        if c["id"] == "ACCESS-SCOPE":
+            print("    %s [%s]: %s" % (c["status"], c["basis"], c["detail"]))
+            for cit in c["citations"]:
+                print("               ↳ %s: \"%s\"" % (cit["doc_id"], cit["quote"][:80]))
 
 
 def show_precheck(cr):
@@ -154,7 +175,20 @@ def main():
         if c["id"] == "EXPOSURE":
             print("    %s: %s" % (c["status"], c["detail"]))
 
-    step(11, "Verifikasi rantai hash audit log")
+    step(11, "Contoh \"Server A\": Eka (Team Lead) minta akses app-erp-prod untuk Lina (Marketing)")
+    _, acc = api.call("/api/requests", {"user": EKA, "fields": dict(ACCESS, assets=["app-erp-prod"])})
+    _, acc = api.call("/api/requests/%s/submit" % acc["id"], {"user": EKA})
+    show_scope(acc)
+
+    step(12, "Aset tanpa policy internal: akses mail-jkt-01 untuk Lina -> dinilai dengan standar global")
+    _, acc = api.call("/api/requests", {"user": EKA, "fields": dict(ACCESS, assets=["mail-jkt-01"],
+                                                                   title="Akses mail relay untuk Marketing")})
+    _, acc = api.call("/api/requests/%s/submit" % acc["id"], {"user": EKA})
+    show_scope(acc)
+    for s in acc["approvals"]:
+        print("    approver: %-32s -> %s" % (s["label"], s["assignee"]))
+
+    step(13, "Verifikasi rantai hash audit log")
     _, verify = api.call("/api/audit/verify")
     print("    %s" % json.dumps(verify, ensure_ascii=False))
 

@@ -276,6 +276,37 @@ class RulesTest(unittest.TestCase):
     def test_aset_tidak_dikenal(self):
         self.assertEqual(check(self.pre(assets=["server-yang-itu"]), "ASSETS")[0]["status"], "NEEDS_INFO")
 
+    def access(self, assets, grantee):
+        return self.pre(type="access", change_kind="access_grant", assets=assets,
+                        requester={"user": "Eka Putri", "role": "Team Lead"},
+                        window={"start": "2026-11-09T10:00:00+07:00", "end": "2026-11-09T11:00:00+07:00"},
+                        access={"grantee": grantee, "authorizing_role": "Team Lead", "expires_at": "2026-12-31"})
+
+    def test_akses_departemen_tidak_diizinkan_diblokir(self):
+        # contoh "Server A hanya untuk infra & ops": marketing minta akses app-erp-prod
+        r = self.access(["app-erp-prod"], "Lina Kartika")
+        self.assertEqual(r["outcome"], "BLOCKED")
+        scope = check(r, "ACCESS-SCOPE")[0]
+        self.assertEqual((scope["status"], scope["basis"]), ("BLOCK", "sop"))
+        self.assertEqual([c["doc_id"] for c in scope["citations"]], ["CMDB", "CTRL-02"])
+        self.assertEqual(scope["citations"][0]["quote"], "IT;Operations;Finance")
+
+    def test_akses_departemen_diizinkan_lolos(self):
+        scope = check(self.access(["app-erp-prod"], "Dewi Anggraini"), "ACCESS-SCOPE")[0]
+        self.assertEqual(scope["status"], "PASS")
+
+    def test_aset_tanpa_policy_internal_dinilai_dengan_standar(self):
+        r = self.access(["mail-jkt-01"], "Lina Kartika")
+        scope = check(r, "ACCESS-SCOPE")[0]
+        self.assertEqual((scope["status"], scope["basis"]), ("WARN", "standar"))
+        self.assertEqual({c["doc_id"] for c in scope["citations"]}, {"CTRL-02"})
+        self.assertIn("owner:Citra Kusuma", [s["slot"] for s in r["approvals"]])
+        self.assertEqual(r["outcome"], "READY")
+
+    def test_penerima_akses_tidak_dikenal(self):
+        scope = check(self.access(["app-erp-prod"], "Pak Marketing"), "ACCESS-SCOPE")[0]
+        self.assertEqual(scope["status"], "NEEDS_INFO")
+
     def test_akses_tanpa_kedaluwarsa(self):
         r = self.pre(type="access", change_kind="access_grant", assets=["db-erp-jkt-01"],
                      access={"grantee": "Damar Saputra", "authorizing_role": "IT Admin", "expires_at": ""})

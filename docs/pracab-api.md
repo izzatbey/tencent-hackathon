@@ -47,7 +47,7 @@ terjadi, dan batas undo. Contoh: `["approve:cab_chair", "reject"]`.
 | `exposure` | `none` \| `internal` \| `internet` | |
 | `ports` | `[int]` | |
 | `window` | `{start, end}` | ISO-8601 **dengan offset**: `+07:00` WIB, `+08:00` WITA, `+09:00` WIT |
-| `access` | `{grantee, authorizing_role, expires_at}` | wajib untuk `type: access` (CTRL-01); `expires_at` = `YYYY-MM-DD` |
+| `access` | `{grantee, authorizing_role, expires_at}` | wajib untuk `type: access` (CTRL-01); `grantee` = nama lengkap di `kb/directory.csv`; `expires_at` = `YYYY-MM-DD` |
 | `emergency`, `reversible`, `production_impact`, `affects_availability`, `weakens_security`, `removes_auth_or_backup` | bool | default `false`, kecuali `reversible` & `production_impact` = `true` |
 | `channel` | enum | asal permintaan |
 
@@ -89,13 +89,22 @@ cancel: pemohon, sebelum dispatch
 - `outcome`: `BLOCKED` > `NEEDS_INFO` > `NEEDS_REVISION` > `READY`.
 - `checks[].status`: `INFO` `PASS` `WARN` `NEEDS_INFO` `FAIL` `BLOCK`. Tampilkan
   semuanya, termasuk yang `PASS`: juri perlu melihat apa saja yang dicek.
-- `checks[].basis`: `sop` (bunyi dokumen), `interpretasi` (tafsiran tim, perlu
-  disahkan owner dokumen), `sistem` (aturan aplikasi, belum ada di SOP). Beri
-  label yang berbeda di UI; ini bagian dari kejujuran sistem.
+- `checks[].basis`: `sop` (bunyi dokumen/policy perusahaan), `standar` (tidak
+  ada policy internal; dinilai dengan standar global ISO/NIST), `interpretasi`
+  (tafsiran tim, perlu disahkan owner dokumen), `sistem` (aturan aplikasi,
+  belum ada di SOP). Beri label yang berbeda di UI; ini bagian dari kejujuran
+  sistem.
 - `citations[].quote` selalu ada di dokumen sumbernya (diuji).
 
-ID cek: `ASSETS` `FIELDS` `ACCESS` `INJECTION` `EXPOSURE` `RISK` `WMS-WINDOW`
-`FRIDAY-PRAYER` `BRANCH-FW-WINDOW` `BRANCH-FW-MEMO` `EMERGENCY` `LEAD-TIME` `SOD`.
+ID cek: `ASSETS` `FIELDS` `ACCESS` `ACCESS-SCOPE` `INJECTION` `EXPOSURE` `RISK`
+`WMS-WINDOW` `FRIDAY-PRAYER` `BRANCH-FW-WINDOW` `BRANCH-FW-MEMO` `EMERGENCY`
+`LEAD-TIME` `SOD`.
+
+`ACCESS-SCOPE` (hanya `type: access`): departemen penerima dicocokkan dengan
+kolom `allowed_departments` aset di `kb/cmdb.csv`. Tidak cocok → `BLOCK`
+(kutipan CMDB + CTRL-02). Kolom kosong → tidak ada policy internal → `WARN`
+dengan `basis: standar` (CTRL-02 / ISO A.5.18) dan owner aset ditambahkan
+sebagai approver. Penerima tidak ada di `kb/directory.csv` → `NEEDS_INFO`.
 
 ## Slot persetujuan (`approvals`)
 

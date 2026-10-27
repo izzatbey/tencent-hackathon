@@ -1,14 +1,14 @@
-﻿asset_id,name,type,zone,site,criticality,owner,notes
-db-hr-jkt-01,HR Database (PostgreSQL),Database,hr-data,Jakarta,critical,Indah Permatasari (HR Manager),Crown jewel. Stores NIK and personal data of all employees. Segregated VLAN. Direct internet exposure prohibited.
-db-erp-jkt-01,ERP Database (PostgreSQL),Database,server-farm-jkt,Jakarta,critical,Andini Pratama (IT Admin),Core business data. Orders inventory finance. Backed up daily 02:00 WIB.
-fw-edge-mks-01,Edge Firewall (FortiGate 100F),Firewall,branch-mks,Makassar,high,Ragil Wibowo (Ops Manager Mks),Single internet uplink for Makassar branch. No redundancy. Remote changes require MFA jump-host.
-fw-edge-jkt-01,Edge Firewall (FortiGate 600F),Firewall,dmz-jkt,Jakarta,critical,Andini Pratama (IT Admin),Main perimeter firewall for Jakarta HQ.
-core-sw-jkt-01,Core Switch (Cisco Catalyst 9500),Switch,server-farm-jkt,Jakarta,high,Fajar Ramadhan (Network Engineer),Backbone for server farm and corp-jkt.
-vpn-gw-jkt-01,VPN Gateway,Network,corp-jkt,Jakarta,high,Andini Pratama (IT Admin),Site-to-site VPN to Makassar branch. Remote access VPN for staff.
-app-erp-prod,ERP Application Server,Application,server-farm-jkt,Jakarta,critical,Andini Pratama (IT Admin),Production ERP app. No direct internet access. Behind reverse proxy.
-backup-jkt-01,Backup Server (Veeam),Server,mgmt,Jakarta,high,Andini Pratama (IT Admin),Central backup repository. Daily incremental weekly full.
-wms-mks-01,Warehouse Management System,Application,branch-mks,Makassar,high,Ragil Wibowo (Ops Manager Mks),Makassar warehouse operations. Replicates to Jakarta nightly 23:00-02:00 WIB.
-mon-jkt-01,Monitoring Server (Zabbix),Server,mgmt,Jakarta,medium,Fajar Ramadhan (Network Engineer),Infrastructure monitoring. Alerts to SOC team.
-dns-jkt-01,DNS Server (BIND9),Server,corp-jkt,Jakarta,high,Fajar Ramadhan (Network Engineer),Primary internal DNS. Secondary at backup-jkt-01.
-k8s-prod-01,Kubernetes Production Cluster,Cluster,server-farm-jkt,Jakarta,critical,Andini Pratama (IT Admin),Container orchestration for microservices. 3-node cluster.
-mail-jkt-01,Mail Server (Postfix),Server,corp-jkt,Jakarta,high,Citra Kusuma (SOC Analyst),Internal mail relay. External mail via cloud provider.
+﻿asset_id,name,type,zone,site,criticality,owner,allowed_departments,notes
+db-hr-jkt-01,HR Database (PostgreSQL),Database,hr-data,Jakarta,critical,Indah Permatasari (HR Manager),HR,Crown jewel. Stores NIK and personal data of all employees. Segregated VLAN. Direct internet exposure prohibited.
+db-erp-jkt-01,ERP Database (PostgreSQL),Database,server-farm-jkt,Jakarta,critical,Andini Pratama (IT Admin),IT;Finance,Core business data. Orders inventory finance. Backed up daily 02:00 WIB.
+fw-edge-mks-01,Edge Firewall (FortiGate 100F),Firewall,branch-mks,Makassar,high,Ragil Wibowo (Ops Manager Mks),IT;Operations,Single internet uplink for Makassar branch. No redundancy. Remote changes require MFA jump-host.
+fw-edge-jkt-01,Edge Firewall (FortiGate 600F),Firewall,dmz-jkt,Jakarta,critical,Andini Pratama (IT Admin),IT,Main perimeter firewall for Jakarta HQ.
+core-sw-jkt-01,Core Switch (Cisco Catalyst 9500),Switch,server-farm-jkt,Jakarta,high,Fajar Ramadhan (Network Engineer),IT,Backbone for server farm and corp-jkt.
+vpn-gw-jkt-01,VPN Gateway,Network,corp-jkt,Jakarta,high,Andini Pratama (IT Admin),IT,Site-to-site VPN to Makassar branch. Remote access VPN for staff.
+app-erp-prod,ERP Application Server,Application,server-farm-jkt,Jakarta,critical,Andini Pratama (IT Admin),IT;Operations;Finance,Production ERP app. No direct internet access. Behind reverse proxy.
+backup-jkt-01,Backup Server (Veeam),Server,mgmt,Jakarta,high,Andini Pratama (IT Admin),IT,Central backup repository. Daily incremental weekly full.
+wms-mks-01,Warehouse Management System,Application,branch-mks,Makassar,high,Ragil Wibowo (Ops Manager Mks),IT;Operations,Makassar warehouse operations. Replicates to Jakarta nightly 23:00-02:00 WIB.
+mon-jkt-01,Monitoring Server (Zabbix),Server,mgmt,Jakarta,medium,Fajar Ramadhan (Network Engineer),IT,Infrastructure monitoring. Alerts to SOC team.
+dns-jkt-01,DNS Server (BIND9),Server,corp-jkt,Jakarta,high,Fajar Ramadhan (Network Engineer),IT,Primary internal DNS. Secondary at backup-jkt-01.
+k8s-prod-01,Kubernetes Production Cluster,Cluster,server-farm-jkt,Jakarta,critical,Andini Pratama (IT Admin),IT,Container orchestration for microservices. 3-node cluster.
+mail-jkt-01,Mail Server (Postfix),Server,corp-jkt,Jakarta,high,Citra Kusuma (SOC Analyst),,Internal mail relay. External mail via cloud provider.

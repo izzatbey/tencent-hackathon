@@ -59,6 +59,8 @@ tools/              pack_skill.py — rakit dist/security-sahabat.skill
 ```
 
 Desain sistem, diagram, dan kontrak API: **[docs/architecture.md](docs/architecture.md)**.
+Tujuan akhir (CAB decision brain: KB perusahaan + standar global, policy
+register, LLM+RAG+agent) dan roadmap v2: **[docs/vision-v2.md](docs/vision-v2.md)**.
 
 ## Mulai cepat
 

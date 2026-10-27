@@ -7,7 +7,8 @@ diputar ulang persis seperti saat itu walaupun KB berubah kemudian.
 
 Setiap cek: {id, status, title, detail, basis, citations}
   status  INFO | PASS | WARN | NEEDS_INFO | FAIL | BLOCK
-  basis   sop          bunyi dokumen apa adanya
+  basis   sop          bunyi dokumen/policy perusahaan apa adanya
+          standar      tidak ada policy internal; dinilai dengan standar global (ISO/NIST)
           interpretasi tafsiran tim atas dokumen; perlu disahkan owner dokumen
           sistem       aturan aplikasi yang belum ada di SOP
 
@@ -59,6 +60,8 @@ SOURCES = {
     "ctrl12.fields": ("doc", "CTRL-12", "Change requests must document: what, why, impact assessment, rollback plan, and approver."),
     "ctrl12.emergency": ("doc", "CTRL-12", "Emergency changes may bypass CAB but must be retroactively reviewed within 48 hours."),
     "ctrl01.access": ("doc", "CTRL-01", "any change granting new network or system access must name the requester, the authorizing role, and an expiry date."),
+    "ctrl02.least": ("doc", "CTRL-02", "users should only have access to information necessary for their role."),
+    "ctrl02.need": ("doc", "CTRL-02", "Any access request must justify the business need."),
     "ctrl09.exposure": ("doc", "CTRL-09", "direct internet exposure of internal databases or servers is prohibited."),
     "ctrl09.nat": ("doc", "CTRL-09", "Port forwarding or NAT rules exposing internal services to the internet must be classified as HIGH or CRITICAL risk."),
     "ctrl09.ssh": ("doc", "CTRL-09", "SSH (port 22) from the internet to any internal server is classified as CRITICAL risk"),
@@ -91,6 +94,7 @@ class Context:
         self.docs = kb_facts._documents(self.root)
         self.cmdb = kb_facts.load_cmdb(self.root)
         self.people = perm.load_permissions_rows()
+        self.directory = kb_facts.load_directory(self.root)
         self._cache = {}
 
     def c(self, key):
@@ -110,6 +114,11 @@ class Context:
     def person(self, role):
         row = next((r for r in self.people if r.get("role") == role), None)
         return row["user"] if row else None
+
+    def staff(self, name):
+        """Baris direktori untuk nama lengkap (tanpa peduli kapital); None bila tak ada."""
+        key = " ".join(str(name or "").lower().split())
+        return next((p for p in self.directory if p["name"].lower() == key), None) if key else None
 
 
 # --------------------------------------------------------------------------
@@ -282,6 +291,49 @@ def cab_slot(chair, keys, ctx):
             "kind": "cab_meeting", "mode": "tertulis", "citations": ctx.cites(*keys)}
 
 
+def check_access_scope(cr, assets, ctx):
+    """Siapa boleh mengakses aset: kolom allowed_departments di CMDB (policy
+    perusahaan, tingkat 1). Aset tanpa kolom itu dinilai dengan standar global
+    (CTRL-02 / ISO A.5.18, tingkat 2): butuh justifikasi + persetujuan owner.
+
+    Mengembalikan (daftar cek, perlu_owner_slot)."""
+    access = cr.get("access") or {}
+    grantee = str(access.get("grantee") or "").strip()
+    if not grantee or not assets:
+        return [], False
+    person = ctx.staff(grantee)
+    if person is None:
+        return [_check("ACCESS-SCOPE", "NEEDS_INFO", "Penerima akses tidak dikenal",
+                       "'%s' tidak ada di direktori staf. Tulis nama lengkap seperti di direktori."
+                       % grantee, "sistem")], False
+    dept = person.get("department") or "-"
+    who = "%s (%s)" % (person["name"], dept)
+    checks, need_owner = [], False
+    for a in assets:
+        allowed = perm.split_multi(a.get("allowed_departments"))
+        if not allowed:
+            need_owner = True
+            checks.append(_check("ACCESS-SCOPE", "WARN", "Tidak ada policy internal untuk %s" % a["asset_id"],
+                                 "CMDB tidak mencatat departemen yang boleh mengakses %s. Dinilai dengan "
+                                 "standar global: akses hanya sesuai kebutuhan peran, kebutuhan bisnis wajib "
+                                 "dijustifikasi, dan owner aset (%s) harus menyetujui."
+                                 % (a["asset_id"], kb_facts.owner_name(a.get("owner")) or "-"),
+                                 "standar", ctx.cites("ctrl02.least", "ctrl02.need")))
+            continue
+        cite = kb_facts.cite_cmdb(a["asset_id"], "allowed_departments", cmdb=ctx.cmdb)
+        if dept.lower() in {d.lower() for d in allowed}:
+            checks.append(_check("ACCESS-SCOPE", "PASS", "Departemen penerima diizinkan",
+                                 "%s boleh mengakses %s (diizinkan: %s)." % (who, a["asset_id"], ", ".join(allowed)),
+                                 "sop", [cite]))
+        else:
+            checks.append(_check("ACCESS-SCOPE", "BLOCK", "Departemen penerima tidak diizinkan",
+                                 "%s bukan departemen yang boleh mengakses %s (policy: %s). Permintaan ini "
+                                 "tidak dapat dilanjutkan; ubah penerima atau minta owner merevisi policy."
+                                 % (who, a["asset_id"], ", ".join(allowed)),
+                                 "sop", [cite] + ctx.cites("ctrl02.least")))
+    return checks, need_owner
+
+
 def precheck(cr, submitted_at, root=None, ctx=None):
     ctx = ctx or Context(root)
     checks = []
@@ -324,6 +376,10 @@ def precheck(cr, submitted_at, root=None, ctx=None):
                              ("Belum diisi: %s." % "; ".join(gaps)) if gaps
                              else "Penerima, role pemberi otorisasi, dan kedaluwarsa %s tercatat." % expires,
                              "sop", ctx.cites("ctrl01.access")))
+        scope_checks, need_owner = check_access_scope(cr, assets, ctx)
+        checks += scope_checks
+    else:
+        need_owner = False
 
     # --- instruksi tersembunyi di teks ---------------------------------------
     text = "\n".join(str(cr.get(k) or "") for k in FREE_TEXT)
@@ -410,6 +466,16 @@ def precheck(cr, submitted_at, root=None, ctx=None):
                              "retroaktif CAB paling lambat 48 jam setelah eksekusi.", "sop",
                              ctx.cites("sop14.emergency", "ctrl12.emergency")))
     else:
+        if need_owner:
+            # tingkat 2 (standar): owner aset ikut menyetujui walau risikonya LOW
+            have = {s["assignee"] for s in slots}
+            for a in assets:
+                owner = kb_facts.owner_name(a.get("owner"))
+                if owner and owner not in have and not perm.split_multi(a.get("allowed_departments")):
+                    slots.append({"slot": "owner:%s" % owner, "label": "System owner (standar A.5.18)",
+                                  "assignee": owner, "kind": "person", "mode": "tertulis",
+                                  "citations": ctx.cites("ctrl02.need")})
+                    have.add(owner)
         if extra_cab and not any(s["slot"] == "cab" for s in slots):
             slots.append(cab_slot(ctx.person("HR Manager"), extra_cab, ctx))
         if any(s["slot"] == "cab" for s in slots):
