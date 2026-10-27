@@ -67,6 +67,37 @@ Cara lain bila project skill tidak terbaca: impor `dist/security-sahabat.skill`
 (zip) lewat panel Skills, atau salin foldernya ke folder skill pengguna lalu
 restart WorkBuddy.
 
+### Hasil uji di WorkBuddy online (27 Okt 2026)
+
+Skill diunggah ke Personal Library di workbuddy.ai (akun Free, model bawaan
+"Hy4 preview"). Screenshot di `docs/test-results/workbuddy/`.
+
+| Pertanyaan | Skill terpanggil | Hasil | Kredit |
+| --- | --- | --- | --- |
+| Andini: buka port 22 dari internet ke db-hr-jkt-01? | Otomatis | Lulus: "tidak boleh", CRITICAL, kutip CTRL-09, TOPO-HR-DATA, CTRL-10, alternatif jump-host + MFA, jalur CAB. Jawaban berbahasa Mandarin | 4 |
+| Sari: siapa owner Proyek Garuda? | Tidak | Aman tapi bukan karena skill: agen mencari di workspace kosong dan minta file | 5 untuk dua baris ini |
+| Sari, sama, lewat `/security-sahabat` | Eksplisit | Lulus: jawaban sama dengan topik yang memang tidak ada, Garuda tidak disebut restricted | (lihat atas) |
+
+Total 9 kredit untuk tiga pertanyaan (350 menjadi 341), 30 sampai 70 detik
+per jawaban. Saldo hanya terlihat per akun, jadi kredit dua tugas terakhir
+tidak bisa dipisah.
+
+Temuan dan tindak lanjut:
+
+1. **Pemicu skill terlalu sempit.** Deskripsi hanya menyebut pola
+   "boleh/tidak boleh", policy, dan akses. Sekarang ditambah pertanyaan
+   "siapa owner", "apa itu proyek X", "siapa kontak/SME"; `test_skill_sync.py`
+   menjaganya. Belum diuji ulang di WorkBuddy (perlu unggah ulang zip).
+2. **Bahasa jawaban.** Instruksi sistem model Hy4 memaksa Mandarin, mengalahkan
+   `answer-playbook.md`. Tidak ada pengaturan bahasa jawaban di akun. Cara yang
+   terbukti: tulis "Jawab dalam bahasa Indonesia" di pertanyaan. Untuk demo,
+   pakai kalimat itu atau coba model lain di pemilih model.
+3. **Batas mode skill.** Paket skill membawa `kb/restricted/proyek-garuda.md`
+   supaya skrip bisa menyaring izin, jadi agen yang punya alat Read secara
+   teknis bisa membukanya langsung. Di uji ini agen patuh pada
+   `restricted-handling.md`, tapi itu kepatuhan model, bukan jaminan. Jaminan
+   sungguhan butuh engine di balik konektor (ide 6.3) atau web app.
+
 ## 3. Link live lewat WorkBuddy Sites (poin bonus)
 
 WorkBuddy punya fitur bawaan **Sites** (`workbuddy_sites_deploy`) yang

@@ -35,6 +35,21 @@ class ProjectSkillTest(unittest.TestCase):
         self.assertFalse(any("knowledge-base/source" in arc or arc.startswith("source/")
                              for _, arc in pack_skill.entries()))
 
+    def description(self):
+        text = (ROOT / "skill" / "SKILL.md").read_text(encoding="utf-8")
+        line = next(ln for ln in text.splitlines() if ln.startswith("description:"))
+        return line.removeprefix("description:").strip()
+
+    def test_deskripsi_muat_di_batas_panjang_skill(self):
+        self.assertLessEqual(len(self.description()), 1024)
+
+    def test_deskripsi_memicu_pertanyaan_owner_dan_proyek(self):
+        # Uji WorkBuddy 27 Okt 2026: "Siapa owner Proyek Garuda?" tidak memanggil skill,
+        # agen lalu mencari di workspace kosong. Pemicu harus menyebut pola ini.
+        desc = self.description().lower()
+        for phrase in ("siapa owner", "proyek", "kontak"):
+            self.assertIn(phrase, desc)
+
     def run_skill(self, question):
         script = pack_skill.PROJECT_SKILL / "scripts" / "search_kb.py"
         proc = subprocess.run([sys.executable, str(script), "-q", question, "--json"],

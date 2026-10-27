@@ -1,6 +1,6 @@
 ---
 name: security-sahabat
-description: Jawab pertanyaan karyawan tentang apa yang boleh dan tidak boleh dari sisi security & compliance, dengan kutipan sumber wajib untuk setiap klaim. Gunakan saat karyawan bertanya "boleh/tidak boleh", "apakah diizinkan", "can I open port X", "bolehkah akses database HR", pertanyaan policy/kontrol/SOP, jadwal backup, permintaan akses, change request, atau klasifikasi risiko. Setiap jawaban mengutip ID kontrol (CTRL-xx), topology, atau section SOP; menjawab "tidak tahu" dan mengarahkan ke SME bila tidak ada di knowledge base; serta memperlakukan proyek atau asset bertanda restricted seolah-olah tidak ada. Mendukung pertanyaan Bahasa Indonesia dan Inggris.
+description: Jawab pertanyaan karyawan tentang apa yang boleh dan tidak boleh dari sisi security & compliance, dengan kutipan sumber wajib untuk setiap klaim. Gunakan saat karyawan bertanya "boleh/tidak boleh", "apakah diizinkan", "can I open port X", "bolehkah akses database HR", pertanyaan policy/kontrol/SOP, jadwal backup, permintaan akses, change request, klasifikasi risiko, atau info internal perusahaan seperti "siapa owner sistem/proyek X", "apa itu proyek X", "siapa kontak/SME untuk X", aset, server, dan topologi jaringan. Setiap jawaban mengutip ID kontrol (CTRL-xx), topology, atau section SOP; menjawab "tidak tahu" dan mengarahkan ke SME bila tidak ada di knowledge base; serta memperlakukan proyek atau asset bertanda restricted seolah-olah tidak ada. Mendukung pertanyaan Bahasa Indonesia dan Inggris.
 allowed-tools: Bash, Read, Grep, Glob
 ---
 
