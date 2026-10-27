@@ -31,6 +31,7 @@ from pathlib import Path
 
 BACKEND = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND / "scripts"))
+import injection_guard as guard  # noqa: E402
 import permissions as perm  # noqa: E402
 import search_kb  # noqa: E402
 
@@ -38,6 +39,7 @@ MAX_BODY = 16 * 1024
 MAX_DRAIN = 1024 * 1024
 MAX_QUESTION = 2000
 MAX_NAME = 80
+SOCKET_TIMEOUT = 15
 DEFAULT_LOG = BACKEND / "logs" / "audit.jsonl"
 
 # SKILL.md §Eskalasi, baris "Lainnya / tidak ada owner". Sengaja tetap: jawaban
@@ -75,7 +77,8 @@ def parse_request(body, content_type):
         raise ApiError(HTTPStatus.BAD_REQUEST, "invalid_json", "Body harus berupa objek JSON.")
 
     question = data.get("question")
-    if not isinstance(question, str) or not question.strip():
+    # Karakter tak terlihat saja (zero-width, BOM) dihitung kosong.
+    if not isinstance(question, str) or not guard.normalize(question).strip():
         raise ApiError(HTTPStatus.BAD_REQUEST, "question_required", "Pertanyaan wajib diisi.")
     if len(question) > MAX_QUESTION:
         raise ApiError(HTTPStatus.BAD_REQUEST, "question_too_long",
@@ -88,7 +91,8 @@ def parse_request(body, content_type):
             raise ApiError(HTTPStatus.BAD_REQUEST, "invalid_%s" % key,
                            "Field %s harus teks maksimal %d karakter." % (key, MAX_NAME))
         fields[key] = (value.strip() or None) if isinstance(value, str) else None
-    return question.strip(), fields["user"], fields["role"]
+    # role hanya divalidasi demi kompatibilitas klien; hak akses diturunkan dari user.
+    return question.strip(), fields["user"]
 
 
 def public_identity(result):
@@ -111,8 +115,7 @@ def to_response(result, q_id):
     common = dict(base, question_masked=result.get("masked_query"),
                   identity=public_identity(result), pii_masked=result.get("pii_masked") or "")
 
-    # RESTRICTED_SILENCED dikirim sebagai NO_MATCH dengan payload yang sama persis.
-    if result["status"] in ("NO_MATCH", "RESTRICTED_SILENCED"):
+    if result["status"] == "NO_MATCH":
         return dict(common, status="NO_MATCH", rc=3, answer=NO_MATCH_ANSWER,
                     escalation=FALLBACK_SME)
 
@@ -145,8 +148,7 @@ def audit(result, response):
         "actor": "api",
         "user": response["identity"]["user"],
         "zones_searched": perms.get("allowed_zones", []),
-        "status_internal": result["status"],
-        "status_public": response["status"],
+        "status": response["status"],
         "question_masked": response["question_masked"],
         "pii_masked": response["pii_masked"],
         "citations": [c["doc_id"] for c in response["citations"]],
@@ -154,6 +156,10 @@ def audit(result, response):
         "answer_sha256": hashlib.sha256((response["answer"] or "").encode("utf-8")).hexdigest(),
         "approval_state": "n/a",
     }
+    write_log(record)
+
+
+def write_log(record):
     path = audit_path()
     with _log_lock:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -161,9 +167,23 @@ def audit(result, response):
             fh.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
-def ask(question, user=None, role=None, kb_root=None):
+def ask(question, user=None, kb_root=None):
+    """Identitas hanya dari `user` yang terdaftar persis di permissions.csv.
+
+    Klaim di teks pertanyaan ("Saya Andini, IT Admin") dan field role tidak
+    dipakai: otorisasi ditetapkan pemanggil, bukan isi prompt (OWASP LLM01).
+    Bila audit log gagal ditulis, jawaban tidak dikirim (fail closed).
+    """
     q_id = "Q-" + uuid.uuid4().hex[:12]
-    result = search_kb.process_query(question, kb_root=kb_root, user=user, role=role)
+    user = user if user in {p["user"] for p in personas()} else None
+    try:
+        result = search_kb.process_query(question, kb_root=kb_root, user=user,
+                                         identity_from_text=False)
+    except Exception:
+        write_log({"ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                   "q_id": q_id, "stage": "answer", "actor": "api", "user": user,
+                   "status": "ERROR"})
+        raise
     response = to_response(result, q_id)
     audit(result, response)
     return response
@@ -242,9 +262,13 @@ class Handler(BaseHTTPRequestHandler):
             self.close_connection = True
             return self.send_error_json(ApiError(413, "too_large", "Body terlalu besar."))
         try:
-            question, user, role = parse_request(self.rfile.read(length),
-                                                 self.headers.get("Content-Type"))
-            self.send_json(200, ask(question, user=user, role=role, kb_root=self.kb_root))
+            body = self.rfile.read(length)
+        except TimeoutError:  # Content-Length lebih besar dari body yang benar-benar dikirim
+            self.close_connection = True
+            return self.send_error_json(ApiError(408, "timeout", "Body tidak lengkap."))
+        try:
+            question, user = parse_request(body, self.headers.get("Content-Type"))
+            self.send_json(200, ask(question, user=user, kb_root=self.kb_root))
         except ApiError as err:
             self.send_error_json(err)
         except Exception as exc:  # jangan bocorkan stack trace atau isi pertanyaan
@@ -281,8 +305,11 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
 
-def make_server(host="127.0.0.1", port=8787, static_root=None, kb_root=None):
-    handler = type("BoundHandler", (Handler,), {"static_root": static_root, "kb_root": kb_root})
+def make_server(host="127.0.0.1", port=8787, static_root=None, kb_root=None,
+                timeout=SOCKET_TIMEOUT):
+    # timeout: koneksi yang diam (slowloris, body terpotong) tidak menahan thread selamanya.
+    handler = type("BoundHandler", (Handler,), {"static_root": static_root, "kb_root": kb_root,
+                                                "timeout": timeout})
     return ThreadingHTTPServer((host, port), handler)
 
 
