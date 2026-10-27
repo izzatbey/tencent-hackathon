@@ -32,6 +32,11 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
 
 ## Struktur & cara kerja
 
+- `.codebuddy/skills/security-sahabat/` = project skill WorkBuddy, salinan
+  persis hasil `tools/pack_skill.py --project`. Jalankan ulang perintah itu
+  setiap mengubah `skill/`, `backend/scripts/` atau `knowledge-base/kb/`;
+  `test_skill_sync.py` merah bila lupa. Panduan WorkBuddy: `docs/workbuddy.md`.
+
 - `backend/` berperan sebagai "skill dir": skrip mencari `config.json` di
   `backend/`, lalu KB di `backend/kb/` → fallback `knowledge-base/kb/`
   (`REPO_KB` di `search_kb.py`). Jangan pindahkan `scripts/` keluar `backend/`.
@@ -41,8 +46,8 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
 - `process_query()` di `backend/scripts/search_kb.py` = satu-satunya pintu
   masuk. Urutan tidak boleh ditukar: injection guard → PII mask → identitas +
   permission gate → retrieval → karantina context injection → flag konflik.
-- Status/rc: `OK` 0 · `RESTRICTED_SILENCED` 2 · `NO_MATCH` 3 ·
-  `INJECTION_DETECTED` 4.
+- Status/rc: `OK` 0 · `NO_MATCH` 3 · `INJECTION_DETECTED` 4. Tidak ada
+  status khusus untuk topik restricted (sejak 27 Okt, ADR 0002).
 
 ## Keputusan yang mengikat
 
@@ -56,23 +61,27 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
 - **Proyek restricted** (`restricted: true`) terbuka hanya bila dokumen punya
   `project`, `allowed_projects` user memuatnya (atau `*`), DAN gate aktif.
   Saat ini: Proyek Garuda (`RESTRICTED-01`) → hanya Andini & Indah.
-- **Existence leak:** bagi yang tidak berwenang, jawaban harus identik dengan
-  proyek fiktif. Di skill: Template 3 kata per kata (bukan kalimat khusus).
-  Di API: `RESTRICTED_SILENCED` wajib dikirim ke frontend sebagai `NO_MATCH`.
-  `verify_matrix` menguji Garuda vs "Proyek Falcon".
+- **Existence leak = non-interference** (ADR 0002, diputuskan Farrez 27 Okt):
+  dokumen yang tidak boleh dibaca penanya (restricted tanpa project yang cocok,
+  zona di luar akses) dilewati SEBELUM penilaian dan tidak ikut idf, jadi
+  keluarannya sama persis dengan bila dokumen itu tidak ada. Jangan kembalikan
+  pembungkaman berbasis kata kunci: "Project Garuda" vs "Project Falcon" dulu
+  bocor karena itu. Diuji `NonInterferenceTest` + kasus `HIDDEN` di verify_matrix.
+- **Identitas API** hanya dari `user` yang persis terdaftar; klaim di teks
+  pertanyaan diabaikan (`identity_from_text=False`). Mode skill tetap membaca
+  identitas dari teks karena tidak punya sumber lain.
 - **Field yang tidak boleh keluar ke frontend:** `kb_root`,
-  `permission_gate.dropped`, isi `quarantined`, `restricted_matches`,
-  `mask_log`, `injection_check`, `permissions.allowed_projects`.
+  `permission_gate` (termasuk `readable_ids`), isi `quarantined`, `mask_log`,
+  `injection_check`, `permissions.allowed_projects`.
 - Kutipan selalu verbatim; PII hanya disamarkan di pertanyaan.
 
 ## Tes
 
-- `python backend/tests/verify_matrix.py` — **44 kasus, wajib 0 gagal**
-  sebelum commit (phase2 13, phase3 14, injection 10, pii 4, ctx 1, leak 2).
+- `python backend/tests/verify_matrix.py` — **46 kasus, wajib 0 gagal**
+  sebelum commit (phase2 13, phase3 14, injection 10, pii 4, ctx 1, leak 4).
 - `python -m unittest discover -s backend/tests` — core + API + Pra-CAB
-  (`test_pracab.py`). Kegagalan yang
-  diketahui ditulis `@unittest.expectedFailure` (existence leak versi Inggris,
-  tes #7 SLA crane). Status matriks brief: `docs/testing.md`.
+  (`test_pracab.py`). Kegagalan yang diketahui ditulis `@unittest.expectedFailure`
+  (tes #7 SLA crane). Status matriks brief dan katalog edge case: `docs/testing.md`.
 - Frontend: `npm run check`, `npm test`, `npm run e2e` di `frontend/`.
 - Di Windows set `PYTHONUTF8=1` dan `PYTHONIOENCODING=utf-8` dulu, kalau tidak
   output berhuruf non-ASCII rusak.
@@ -103,22 +112,22 @@ repo (26 Oktober 2026). Perbarui file ini bila ada keputusan baru.
 
 - Pra-CAB: UI frontend; klarifikasi "dua Budi" di intake; usulan jendela waktu
   alternatif; data hari libur nasional (belum ada di dataset); provider WorkBuddy.
-
-- **Existence leak lewat beda respons** ("Project Garuda" dibungkam, "Project
-  Falcon" dijawab): opsi di `docs/decisions/0002`, menunggu Izzat + Farrez.
 - Tes #7: pertanyaan di luar data tetap mendapat bukti tak relevan (butuh
   ambang relevansi atau S4).
-- S4 answer synthesizer untuk `/api/ask`. (S1 intake LLM, S5 approval gate, dan
-  replay audit log sudah ada untuk Pra-CAB; `/api/ask` belum memakai S1.)
+- S1 parser LLM dan S4 answer synthesizer untuk `/api/ask`; S5 approval gate
+  untuk aksi yang tersirat di pertanyaan `/api/ask`. Spesifikasinya ada sebagai
+  tes `expectedFailure` di `backend/tests/test_brief_pending.py` (#2, #6, #9,
+  #10, #14, #18, #19). Pra-CAB sudah punya intake LLM, approval gate, dan
+  undo sendiri; belum disambungkan ke `/api/ask`.
 - Indexing `cmdb.csv`, `chat_exports.jsonl`; klarifikasi "dua Budi"
   (`contacts.csv`, brief test #9).
-- Autentikasi: API mempercayai `user`/`role` dari request (pemilih persona demo).
+- Autentikasi: API mempercayai `user` dari request (pemilih persona demo).
 
 ## Catatan / jebakan
 
-- Bagi penanya tak berwenang, kata "proyek" saja sudah membungkam pertanyaan
-  (kata itu eksklusif di metadata restricted). Menguntungkan untuk anti-leak,
-  tapi pertanyaan sah seperti "share dokumen proyek ke vendor" ikut bisu.
+- Karena tidak ada lagi pembungkaman, "Siapa owner Proyek Garuda?" dari Sari
+  bisa mendapat bukti lemah yang tak relevan (SOP-14), persis seperti untuk
+  proyek fiktif. Itu bukan kebocoran; itu masalah ambang relevansi (tes #7).
 - `allowed_projects` berisi nama proyek restricted — jangan pernah
   ditampilkan di UI atau log yang bisa dibaca user lain.
 - Pencocokan identitas: nama (3) > role (2) > dept (1). "Saya Budi dari

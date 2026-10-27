@@ -127,7 +127,7 @@
           {:else if turn.state === 'error'}
             <p class="bubble muted">Pertanyaan belum terjawab.</p>
           {:else if questionShown(turn)}
-            <p class="bubble">{questionShown(turn)}</p>
+            <p class="bubble" dir="auto">{questionShown(turn)}</p>
           {:else}
             <p class="bubble muted">Pertanyaan tidak ditampilkan karena berisi perintah ke sistem.</p>
           {/if}

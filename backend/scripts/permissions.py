@@ -300,12 +300,17 @@ def filter_by_permissions(hits, permissions, mode="flag"):
     return kept, dropped, risk_notes
 
 
-def resolve(query, user=None, role=None, config=None, rows=None):
-    """Satu pintu: query + override -> (identity, permissions). Dipakai search_kb."""
+def resolve(query, user=None, role=None, config=None, rows=None, from_text=True):
+    """Satu pintu: query + override -> (identity, permissions). Dipakai search_kb.
+
+    from_text=False: identitas hanya dari user/role pemanggil, klaim di teks
+    pertanyaan ("Saya Andini, IT Admin") diabaikan. Dipakai API web, tempat
+    identitas datang dari sesi, bukan dari apa yang diketik penanya.
+    """
     config = config if config is not None else load_config()
     rows = load_permissions_rows() if rows is None else rows
     roles, names = vocabulary(rows)
-    identity = parse_identity(query, roles=roles, names=names)
+    identity = parse_identity(query if from_text else "", roles=roles, names=names)
     if user:
         identity["name"] = user
         identity["authenticated"] = True

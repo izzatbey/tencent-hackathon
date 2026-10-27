@@ -62,22 +62,50 @@ Desain sistem, diagram, dan kontrak API: **[docs/architecture.md](docs/architect
 
 ## Mulai cepat
 
-Butuh Python 3.10+ (tanpa dependensi eksternal).
+Butuh Python 3.10+ (engine tanpa dependensi) dan Node 22 (hanya untuk UI).
+Di Windows jalankan dulu `set PYTHONUTF8=1` dan `set PYTHONIOENCODING=utf-8`
+(PowerShell: `$env:PYTHONUTF8=1; $env:PYTHONIOENCODING="utf-8"`).
+
+### Menjalankan aplikasi di laptop
 
 ```bash
-# tanya knowledge base
-python backend/scripts/search_kb.py -q "Saya Andini, IT Admin. Boleh buka port 22 ke db-hr-jkt-01?"
-
-# 44 kasus regresi (wajib lulus sebelum merge) + tes core/API
-python backend/tests/verify_matrix.py
-python -m unittest discover -s backend/tests
-
-# API + UI dalam satu proses (lihat frontend/README.md)
-cd frontend && npm ci --ignore-scripts && npm run build && cd ..
+cd frontend
+npm ci --ignore-scripts
+npm run build
+cd ..
 python backend/api/server.py --static frontend/dist
+```
 
-# rakit paket Claude Skill -> dist/security-sahabat.skill
-python tools/pack_skill.py
+Buka http://127.0.0.1:8787, pilih persona di kanan atas, lalu bertanya.
+Setiap jawaban punya nomor catatan; baca ulang catatannya dengan
+`python backend/api/server.py --replay <nomor>`. Mode pengembangan UI (hot
+reload) ada di [frontend/README.md](frontend/README.md).
+
+### Menjalankan lewat WorkBuddy
+
+Buka folder repo ini sebagai folder kerja tugas di WorkBuddy. Skill
+`.codebuddy/skills/security-sahabat/` ikut terbaca, jadi agen WorkBuddy bisa
+langsung menjawab dengan engine yang sama. Publikasi link live lewat WorkBuddy
+Sites dan bukti pemakaian untuk submission: [docs/workbuddy.md](docs/workbuddy.md).
+
+### Tes
+
+```bash
+python backend/tests/verify_matrix.py          # 46 kasus regresi, wajib 0 gagal
+python -m unittest discover -s backend/tests   # core, API, skill, spesifikasi fitur yang belum ada
+cd frontend && npm run check && npm test && npm run e2e
+cd frontend && npm run evidence                # screenshot bukti -> docs/test-results/
+python tools/mutate_guards.py                  # setiap penjaga keamanan punya tes yang merah
+```
+
+Hasil per test case brief beserta screenshot: [docs/test-results/](docs/test-results/README.md).
+Rancangan tes dan sumbernya: [docs/testing.md](docs/testing.md).
+
+### Paket skill
+
+```bash
+python tools/pack_skill.py            # dist/security-sahabat.skill (zip)
+python tools/pack_skill.py --project  # perbarui .codebuddy/skills/security-sahabat/
 ```
 
 ## Pembagian kerja
@@ -105,10 +133,10 @@ python tools/pack_skill.py
 | S5 Approval gate | 🟡 | |
 | S6 Audit log | 🟡 | |
 | HTTP API (`POST /api/ask`) | ✅ | `backend/api/server.py`, stdlib; `answer` null sampai S4 |
-| Audit log per pertanyaan | 🟡 | JSONL ber-`q_id` dari API; belum ada replay |
+| Audit log per pertanyaan | ✅ | JSONL ber-`q_id` dari API, `--replay <q_id>` |
 | Frontend chat UI | ✅ | Svelte, `frontend/` |
 | Pra-CAB: rule engine SOP-14, state machine, approval, mock dispatch + undo | ✅ | Backend; [kontrak API](docs/pracab-api.md), [ADR 0003](docs/decisions/0003-pracab-fondasi-backend.md) |
-| Audit log berantai hash + verifikasi | ✅ | `backend/scripts/audit_chain.py`, `GET /api/audit/verify` |
+| Audit log berantai hash + verifikasi | ✅ | `backend/scripts/audit_chain.py`, `GET /api/audit/verify`; `--replay` membaca rantai yang sama |
 | Adapter LLM (Claude untuk uji coba, WorkBuddy stub) | 🟡 | Dipakai intake Pra-CAB; default `off` |
-| Existence leak lewat beda respons | ❌ | "Project Garuda" vs "Project Falcon", [ADR 0002](docs/decisions/0002-existence-leak-differential.md) |
+| Existence leak (non-interference) | ✅ | Dokumen tak terbaca dilewati sebelum pencarian, [ADR 0002](docs/decisions/0002-existence-leak-differential.md) |
 | Status test matrix | | [docs/testing.md](docs/testing.md) |

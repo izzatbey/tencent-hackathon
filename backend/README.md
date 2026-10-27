@@ -14,7 +14,7 @@
 | `scripts/cab_intake.py` | Teks bebas → draft field CR (LLM, dengan pengaman) |
 | `api/server.py` | HTTP API tipis (stdlib): `POST /api/ask`, `GET /api/personas`, routing Pra-CAB |
 | `api/cab_api.py` | Endpoint Pra-CAB — kontrak: [docs/pracab-api.md](../docs/pracab-api.md) |
-| `tests/verify_matrix.py` | 44 kasus regresi |
+| `tests/verify_matrix.py` | 46 kasus regresi |
 | `tests/test_accountability.py` | Edge case per 5 aturan akuntabilitas (unittest) |
 | `tests/test_api.py` | DTO, audit log, validasi, HTTP |
 | `tests/test_pracab.py` | Audit chain, adapter LLM, aturan SOP-14, state machine, intake, HTTP |
@@ -35,14 +35,15 @@ result = search_kb.process_query("Boleh buka port 22 ke db-hr-jkt-01?")
 python backend/api/server.py                          # http://127.0.0.1:8787
 python backend/api/server.py --static frontend/dist   # sekalian melayani UI
 python backend/api/server.py --demo                   # + POST /api/demo/clock
+python backend/api/server.py --replay Q-0091a2d7fa37  # catatan audit satu pertanyaan
 python -m unittest discover -s backend/tests -v
 ```
 
 Audit log: env `SECURITY_SAHABAT_AUDIT_LOG`, default `backend/logs/audit.jsonl`
 (di-gitignore). Satu rantai hash untuk tanya-jawab dan Pra-CAB. Isinya teks
-yang sudah disamarkan, status internal dan publik, `doc_id` yang dikutip, hasil
-precheck, dan setiap aksi (termasuk yang ditolak); tidak pernah teks mentah atau
-`allowed_projects`. Periksa rantainya:
+yang sudah disamarkan, status, `doc_id` yang dikutip, hasil precheck, dan setiap
+aksi (termasuk yang ditolak); tidak pernah teks mentah atau `allowed_projects`.
+Gagal menulis log = jawaban tidak dikirim (fail closed). Periksa rantainya:
 
 ```bash
 python backend/scripts/audit_chain.py --verify backend/logs/audit.jsonl
@@ -66,4 +67,4 @@ teks bebas ke field draft; risiko, approver, dan verdict selalu dari
 - Provider WorkBuddy (`llm.WorkBuddyProvider`) setelah API-nya diketahui.
 - Answer composer (LLM) untuk `/api/ask` yang mengikuti `skill/references/answer-playbook.md`;
   sampai itu ada, `answer` bernilai `null` untuk status `OK`.
-- Existence leak lewat perbedaan respons: [docs/decisions/0002](../docs/decisions/0002-existence-leak-differential.md).
+- Ambang relevansi (tes #7): pertanyaan di luar data masih mendapat bukti lemah.

@@ -98,23 +98,15 @@ informasi", tanpa konfirmasi, tanpa sangkalan, tanpa alasan.
 
 ## Template 6 — Di luar zona akses penanya
 
-Gunakan bila skrip mencetak `PERMISSION_FILTERED` atau hasil kosong padahal
-topiknya jelas ada aturannya.
+Tidak ada template khusus. Dokumen di luar zona penanya tidak pernah dicari,
+jadi bagi penanya itu dokumen tersebut tidak ada: jawab dari bukti yang ada,
+atau Template 3 bila kosong. Jangan pernah menulis "ada bagian yang tidak bisa
+saya bagikan" atau "di luar akses Anda": kalimat itu sendiri membuktikan ada
+sesuatu di sana.
 
-```
-Untuk bagian ini saya tidak memiliki informasi yang bisa saya bagikan dengan
-akun/peran Anda saat ini.
-
-Yang bisa saya jawab: [bagian yang lolos permission gate, dengan kutipan]
-
-Langkah selanjutnya:
-1. Minta akses atau konfirmasi ke [owner dokumen]
-2. Bila identitas Anda belum terbaca: sebutkan nama dan peran, mis.
-   "Saya [Nama], [Role]" — hak akses dibaca dari kb/permissions.csv
-```
-
-Jangan menyebut `doc_id`, judul, atau jumlah dokumen yang disaring — itu sama
-dengan mengonfirmasi keberadaan materi di luar akses penanya.
+Bila identitas penanya belum terbaca (zona `common` saja), boleh menambahkan
+satu baris netral di akhir jawaban apa pun: "Sebutkan nama dan peran Anda bila
+ingin jawaban sesuai akses Anda."
 
 Bila skrip memberi flag `RISK [doc]` (risk dokumen di atas batas akses penanya),
 kutipan tetap boleh dipakai, tapi tambahkan satu baris:

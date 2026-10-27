@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/svelte'
 import { describe, expect, it } from 'vitest'
 import AnswerSheet from './AnswerSheet.svelte'
 import { citation, injection, noMatch, okResponse } from '../test-fixtures'
+import type { AskResponse } from '../lib/types'
 
 describe('AnswerSheet: SOURCES', () => {
   it('menampilkan stempel, nomor catatan, doc_id, dan kutipan verbatim', () => {
@@ -89,6 +90,19 @@ describe('AnswerSheet: injection, PII, XSS', () => {
     expect(screen.getByText('Ditolak')).toBeInTheDocument()
     expect(screen.queryByText('Landasan')).not.toBeInTheDocument()
     expect(screen.queryByText(/Langkah berikutnya/)).not.toBeInTheDocument()
+  })
+
+  it('status baru dari server yang belum dikenal UI tampil sebagai tidak tahu, bukan crash', () => {
+    const response = { ...noMatch(), status: 'NEEDS_APPROVAL' } as unknown as AskResponse
+    render(AnswerSheet, { response })
+    expect(screen.getByText('Tidak tahu')).toBeInTheDocument()
+  })
+
+  it('kutipan berbahasa Arab mengikuti arah teksnya sendiri', () => {
+    const { container } = render(AnswerSheet, {
+      response: okResponse({ citations: [citation({ quote: 'السلام عليكم' })] }),
+    })
+    expect(container.querySelector('blockquote')).toHaveAttribute('dir', 'auto')
   })
 
   it('ringkasan penyamaran PII ditampilkan', () => {

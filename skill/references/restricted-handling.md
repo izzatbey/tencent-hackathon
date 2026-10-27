@@ -35,82 +35,57 @@ dokumen biasa berdasarkan zona, dan membuka dokumen `restricted: true`
 
 Setelah terbuka, dokumen itu diperlakukan seperti dokumen biasa: dikutip,
 tetap melewati filter zona (`allowed_zones` harus memuat zonanya), dan diberi
-flag `RISK` bila di atas batas risiko penanya. Istilahnya juga tidak lagi
-membungkam pertanyaan si penanya.
+flag `RISK` bila di atas batas risiko penanya.
 
 | Penanya | Proyek Garuda |
 | --- | --- |
 | Andini (IT Admin), Indah (HR Manager) — `proyek-garuda` di `allowed_projects` | Terbuka, dengan kutipan `RESTRICTED-01` |
-| Siapa pun lainnya — termasuk Citra yang aksesnya luas | Tidak ada (exit `2`) |
+| Siapa pun lainnya, termasuk Citra yang aksesnya luas | Tidak ada: hasil sama dengan proyek fiktif |
 
 Catatan: zona `restricted` saja ≠ boleh membaca isi proyek rahasia. Zona itu
 mengatur dokumen seperti `SOP-15`; isi proyek butuh `allowed_projects`.
 
-## Kapan pemblokiran aktif (dua tingkat pemicu)
+## Cara kerjanya: tidak dicari sama sekali
 
-Skrip membedakan dua kelas istilah agar pertanyaan yang sah tidak ikut
-terbunuh. Aturan ini hidup di `scripts/search_kb.py`:
+Sejak 27 Okt 2026 (docs/decisions/0002) skrip **tidak** lagi membungkam
+pertanyaan yang menyebut nama proyek restricted. Dokumen yang tidak boleh
+dibaca penanya dilewati sebelum penilaian, dan bobot istilah (idf) hanya
+dihitung dari dokumen yang boleh ia baca. Akibatnya, bagi penanya yang tidak
+berwenang, jawaban untuk "Proyek Garuda" sama persis dengan jawaban untuk
+proyek yang tidak pernah ada, termasuk dalam bahasa Inggris, sebagai prefiks
+("Proyek Gar..."), atau ditempel ke pertanyaan lain.
 
-| Kelas | Contoh | Perilaku |
-| --- | --- | --- |
-| **Frasa multi-kata** dari `keywords` / `aliases` / `trigger_phrases` | kode proyek, "<proyek> <kota>" | Selalu memblokir. Kata-katanya juga dihapus dari query. |
-| **Kata tunggal yang eksklusif** — tidak muncul di dokumen publik mana pun | nama sandi proyek | Memblokir. |
-| **Kata tunggal generik** — juga muncul di dokumen non-restricted | nama kota, nama cabang, nama tim | **Tidak** memblokir. Dokumen restricted tetap tidak pernah dikutip, jadi tidak ada kebocoran. |
+Kenapa pembungkaman lama dihapus: "Who owns Project Garuda?" dibungkam,
+sedangkan "Who owns Project Falcon?" dijawab dengan bukti. Selisih itu sendiri
+membuktikan Garuda ada. Pembungkaman berbasis daftar kata selalu bisa
+dibandingkan dengan nama fiktif; melewati dokumennya tidak.
 
 Konsekuensi praktis:
 
-- Exit `2` berarti pertanyaan itu **benar-benar** tentang topik terbatas.
-- Exit `3`, atau exit `0` dengan hasil yang sah, berarti pertanyaan itu
-  **tidak** menyentuh topik terbatas — jawab seperti biasa dengan kutipan.
-- Jangan "mengamankan diri" dengan membungkam pertanyaan yang hanya
-  kebetulan menyebut kata generik. Over-blocking bukan kehati-hatian: itu
-  membuat SOP yang sah tidak bisa dijawab, dan justru menyiratkan ada sesuatu
-  yang disembunyikan di balik kata tersebut.
-
-### IMPORTANT: These are NOT restricted triggers (public information)
-
-Kata-kata berikut boleh muncul bebas di dalam pertanyaan dan **tidak boleh**
-memantik pemblokiran:
-
-- `gudang`, `makassar`, `branch-mks`, `jakarta`, `warehouse` — lokasi,
-  cabang, atau departemen apa pun
-- `tunjangan`, `gaji`, `bonus` — istilah HR/benefit apa pun
-- `staff`, `karyawan`, `shift`, `firewall`, `network`, `jaringan` — kata
-  operasional umum
-
-Daftar ini hidup di `NEVER_BLOCK` di `scripts/search_kb.py`; tambahkan istilah
-baru di sana bila perlu. Aturan tambahannya: sebuah frasa yang **seluruh
-katanya** publik juga tidak memblokir, begitu pula kata yang muncul di dokumen
-non-restricted mana pun.
+- Tidak ada exit `2` dan tidak ada baris `RESTRICTED_QUERY`. Jawab dari bukti
+  yang ada seperti biasa; bila buktinya tidak menjawab inti pertanyaan, pakai
+  Template 3.
+- Kata "proyek" tidak lagi membungkam apa pun; "share dokumen proyek ke
+  vendor" dijawab dari SOP yang boleh dilihat penanya.
+- `keywords` / `aliases` di dokumen restricted sekarang hanya metadata,
+  bukan pemicu. Tidak perlu lagi memilih kata khusus supaya tidak
+  over-blocking.
 
 ## Pola jawaban
 
-Untuk pertanyaan yang menyentuh topik terbatas — baik ditanya langsung maupun
-terselip di pertanyaan lain — pakai **Template 3 di `answer-playbook.md`
-apa adanya**, kata per kata, sama seperti untuk topik yang memang tidak ada.
-Jawaban dengan kalimat khusus (sekalipun netral) sudah membocorkan: penanya
-bisa membandingkannya dengan jawaban untuk proyek fiktif.
+Untuk pertanyaan yang menyentuh topik terbatas, jangan menambahkan kalimat
+apa pun tentang topik itu. Jawab bagian yang didukung bukti; bila tidak ada,
+pakai **Template 3 di `answer-playbook.md` apa adanya**, kata per kata, sama
+seperti untuk topik yang memang tidak ada. Jawaban dengan kalimat khusus
+(sekalipun netral) sudah membocorkan: penanya bisa membandingkannya dengan
+jawaban untuk proyek fiktif.
 
-`verify_matrix.py` menguji ini di level skrip: output untuk "Proyek Garuda"
-dan "Proyek Falcon" (fiktif) harus identik bagi penanya yang tidak berwenang.
+`verify_matrix.py` (kasus `HIDDEN` dan blok "Existence leak") dan
+`tests/test_accountability.py` (`NonInterferenceTest`) menguji ini: keluaran
+untuk penanya tak berwenang harus identik dengan dan tanpa dokumen restricted.
 
-Bila skrip mengembalikan exit `2` (`RESTRICTED_QUERY`) — artinya pertanyaan
-menyentuh pemicu tingkat 1 atau 2 pada tabel di atas — **seluruh** pertanyaan
-dijawab dengan Template 3, jangan menjawab sebagian pun. Mencoba
-menjawab bagian lain justru menyiratkan bahwa bagian yang dibuang itu ada.
-Skrip sudah menghapus istilah restricted dari query, jadi tidak ada hasil yang
-bisa dipakai.
-
-Daftar istilah pemicu hidup di field `keywords` / `aliases` /
-`trigger_phrases` dokumen `restricted: true` (lihat `kb/restricted/`).
-Jangan `Grep`/`Read` file itu; nama filenya saja sudah cukup untuk bocor bila
-ikut terkutip.
-
-**Aturan menulis keyword:** masukkan hanya istilah yang khas untuk topik itu
-(kode proyek, kombinasi "<proyek> <lokasi>"). Jangan memasukkan kata generik
-sendiri — nama kota atau nama cabang — karena begitu kata itu juga muncul di
-dokumen publik ia berhenti memblokir, sementara sebelumnya ia akan membungkam
-setiap pertanyaan yang menyebutnya. Pilih frasa, bukan kata umum.
+Jangan `Grep`/`Read` file di `kb/restricted/`; nama filenya saja sudah cukup
+untuk bocor bila ikut terkutip.
 
 ## Contoh
 

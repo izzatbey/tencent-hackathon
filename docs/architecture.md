@@ -58,14 +58,13 @@ flowchart TD
     I1 -- BLOCK --> R4[/"INJECTION_DETECTED · rc 4<br/>Template 7: tolak, minta parafrase"/]
     I1 -- lolos --> P[2. PII masking<br/>NIK · telepon · email · EMP-ID · IP]
     P --> ID[3. Identitas → permissions.csv<br/>tak dikenal = zona common]
-    ID --> S[4. Retrieval KB<br/>istilah restricted disembunyikan dari query]
-    S --> G[Permission gate<br/>buang dokumen di luar zona · flag risiko]
-    G --> I2{5. Injection guard<br/>scope=evidence}
+    ID --> G[4. Permission gate SEBELUM pencarian<br/>hanya dokumen yang boleh dibaca]
+    G --> S[Retrieval + idf<br/>dari dokumen yang boleh dibaca saja]
+    S --> I2{5. Injection guard<br/>scope=evidence}
     I2 -- BLOCK --> QR[QUARANTINED<br/>dikeluarkan dari hits]
     I2 -- lolos --> C[6. Deteksi konflik<br/>CONFLICT · SUPERSEDED · REVIEW · RISK]
     QR --> C
     C --> D{Status}
-    D -- restricted cocok --> R2[/"RESTRICTED_SILENCED · rc 2<br/>anggap tidak ada"/]
     D -- ada hits --> R0[/"OK · rc 0<br/>Template 1/2/4"/]
     D -- kosong --> R3[/"NO_MATCH · rc 3<br/>Template 3: tidak tahu + SME"/]
 ```
@@ -142,28 +141,23 @@ Response (hanya field ini yang boleh keluar ke browser; diterapkan di
 | `NO_MATCH` | 3 | "Tidak tahu" (Template 3) + nama SME |
 | `INJECTION_DETECTED` | 4 | permintaan parafrase |
 
-**Existence leak:** API wajib mengirim `RESTRICTED_SILENCED` (rc 2) ke frontend
-sebagai `NO_MATCH` dengan payload yang identik — status `RESTRICTED_SILENCED`
-tidak boleh pernah sampai ke browser, karena status yang berbeda saja sudah
-membedakan "dirahasiakan" dari "tidak ada". Proyek restricted terbuka hanya
-bagi user yang `allowed_projects`-nya memuat `project` dokumen itu.
+**Existence leak (non-interference):** dokumen yang tidak boleh dibaca
+penanya (proyek restricted di luar `allowed_projects`, zona di luar
+`allowed_zones`) dilewati sebelum penilaian dan tidak ikut menghitung idf.
+Bagi penanya itu, keluaran apa pun sama persis dengan keluaran saat dokumen
+tersebut tidak ada; tidak ada status khusus untuk topik restricted. Diuji
+dengan menjalankan pertanyaan yang sama terhadap KB lengkap dan KB yang
+dipangkas (`NonInterferenceTest`). Keputusan: [decisions/0002](decisions/0002-existence-leak-differential.md).
 
-| Status internal | Status ke frontend |
-| --- | --- |
-| `OK` | `OK` |
-| `RESTRICTED_SILENCED` | `NO_MATCH` |
-| `NO_MATCH` | `NO_MATCH` |
-| `INJECTION_DETECTED` | `INJECTION_DETECTED` |
-
-**Celah yang diketahui:** pemetaan status saja belum cukup. "Who owns Project
-Garuda?" dibungkam, "Who owns Project Falcon?" dijawab; selisih itu membocorkan
-keberadaan Garuda. Lihat [decisions/0002](decisions/0002-existence-leak-differential.md).
+**Identitas di API** hanya dari field `user` yang persis cocok dengan nama di
+`permissions.csv`; klaim di teks pertanyaan dan field `role` tidak dipakai.
+Belum ada autentikasi: pemilih persona di UI berperan sebagai login demo.
 
 **Wajib disaring di API (jangan pernah dikirim ke frontend):**
 
 - `kb_root` — path server.
-- `permission_gate.dropped` — berisi `doc_id` dokumen di luar akses penanya.
-- `quarantined` (isi), `restricted_matches`, `mask_log`, `injection_check`.
+- `permission_gate` (termasuk `readable_ids` dan `dropped` untuk `risk_gate: enforce`).
+- `quarantined` (isi), `mask_log`, `injection_check`.
 - `permissions.allowed_projects` — bisa membocorkan nama proyek restricted.
 
 ## 5. Struktur repo & kepemilikan
@@ -195,4 +189,4 @@ flowchart LR
 2. **Restricted = tidak ada.** Tidak dikonfirmasi maupun disangkal, termasuk di UI, log, dan pesan error.
 3. **Kutipan verbatim** — PII hanya disamarkan di pertanyaan, tidak di kutipan.
 4. **Ragu → tidak boleh**, lalu eskalasi ke owner dokumen.
-5. Regresi `backend/tests/verify_matrix.py` (44 kasus) wajib lulus sebelum merge.
+5. Regresi `backend/tests/verify_matrix.py` (46 kasus) wajib lulus sebelum merge.

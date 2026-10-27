@@ -7,6 +7,8 @@ Membungkus process_query() dan hanya mengeluarkan field yang aman ke browser
     python backend/api/server.py                     # 127.0.0.1:8787
     python backend/api/server.py --static frontend/dist   # sekalian melayani UI hasil build
     python backend/api/server.py --demo              # + POST /api/demo/clock
+    python backend/api/server.py --replay Q-0091a2d7fa37  # baca ulang catatan audit
+    PORT=8080 python backend/api/server.py --static frontend/dist  # bind 0.0.0.0 (WorkBuddy Sites)
 
 Endpoint:
     POST /api/ask       {"question": "...", "user": null, "role": null}
@@ -34,6 +36,7 @@ BACKEND = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND / "scripts"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import cab_api  # noqa: E402
+import injection_guard as guard  # noqa: E402
 import permissions as perm  # noqa: E402
 import search_kb  # noqa: E402
 from audit_chain import AuditChain  # noqa: E402
@@ -43,6 +46,7 @@ MAX_BODY = 64 * 1024
 MAX_DRAIN = 1024 * 1024
 MAX_QUESTION = 2000
 MAX_NAME = 80
+SOCKET_TIMEOUT = 15
 DEFAULT_LOG = BACKEND / "logs" / "audit.jsonl"
 
 # SKILL.md §Eskalasi, baris "Lainnya / tidak ada owner". Sengaja tetap: jawaban
@@ -84,7 +88,8 @@ def parse_json(body, content_type):
 def parse_request(body, content_type):
     data = parse_json(body, content_type)
     question = data.get("question")
-    if not isinstance(question, str) or not question.strip():
+    # Karakter tak terlihat saja (zero-width, BOM) dihitung kosong.
+    if not isinstance(question, str) or not guard.normalize(question).strip():
         raise ApiError(HTTPStatus.BAD_REQUEST, "question_required", "Pertanyaan wajib diisi.")
     if len(question) > MAX_QUESTION:
         raise ApiError(HTTPStatus.BAD_REQUEST, "question_too_long",
@@ -97,7 +102,8 @@ def parse_request(body, content_type):
             raise ApiError(HTTPStatus.BAD_REQUEST, "invalid_%s" % key,
                            "Field %s harus teks maksimal %d karakter." % (key, MAX_NAME))
         fields[key] = (value.strip() or None) if isinstance(value, str) else None
-    return question.strip(), fields["user"], fields["role"]
+    # role hanya divalidasi demi kompatibilitas klien; hak akses diturunkan dari user.
+    return question.strip(), fields["user"]
 
 
 def public_identity(result):
@@ -120,8 +126,7 @@ def to_response(result, q_id):
     common = dict(base, question_masked=result.get("masked_query"),
                   identity=public_identity(result), pii_masked=result.get("pii_masked") or "")
 
-    # RESTRICTED_SILENCED dikirim sebagai NO_MATCH dengan payload yang sama persis.
-    if result["status"] in ("NO_MATCH", "RESTRICTED_SILENCED"):
+    if result["status"] == "NO_MATCH":
         return dict(common, status="NO_MATCH", rc=3, answer=NO_MATCH_ANSWER,
                     escalation=FALLBACK_SME)
 
@@ -151,8 +156,7 @@ def audit(result, response):
         "actor": "api",
         "user": response["identity"]["user"],
         "zones_searched": perms.get("allowed_zones", []),
-        "status_internal": result["status"],
-        "status_public": response["status"],
+        "status": response["status"],
         "question_masked": response["question_masked"],
         "pii_masked": response["pii_masked"],
         "citations": [c["doc_id"] for c in response["citations"]],
@@ -160,12 +164,31 @@ def audit(result, response):
         "answer_sha256": hashlib.sha256((response["answer"] or "").encode("utf-8")).hexdigest(),
         "approval_state": "n/a",
     }
+    write_log(record)
+
+
+def write_log(record):
+    # Galat menulis sengaja tidak ditangkap: ask() gagal, jawaban tidak dikirim.
     AuditChain.for_path(audit_path()).append(record)
 
 
-def ask(question, user=None, role=None, kb_root=None):
+def ask(question, user=None, kb_root=None):
+    """Identitas hanya dari `user` yang terdaftar persis di permissions.csv.
+
+    Klaim di teks pertanyaan ("Saya Andini, IT Admin") dan field role tidak
+    dipakai: otorisasi ditetapkan pemanggil, bukan isi prompt (OWASP LLM01).
+    Bila audit log gagal ditulis, jawaban tidak dikirim (fail closed).
+    """
     q_id = "Q-" + uuid.uuid4().hex[:12]
-    result = search_kb.process_query(question, kb_root=kb_root, user=user, role=role)
+    user = user if user in {p["user"] for p in personas()} else None
+    try:
+        result = search_kb.process_query(question, kb_root=kb_root, user=user,
+                                         identity_from_text=False)
+    except Exception:
+        write_log({"ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                   "q_id": q_id, "stage": "answer", "actor": "api", "user": user,
+                   "status": "ERROR"})
+        raise
     response = to_response(result, q_id)
     audit(result, response)
     return response
@@ -242,7 +265,11 @@ class Handler(BaseHTTPRequestHandler):
                 remaining -= len(chunk)
             self.close_connection = True
             raise ApiError(413, "too_large", "Body terlalu besar.")
-        return self.rfile.read(length)
+        try:
+            return self.rfile.read(length)
+        except TimeoutError:  # Content-Length lebih besar dari body yang benar-benar dikirim
+            self.close_connection = True
+            raise ApiError(408, "timeout", "Body tidak lengkap.")
 
     def run(self, label, fn):
         try:
@@ -266,8 +293,8 @@ class Handler(BaseHTTPRequestHandler):
         content_type = self.headers.get("Content-Type")
         if path == "/api/ask":
             def answer():
-                question, user, role = parse_request(body, content_type)
-                return ask(question, user=user, role=role, kb_root=self.kb_root)
+                question, user = parse_request(body, content_type)
+                return ask(question, user=user, kb_root=self.kb_root)
             return self.run("ask", answer)
         self.run("cab", lambda: cab_api.handle_post(path, parse_json(body, content_type),
                                                     audit_path(), demo=self.demo))
@@ -306,22 +333,37 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
 
-def make_server(host="127.0.0.1", port=8787, static_root=None, kb_root=None, demo=False):
-    handler = type("BoundHandler", (Handler,),
-                   {"static_root": static_root, "kb_root": kb_root, "demo": demo})
+def make_server(host="127.0.0.1", port=8787, static_root=None, kb_root=None,
+                timeout=SOCKET_TIMEOUT, demo=False):
+    # timeout: koneksi yang diam (slowloris, body terpotong) tidak menahan thread selamanya.
+    handler = type("BoundHandler", (Handler,), {"static_root": static_root, "kb_root": kb_root,
+                                                "timeout": timeout, "demo": demo})
     return ThreadingHTTPServer((host, port), handler)
+
+
+def replay(q_id):
+    """Semua baris audit log untuk satu q_id (tes #17: rantai bisa direkonstruksi)."""
+    return [r for r in AuditChain.for_path(audit_path()).records() if r.get("q_id") == q_id]
 
 
 def main():
     ap = argparse.ArgumentParser(description="HTTP API SecuritySahabat.")
-    ap.add_argument("--host", default="127.0.0.1")
-    ap.add_argument("--port", type=int, default=8787)
+    # WorkBuddy Sites menyuntikkan PORT dan butuh bind 0.0.0.0; lokal tetap 127.0.0.1.
+    ap.add_argument("--host", default=os.environ.get("HOST")
+                    or ("0.0.0.0" if os.environ.get("PORT") else "127.0.0.1"))
+    ap.add_argument("--port", type=int, default=int(os.environ.get("PORT") or 8787))
     ap.add_argument("--static", help="Folder UI hasil build (mis. frontend/dist)")
     ap.add_argument("--demo", action="store_true",
                     help="Aktifkan POST /api/demo/clock (memajukan jam untuk demo rapat CAB)")
+    ap.add_argument("--replay", metavar="Q_ID", help="Cetak catatan audit untuk q_id ini lalu keluar")
     args = ap.parse_args()
+    if args.replay:
+        records = replay(args.replay)
+        for record in records:
+            print(json.dumps(record, ensure_ascii=False, indent=2))
+        return 0 if records else 1
     server = make_server(args.host, args.port, args.static, demo=args.demo)
-    print("SecuritySahabat API di http://%s:%d" % server.server_address[:2])
+    print("SecuritySahabat API di http://%s:%d" % server.server_address[:2], flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

@@ -9,6 +9,7 @@ const PYTHON = process.env.PYTHON ?? (process.platform === 'win32' ? 'python' : 
 // jadi yang dites adalah engine sungguhan, bukan mock.
 export default defineConfig({
   testDir: 'e2e',
+  testIgnore: ['**/evidence.spec.ts'], // bukti submission: npm run evidence
   fullyParallel: false,
   workers: 1,
   retries: 0,
