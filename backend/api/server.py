@@ -35,6 +35,7 @@ from pathlib import Path
 BACKEND = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND / "scripts"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import ask_bridge  # noqa: E402
 import cab_api  # noqa: E402
 import injection_guard as guard  # noqa: E402
 import permissions as perm  # noqa: E402
@@ -134,10 +135,24 @@ def to_response(result, q_id):
     flags = [{"type": f["type"], "doc": f["doc"], "detail": f["detail"]}
              for f in result.get("flags", [])]
     owner = next((c["owner"] for c in citations if c.get("owner")), FALLBACK_SME)
-    # answer tetap null sampai answer composer (S4) ada: tanpa LLM, API hanya
-    # menyajikan bukti dan tidak menyimpulkan boleh/tidak.
+    # answer null kecuali jembatan (merge_bridge) punya klarifikasi atau verdict
+    # dari aturan; tanpa LLM, API tidak menyimpulkan boleh/tidak dari bukti bebas.
     return dict(common, status="OK", rc=0, answer=None, citations=citations,
                 flags=flags, escalation=owner)
+
+
+def merge_bridge(response, bridge):
+    """Tempel klarifikasi / verdict aturan dari ask_bridge ke DTO yang sama.
+    Tidak ada field baru: hanya answer, flags, dan citations yang bertambah."""
+    if not bridge["answer_parts"]:
+        return response
+    answer = " ".join(bridge["answer_parts"])
+    if response["status"] == "NO_MATCH":
+        answer += " Untuk bagian lain dari pertanyaan ini: " + NO_MATCH_ANSWER
+    have = {(c["doc_id"], c["quote"]) for c in response["citations"]}
+    extra = [c for c in bridge["citations"] if (c["doc_id"], c["quote"]) not in have]
+    return dict(response, answer=answer, flags=response["flags"] + bridge["flags"],
+                citations=response["citations"] + extra)
 
 
 # --------------------------------------------------------------------------
@@ -147,8 +162,9 @@ def audit_path():
     return Path(os.environ.get("SECURITY_SAHABAT_AUDIT_LOG") or DEFAULT_LOG)
 
 
-def audit(result, response):
+def audit(result, response, bridge=None):
     perms = result.get("permissions") or {}
+    bridge = bridge or {"approval_state": "n/a", "summary": None}
     record = {
         "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "q_id": response["q_id"],
@@ -162,7 +178,9 @@ def audit(result, response):
         "citations": [c["doc_id"] for c in response["citations"]],
         "flags": [f["type"] for f in response["flags"]],
         "answer_sha256": hashlib.sha256((response["answer"] or "").encode("utf-8")).hexdigest(),
-        "approval_state": "n/a",
+        # pending/blocked = ada permintaan aksi yang TIDAK dijalankan (S5)
+        "approval_state": bridge["approval_state"],
+        "bridge": bridge["summary"],
     }
     write_log(record)
 
@@ -190,7 +208,17 @@ def ask(question, user=None, kb_root=None):
                    "status": "ERROR"})
         raise
     response = to_response(result, q_id)
-    audit(result, response)
+    bridge = None
+    if result["status"] != "INJECTION_DETECTED":
+        # klarifikasi & verdict aturan dari register yang sama dengan Pra-CAB,
+        # dibaca dari pertanyaan yang sudah disamarkan PII-nya
+        policies = cab_api.store_for(audit_path()).policies
+        with policies.lock:
+            rules, submitted = policies.active_rules(), dict(policies.sources)
+        bridge = ask_bridge.analyze(result.get("masked_query") or "", user=user, rules=rules,
+                                    submitted=submitted, root=kb_root, now=cab_api.CLOCK.now())
+        response = merge_bridge(response, bridge)
+    audit(result, response, bridge)
     return response
 
 
