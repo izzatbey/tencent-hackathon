@@ -278,6 +278,31 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
   Setelah mengubah `backend/scripts/` atau `kb/`, jalankan
   `tools/pack_skill.py --project`.
 
+## Keputusan 28 Okt (Izzat): jembatan tanya-jawab → Pra-CAB
+
+- `backend/scripts/ask_bridge.py`, dipanggil `server.ask()` setelah
+  `process_query()`: klarifikasi (nama ganda dari direktori, jadwal tanpa zona
+  dengan jam salat dari aturan `FRIDAY-PRAYER` di register, aset tidak jelas
+  dari CMDB), deteksi kalimat perintah (tidak pernah dijalankan;
+  `approval_state` pending/blocked di audit), dan pratinjau precheck Pra-CAB
+  untuk aset + jenis perubahan yang disebut. **Tanpa LLM.** Verdict "tidak
+  boleh" hanya bila ada aturan `BLOCK`; id aturan disebut di jawaban.
+- Memakai register yang sama dengan Pra-CAB (`cab_api.store_for().policies`):
+  aturan yang disahkan langsung mengubah jawaban chat ("satu otak").
+- Hasil: tes brief #2, #6, #9, #10, #14, #18 lulus lewat jembatan, #19 lewat
+  undo Pra-CAB. Semua tes di `test_brief_pending.py` kini lulus;
+  `expectedFailure` yang tersisa di seluruh suite hanya #7 (SLA crane, butuh
+  ambang relevansi). Matriks brief di `docs/testing.md`: 19 lulus, 1 gagal (#7).
+- Bentuk DTO `/api/ask` tidak berubah. Label flag baru ada di
+  `frontend/src/lib/labels.ts`. Penilai di `frontend/e2e/evidence.spec.ts` sudah
+  diperbarui tetapi **belum dijalankan**: Playwright di repo butuh Chromium
+  build 1248, PC Izzat baru punya 1228 (`npx playwright install chromium`, perlu
+  izin unduh). `docs/test-results/README.md` dan screenshot-nya masih versi
+  lama sampai `npm run evidence` dijalankan ulang.
+- Batas yang diketahui: bahasa jawaban jembatan selalu Indonesia; pola
+  perintah/pertanyaan berbasis kata kunci (lihat `test_ask_bridge.py` untuk
+  kasus yang sengaja tidak dianggap perintah).
+
 ## Belum dikerjakan (per 27 Okt)
 
 - Pra-CAB: UI frontend (termasuk register); klarifikasi "dua Budi" di intake;

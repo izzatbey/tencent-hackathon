@@ -124,7 +124,10 @@ class ResponseShapeTest(LogEnv, unittest.TestCase):
     def test_jawaban_ok_punya_kutipan_lengkap_dan_tidak_mengarang_kesimpulan(self):  # #1
         response = server.ask("Boleh buka port 22 dari internet ke db-hr-jkt-01?", user="Andini Pratama")
         self.assertEqual(response["status"], "OK")
-        self.assertIsNone(response["answer"])  # belum ada answer composer (S4)
+        # Sejak 28 Okt: kesimpulan hanya dari aturan register yang terpicu (ask_bridge),
+        # bukan dari LLM; id aturannya disebut di jawaban.
+        self.assertTrue(response["answer"].startswith("Menurut aturan perusahaan: tidak boleh."))
+        self.assertIn("[POL-x001]", response["answer"])
         self.assertIn("CTRL-09", [c["doc_id"] for c in response["citations"]])
         for citation in response["citations"]:
             self.assertTrue(citation["doc_id"] and citation["quote"])

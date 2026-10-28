@@ -129,8 +129,17 @@ Response (hanya field ini yang boleh keluar ke browser; diterapkan di
 ```
 
 - `q_id`: nomor catatan audit log; sama dengan baris di `backend/logs/audit.jsonl`.
-- `answer`: `null` untuk `OK` sampai answer composer (S4) ada. Untuk `NO_MATCH`
-  dan `INJECTION_DETECTED` berisi kalimat tetap.
+- `answer`: untuk `OK` bernilai `null` kecuali `backend/scripts/ask_bridge.py`
+  (28 Okt, tanpa LLM) punya isi: klarifikasi (nama yang dimiliki >1 staf, jadwal
+  tanpa zona waktu, aset yang tidak jelas), pemberitahuan bahwa perintah aksi
+  tidak dijalankan, atau verdict dari policy register untuk aset + jenis
+  perubahan yang disebut ("tidak boleh" hanya bila ada aturan `BLOCK`, dengan id
+  aturannya). Untuk `NO_MATCH` kalimat tetap, didahului isi jembatan bila ada;
+  untuk `INJECTION_DETECTED` kalimat tetap.
+- `flags[].type` dari jembatan: `CLARIFY`, `ACTION_REQUEST`, `POLICY_BLOCK`,
+  `POLICY_PREVIEW`. Kutipan aturan (mis. TOPO-PRAYER-TIMES, CHAT memo) ikut
+  ditambahkan ke `citations`. Audit log mencatat `approval_state`
+  (`n/a` · `pending` · `blocked`) dan ringkasan `bridge`.
 - `question_masked`: pertanyaan setelah penyamaran PII; `null` untuk injection.
   Frontend menampilkan ini, bukan teks yang diketik.
 - `identity`: `null`/`null` bila penanya tidak dikenali.
