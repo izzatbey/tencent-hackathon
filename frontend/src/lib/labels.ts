@@ -1,8 +1,7 @@
 import type { Flag } from './types'
 
-// Label tiap jenis flag dari detect_conflicts(), risk_flags(), dan ask_bridge
-// (klarifikasi, permintaan aksi, verdict aturan). Arti tidak pernah hanya dari
-// warna: selalu ada teks label + ikon.
+// Label tiap jenis flag dari detect_conflicts() dan risk_flags(). Arti tidak
+// pernah hanya dari warna: selalu ada teks label + ikon.
 const FLAG_LABELS: Record<string, string> = {
   CONFLICT: 'Sumber saling bertentangan',
   REVIEW: 'Catatan dari pemilik dokumen',
@@ -10,20 +9,16 @@ const FLAG_LABELS: Record<string, string> = {
   SUPERSEDES: 'Menggantikan versi lama',
   STATUS: 'Status dokumen tidak aktif',
   RISK: 'Di atas batas risiko akses Anda',
-  CLARIFY: 'Perlu klarifikasi',
-  ACTION_REQUEST: 'Permintaan aksi tidak dijalankan',
-  POLICY_BLOCK: 'Dilarang aturan perusahaan',
-  POLICY_PREVIEW: 'Pratinjau aturan perusahaan',
 }
-
-const WARNING_FLAGS = new Set(['CONFLICT', 'RISK', 'SUPERSEDED_BY', 'POLICY_BLOCK'])
 
 export function flagLabel(flag: Flag): string {
   return FLAG_LABELS[flag.type] ?? 'Perlu diperhatikan'
 }
 
 export function flagTone(flag: Flag): 'conflict' | 'note' {
-  return WARNING_FLAGS.has(flag.type) ? 'conflict' : 'note'
+  return flag.type === 'CONFLICT' || flag.type === 'RISK' || flag.type === 'SUPERSEDED_BY'
+    ? 'conflict'
+    : 'note'
 }
 
 const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus',

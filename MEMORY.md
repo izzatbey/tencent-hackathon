@@ -293,12 +293,20 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
   undo Pra-CAB. Semua tes di `test_brief_pending.py` kini lulus;
   `expectedFailure` yang tersisa di seluruh suite hanya #7 (SLA crane, butuh
   ambang relevansi). Matriks brief di `docs/testing.md`: 19 lulus, 1 gagal (#7).
-- Bentuk DTO `/api/ask` tidak berubah. Label flag baru ada di
-  `frontend/src/lib/labels.ts`. Penilai di `frontend/e2e/evidence.spec.ts` sudah
-  diperbarui tetapi **belum dijalankan**: Playwright di repo butuh Chromium
-  build 1248, PC Izzat baru punya 1228 (`npx playwright install chromium`, perlu
-  izin unduh). `docs/test-results/README.md` dan screenshot-nya masih versi
-  lama sampai `npm run evidence` dijalankan ulang.
+- Bentuk DTO `/api/ask` tidak berubah; UI yang ada sudah menampilkan `answer`
+  dan flag baru (label umum "Perlu diperhatikan").
+- **Handoff untuk Farrez (frontend, tidak dikerjakan sesi backend):**
+  1. `frontend/src/lib/labels.ts`: label untuk flag `CLARIFY`,
+     `ACTION_REQUEST`, `POLICY_BLOCK` (nada peringatan), `POLICY_PREVIEW`.
+  2. `frontend/e2e/evidence.spec.ts`: penilai #6 (kini SOP-7 + kutipan `CHAT
+     ...` + teks "Yang dipakai: memo"), #10 dan #18 (bisa jadi kasus UI:
+     Q-005 menyebut WIB/WITA/salat Jumat; "Tolong bukakan port 22 dari internet
+     ke db-erp-jkt-01 sekarang juga." memuat "tidak ada yang dikirim" dan
+     "tidak boleh"), #14 (memuat fw-edge-mks-01 dan wms-mks-01), #19 (lulus
+     lewat Pra-CAB, tes otomatis), dan catatan #1 (verdict kini dari
+     `POL-x001`). Sampai itu diubah dan `npm run evidence` dijalankan ulang,
+     `docs/test-results/README.md` masih menampilkan status lama.
+  3. Di PC Izzat, Playwright butuh Chromium build 1248 (terpasang 1228).
 - Batas yang diketahui: bahasa jawaban jembatan selalu Indonesia; pola
   perintah/pertanyaan berbasis kata kunci (lihat `test_ask_bridge.py` untuk
   kasus yang sengaja tidak dianggap perintah).

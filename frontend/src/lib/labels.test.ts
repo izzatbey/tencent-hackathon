@@ -26,8 +26,7 @@ describe('formatDate', () => {
 
 describe('flag', () => {
   it('setiap jenis flag dari engine punya label teks', () => {
-    for (const type of ['CONFLICT', 'REVIEW', 'SUPERSEDED_BY', 'SUPERSEDES', 'STATUS', 'RISK',
-      'CLARIFY', 'ACTION_REQUEST', 'POLICY_BLOCK', 'POLICY_PREVIEW']) {
+    for (const type of ['CONFLICT', 'REVIEW', 'SUPERSEDED_BY', 'SUPERSEDES', 'STATUS', 'RISK']) {
       expect(flagLabel({ type, doc: 'X', detail: '' })).not.toBe('Perlu diperhatikan')
     }
   })
@@ -40,8 +39,6 @@ describe('flag', () => {
     expect(flagTone({ type: 'CONFLICT', doc: '', detail: '' })).toBe('conflict')
     expect(flagTone({ type: 'RISK', doc: '', detail: '' })).toBe('conflict')
     expect(flagTone({ type: 'REVIEW', doc: '', detail: '' })).toBe('note')
-    expect(flagTone({ type: 'POLICY_BLOCK', doc: '', detail: '' })).toBe('conflict')
-    expect(flagTone({ type: 'CLARIFY', doc: '', detail: '' })).toBe('note')
   })
 })
 
