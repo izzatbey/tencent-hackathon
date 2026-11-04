@@ -25,8 +25,11 @@ test('#1 Q-001: port 22 ke db-hr mengutip CTRL-09 secara verbatim', async ({ pag
   const sheet = await askAs(page, 'Andini Pratama, IT Admin',
     'Boleh buka port 22 dari internet ke db-hr-jkt-01 untuk maintenance malam ini?')
   await expect(sheet.getByText('Bukti ditemukan')).toBeVisible()
-  await expect(sheet.locator('.doc-id', { hasText: 'CTRL-09' })).toBeVisible()
+  // CTRL-09 bisa muncul dua kali: dari retrieval dan dari sumber aturan POL-x001
+  await expect(sheet.locator('.doc-id', { hasText: 'CTRL-09' }).first()).toBeVisible()
   await expect(sheet.getByText(/SSH \(port 22\) from the internet/)).toBeVisible()
+  await expect(sheet.locator('.answer')).toContainText(/tidak boleh.*\[POL-x001\]/)
+  await expect(sheet.locator('.flags li.conflict', { hasText: 'Diblokir aturan perusahaan' })).toBeVisible()
   await expect(sheet.getByText(/^Q-[0-9a-f]{12}$/)).toBeVisible()
 })
 

@@ -44,7 +44,7 @@
         <ul>
           {#each response.flags as flag, i (i)}
             <li class={flagTone(flag)}>
-              <Icon name={flagTone(flag) === 'conflict' ? 'gitDiff' : 'warning'} size={18} />
+              <Icon name={flag.type === 'POLICY_BLOCK' ? 'prohibit' : flagTone(flag) === 'conflict' ? 'gitDiff' : 'warning'} size={18} />
               <div>
                 <strong>{flagLabel(flag)}</strong>
                 <span class="flag-doc">{flag.doc}</span>

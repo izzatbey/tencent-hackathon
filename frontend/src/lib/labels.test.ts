@@ -31,6 +31,19 @@ describe('flag', () => {
     }
   })
 
+  it('setiap flag dari ask_bridge.py punya label', () => {
+    for (const type of ['CLARIFY', 'ACTION_REQUEST', 'POLICY_BLOCK', 'POLICY_PREVIEW']) {
+      expect(flagLabel({ type, doc: '', detail: '' })).not.toBe('Perlu diperhatikan')
+    }
+  })
+
+  it('blokir aturan memakai nada peringatan, pratinjau dan klarifikasi tidak', () => {
+    expect(flagTone({ type: 'POLICY_BLOCK', doc: '', detail: '' })).toBe('conflict')
+    for (const type of ['POLICY_PREVIEW', 'CLARIFY', 'ACTION_REQUEST']) {
+      expect(flagTone({ type, doc: '', detail: '' })).toBe('note')
+    }
+  })
+
   it('jenis flag baru yang belum dikenal tetap diberi label umum', () => {
     expect(flagLabel({ type: 'BARU', doc: 'X', detail: '' })).toBe('Perlu diperhatikan')
   })

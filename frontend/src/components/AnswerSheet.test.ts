@@ -56,6 +56,23 @@ describe('AnswerSheet: SOURCES', () => {
     expect(screen.getByText('SOP-FUEL vs MEMO-HR-10')).toBeInTheDocument()
   })
 
+  it('blokir aturan tampil sebagai peringatan, pratinjau sebagai catatan', () => {
+    const { container } = render(AnswerSheet, {
+      response: okResponse({
+        flags: [
+          { type: 'POLICY_BLOCK', doc: 'policy register', detail: 'Diblokir aturan POL-x001.' },
+          { type: 'POLICY_PREVIEW', doc: 'policy register', detail: 'Pratinjau: risiko MEDIUM.' },
+        ],
+      }),
+    })
+    const items = [...container.querySelectorAll('.flags li')]
+    const tone = (li: Element) => (li.classList.contains('conflict') ? 'conflict' : 'note')
+    expect(items.map((li) => [tone(li), li.querySelector('strong')?.textContent])).toEqual([
+      ['conflict', 'Diblokir aturan perusahaan'],
+      ['note', 'Pratinjau aturan Pra-CAB'],
+    ])
+  })
+
   it('tanggal mustahil di metadata ditampilkan apa adanya', () => {
     render(AnswerSheet, { response: okResponse({ citations: [citation({ effective_date: '2026-02-31' })] }) })
     expect(screen.getByText('2026-02-31')).toBeInTheDocument()

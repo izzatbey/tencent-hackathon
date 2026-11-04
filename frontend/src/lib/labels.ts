@@ -9,16 +9,21 @@ const FLAG_LABELS: Record<string, string> = {
   SUPERSEDES: 'Menggantikan versi lama',
   STATUS: 'Status dokumen tidak aktif',
   RISK: 'Di atas batas risiko akses Anda',
+  // dari ask_bridge.py (jembatan tanya-jawab ke Pra-CAB)
+  CLARIFY: 'Perlu klarifikasi',
+  ACTION_REQUEST: 'Permintaan aksi tidak dijalankan',
+  POLICY_BLOCK: 'Diblokir aturan perusahaan',
+  POLICY_PREVIEW: 'Pratinjau aturan Pra-CAB',
 }
+
+const WARNING_FLAGS = new Set(['CONFLICT', 'RISK', 'SUPERSEDED_BY', 'POLICY_BLOCK'])
 
 export function flagLabel(flag: Flag): string {
   return FLAG_LABELS[flag.type] ?? 'Perlu diperhatikan'
 }
 
 export function flagTone(flag: Flag): 'conflict' | 'note' {
-  return flag.type === 'CONFLICT' || flag.type === 'RISK' || flag.type === 'SUPERSEDED_BY'
-    ? 'conflict'
-    : 'note'
+  return WARNING_FLAGS.has(flag.type) ? 'conflict' : 'note'
 }
 
 const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus',
