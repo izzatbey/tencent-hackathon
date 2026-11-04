@@ -26,7 +26,7 @@ implementasi, uji lewat HTTP sungguhan untuk perilaku lapisan request).
 | Teknik | Hypertest non-interference (dua eksekusi, input rahasia beda, keluaran harus sama), relasi metamorfik nama nyata vs fiktif, partisi per status, tabel keputusan persona x proyek x zona, nilai batas panjang (0, 1, 2000, 2001, 2000 emoji), transisi izin (cabut, beri, cabut), skenario demo end-to-end. |
 | Oracle | Teks dokumen di disk (kutipan harus substring verbatim). Untuk kebocoran: KB yang dipangkas dari dokumen tak terbaca, dihitung dari frontmatter dan permissions.csv tanpa memakai logika izin engine. |
 | Kualitas tes | Setiap penjaga dirusak sementara (`python tools/mutate_guards.py`): 10 mutan untuk perubahan ADR 0002 dan API, plus mutan tahap sebelumnya. Semua menjadi merah. |
-| Tidak bisa dites di sini | Agent WorkBuddy, voice note, answer composer LLM (S4), approval gate (S5), klarifikasi dua Budi, latensi sebagai side channel (tidak diukur; semua dokumen tetap dimuat per request). |
+| Tidak bisa dites di sini | Agent WorkBuddy, voice note, answer composer LLM (S4), latensi sebagai side channel (tidak diukur; semua dokumen tetap dimuat per request). Approval gate dan klarifikasi dua Budi sudah dites sejak 28 Okt (Pra-CAB, `ask_bridge`). |
 
 ## Katalog edge case kebocoran (ADR 0002)
 

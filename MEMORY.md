@@ -1,7 +1,7 @@
 # Project Memory — SecuritySahabat
 
 Konteks kerja untuk sesi Claude Code berikutnya. Dibuat 26 Okt 2026, terakhir
-diperbarui 27 Okt 2026 (policy register v0). Perbarui file ini bila ada
+diperbarui 4 Nov 2026 (handoff frontend jembatan selesai). Perbarui file ini bila ada
 keputusan baru atau item "belum dikerjakan" selesai.
 
 ## Ringkas
@@ -69,7 +69,7 @@ Sudah ada dan teruji (main):
   aturan dari memo oleh LLM (diuji dengan FakeProvider).
 - Audit log berantai hash bersama untuk semua jalur (`audit_chain.py`).
 - Demo end-to-end tanpa UI: `python tools/demo_pracab.py` (16 langkah).
-- Tes: 187 unit test (8 `expectedFailure` disengaja), 46 regresi.
+- Tes: 201 unit test (1 `expectedFailure`: #7), 46 regresi (per 4 Nov).
 
 Belum diverifikasi: ekstraksi aturan dengan Claude sungguhan (`pip install
 anthropic` + `ANTHROPIC_API_KEY`, lalu `SECURITY_SAHABAT_LLM=claude` dan
@@ -217,7 +217,7 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
 - `python backend/tests/verify_matrix.py` — **46 kasus, wajib 0 gagal**
   sebelum commit (phase2 13, phase3 14, injection 10, pii 4, ctx 1, leak 4).
 - `python -m unittest discover -s backend/tests` — core + API + Pra-CAB
-  (`test_pracab.py`) + policy register (`test_policy.py`); 187 tes per 27 Okt.
+  (`test_pracab.py`) + policy register (`test_policy.py`); 201 tes per 4 Nov.
   Kegagalan yang diketahui ditulis `@unittest.expectedFailure` (tes #7 SLA
   crane, spesifikasi `test_brief_pending.py`). Status matriks brief dan
   katalog edge case: `docs/testing.md`.
@@ -295,7 +295,14 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
   ambang relevansi). Matriks brief di `docs/testing.md`: 19 lulus, 1 gagal (#7).
 - Bentuk DTO `/api/ask` tidak berubah; UI yang ada sudah menampilkan `answer`
   dan flag baru (label umum "Perlu diperhatikan").
-- **Handoff untuk Farrez (frontend, tidak dikerjakan sesi backend):**
+- **Handoff untuk Farrez (frontend): selesai 4 Nov (T-0073), butir 1 dan 2.**
+  Label keempat flag ada di `labels.ts`; `POLICY_BLOCK` bernada peringatan
+  dengan ikon `prohibit`, tiga lainnya catatan. `evidence.spec.ts` kini
+  menilai #1, #2, #6, #9, #10, #14, #18 dari layar dan #19 sebagai tes
+  otomatis; bukti: 23 lulus, 1 gagal (#7) dari 24 baris (20 kasus brief +
+  04b/04c/H1/X1). `sahabat.spec.ts` #1 ikut diperbarui: CTRL-09 kini bisa
+  dikutip dua kali (retrieval + sumber POL-x001), jadi locator-nya `.first()`
+  dan tes menagih verdict `[POL-x001]`. Teks aslinya:
   1. `frontend/src/lib/labels.ts`: label untuk flag `CLARIFY`,
      `ACTION_REQUEST`, `POLICY_BLOCK` (nada peringatan), `POLICY_PREVIEW`.
   2. `frontend/e2e/evidence.spec.ts`: penilai #6 (kini SOP-7 + kutipan `CHAT
@@ -311,7 +318,7 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
   perintah/pertanyaan berbasis kata kunci (lihat `test_ask_bridge.py` untuk
   kasus yang sengaja tidak dianggap perintah).
 
-## Belum dikerjakan (per 27 Okt)
+## Belum dikerjakan (per 4 Nov)
 
 - Pra-CAB: UI frontend (termasuk register); klarifikasi "dua Budi" di intake;
   usulan jendela waktu alternatif; data hari libur nasional (belum ada di
@@ -319,11 +326,13 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
   sungguhan; migrasi cek built-in lain ke register (lihat prioritas #4).
 - Tes #7: pertanyaan di luar data tetap mendapat bukti tak relevan (butuh
   ambang relevansi atau S4).
-- S1 parser LLM dan S4 answer synthesizer untuk `/api/ask`; S5 approval gate
-  untuk aksi yang tersirat di pertanyaan `/api/ask`. Spesifikasinya ada sebagai
-  tes `expectedFailure` di `backend/tests/test_brief_pending.py` (#2, #6, #9,
-  #10, #14, #18, #19). Pra-CAB sudah punya intake LLM, approval gate, dan
-  undo sendiri; belum disambungkan ke `/api/ask`.
+- S1 parser LLM dan S4 answer synthesizer untuk `/api/ask`. Jembatan 28 Okt
+  menutup #2, #6, #9, #10, #14, #18, #19 tanpa LLM; jawaban untuk pertanyaan
+  yang tidak menyebut aset + jenis perubahan masih hanya bukti.
+- Screenshot bukti memotret seluruh giliran, jadi kotak input yang sticky ikut
+  terpotret di tengah gambar panjang (mis. `screenshots/09.png`). Belum
+  dirapikan; kalau mengganggu untuk Demo Day, sembunyikan composer saat
+  `npm run evidence` atau screenshot per `article.sheet`.
 - Indexing `cmdb.csv`, `chat_exports.jsonl`; klarifikasi "dua Budi"
   (`contacts.csv`, brief test #9).
 - Autentikasi: API mempercayai `user` dari request (pemilih persona demo).
