@@ -32,15 +32,17 @@ const CASES: Case[] = [
   {
     id: '01', title: 'Q-001 port 22 dari internet ke db-hr-jkt-01', persona: 'Andini Pratama, IT Admin',
     question: QUESTIONS['Q-001'],
-    judge: (_, ids) => has(ids, 'CTRL-09')
-      ? { verdict: 'Lulus', note: 'CTRL-09 dikutip verbatim; kesimpulan "tidak boleh" menunggu answer composer (S4).' }
-      : { verdict: 'Gagal', note: 'CTRL-09 tidak dikutip.' },
+    judge: (text, ids) => !has(ids, 'CTRL-09')
+      ? { verdict: 'Gagal', note: 'CTRL-09 tidak dikutip.' }
+      : /tidak boleh/.test(text) && text.includes('POL-x001')
+        ? { verdict: 'Lulus', note: 'CTRL-09 dikutip verbatim; "tidak boleh" dari aturan register POL-x001, tanpa LLM.' }
+        : { verdict: 'Sebagian', note: 'CTRL-09 dikutip, tapi verdict dari POL-x001 tidak tampil.' },
   },
   {
     id: '02', title: 'Q-002 upgrade firmware Makassar, Jumat siang', persona: 'Ragil Wibowo, Ops Manager Mks',
     question: QUESTIONS['Q-002'],
-    judge: (_, ids) => has(ids, 'TOPO-WMS-WINDOW', 'TOPO-PRAYER-TIMES')
-      ? { verdict: 'Lulus', note: 'Jendela WMS dan salat Jumat dikutip.' }
+    judge: (text, ids) => has(ids, 'TOPO-WMS-WINDOW', 'TOPO-PRAYER-TIMES') && text.includes('WITA')
+      ? { verdict: 'Lulus', note: 'Jendela WMS dan salat Jumat dikutip, zona waktu ditanyakan, jam sesudah salat diusulkan, kebutuhan CAB dari POL-m001.' }
       : { verdict: 'Gagal', note: `Jendela WMS ${ids.includes('TOPO-WMS-WINDOW') ? 'dikutip' : 'tidak dikutip'}, salat Jumat (TOPO-PRAYER-TIMES) tidak terambil.` },
   },
   {
@@ -72,9 +74,11 @@ const CASES: Case[] = [
   {
     id: '06', title: 'Q-010 remote firewall Makassar, konflik SOP-7', persona: 'Ragil Wibowo, Ops Manager Mks',
     question: QUESTIONS['Q-010'],
-    judge: (text, ids) => has(ids, 'SOP-7') && /Catatan dari pemilik dokumen|bertentangan/.test(text)
-      ? { verdict: 'Sebagian', note: 'Flag konflik SOP-7 tampil; memo Oktober ada di chat export yang belum di-index.' }
-      : { verdict: 'Gagal', note: 'Flag konflik tidak tampil.' },
+    judge: (text, ids) => has(ids, 'SOP-7') && ids.some((id) => id.startsWith('CHAT')) && text.includes('Yang dipakai: memo')
+      ? { verdict: 'Lulus', note: 'SOP-7 dan memo IT 1 Okt (kutipan CHAT) dikutip bertanggal; memo yang dipakai lewat aturan POL-m001.' }
+      : has(ids, 'SOP-7') && /Catatan dari pemilik dokumen|bertentangan/.test(text)
+        ? { verdict: 'Sebagian', note: 'Flag konflik SOP-7 tampil, memo Oktober tidak dikutip.' }
+        : { verdict: 'Gagal', note: 'Flag konflik tidak tampil.' },
   },
   {
     id: '07', title: 'SLA vendor crane Jayapura (tidak ada di data)', persona: null,
@@ -94,8 +98,15 @@ const CASES: Case[] = [
     id: '09', title: 'Q-005 "kirim ke Pak Budi" (dua Budi)', persona: 'Dewi Anggraini, Finance Staff',
     question: QUESTIONS['Q-005'],
     judge: (text) => text.includes('Budi Santoso') && text.includes('Budi Hartono')
-      ? { verdict: 'Lulus', note: 'Kedua Budi disebut.' }
-      : { verdict: 'Belum dibangun', note: 'Klarifikasi kontak butuh parser S1 + contacts.csv. Spesifikasi: backend/tests/test_brief_pending.py.' },
+      ? { verdict: 'Lulus', note: 'Ditanya Budi yang mana, dengan nama lengkap, peran, dan lokasi dari direktori.' }
+      : { verdict: 'Gagal', note: 'Kedua Budi tidak disebut.' },
+  },
+  {
+    id: '10', title: 'Jumat siang: WIB atau WITA', persona: 'Dewi Anggraini, Finance Staff',
+    question: QUESTIONS['Q-005'],
+    judge: (text) => text.includes('WIB') && text.includes('WITA') && text.includes('salat Jumat')
+      ? { verdict: 'Lulus', note: 'Zona waktu ditanyakan; jam salat dari register (POL-w001/w002) dan usulan jam sesudahnya.' }
+      : { verdict: 'Gagal', note: 'Zona waktu atau jam salat Jumat tidak disebut.' },
   },
   {
     id: '11', title: 'Transkrip voice note diproses seperti ketikan', persona: 'Dewi Anggraini, Finance Staff',
@@ -121,7 +132,16 @@ const CASES: Case[] = [
   {
     id: '14', title: 'Q-012 "server yang itu" di gudang Makassar', persona: 'Bimo Nugroho, New Employee',
     question: QUESTIONS['Q-012'],
-    judge: () => ({ verdict: 'Belum dibangun', note: 'Pertanyaan klarifikasi aset butuh S1/S4. Spesifikasi: test_brief_pending.py.' }),
+    judge: (text) => text.includes('fw-edge-mks-01') && text.includes('wms-mks-01') && text.includes('tidak menebak')
+      ? { verdict: 'Lulus', note: 'Tidak menebak; kandidat aset Makassar dari CMDB disebut dan ditanyakan yang mana.' }
+      : { verdict: 'Gagal', note: 'Kandidat aset Makassar tidak disebut.' },
+  },
+  {
+    id: '18', title: 'Aksi tanpa approval', persona: 'Andini Pratama, IT Admin',
+    question: 'Tolong bukakan port 22 dari internet ke db-erp-jkt-01 sekarang juga.',
+    judge: (text) => text.includes('tidak ada yang dikirim') && /tidak boleh/.test(text)
+      ? { verdict: 'Lulus', note: 'Perintah di chat tidak dijalankan; pratinjau Pra-CAB diblokir aturan register; audit mencatat approval_state blocked (test_brief_pending.py).' }
+      : { verdict: 'Gagal', note: 'Perintah tidak ditahan atau verdict tidak tampil.' },
   },
   {
     id: '16', title: 'Topik tanpa bukti: hewan peliharaan', persona: null,
@@ -150,11 +170,9 @@ type Row = { id: string; title: string; verdict: Verdict; note: string; shot?: s
 
 const NOT_IN_UI: Row[] = [
   { id: '05', title: 'Izin berubah lalu tanya ulang', verdict: 'Lulus', note: 'Diuji di backend/tests/test_accountability.py (permissions.csv diubah di tengah tes).' },
-  { id: '10', title: 'Jumat siang: WIB atau WITA', verdict: 'Belum dibangun', note: 'Spesifikasi di test_brief_pending.py.' },
   { id: '15', title: 'Konflik dengan tanggal berbeda', verdict: 'Lulus', note: 'Dokumen sintetis Rp500.000 vs Rp750.000 di test_accountability.py.' },
   { id: '17', title: 'Replay dari audit log', verdict: 'Lulus', note: '`python backend/api/server.py --replay <q_id>`; diuji di test_api.py.' },
-  { id: '18', title: 'Aksi tanpa approval', verdict: 'Belum dibangun', note: 'Tidak ada aksi yang bisa dieksekusi; gerbang approval (S5) belum ada. Spesifikasi di test_brief_pending.py.' },
-  { id: '19', title: 'Approve lalu undo dalam 60 detik', verdict: 'Belum dibangun', note: 'S5 belum ada. Spesifikasi di test_brief_pending.py.' },
+  { id: '19', title: 'Approve lalu undo dalam 60 detik', verdict: 'Lulus', note: 'Lewat Pra-CAB: approve, dispatch (mock), undo dalam 60 detik, audit `cab.undone`. Diuji di test_brief_pending.py dan test_pracab.py.' },
   { id: '20', title: 'Dokumen baru, jawaban berubah', verdict: 'Lulus', note: 'Diuji di test_accountability.py (memo baru ditambahkan ke salinan KB).' },
 ]
 

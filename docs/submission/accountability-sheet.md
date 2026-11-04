@@ -53,15 +53,15 @@ Semua tool masih **mock**: dispatch hanya mencatat "would have sent".
 ## Keterbatasan yang kami akui
 
 - **Autentikasi:** API mempercayai persona dari pemilih demo; belum ada login/SSO.
-- **Kesimpulan "boleh/tidak" di tanya-jawab** belum ditulis (S4); UI hanya
-  menampilkan bukti. Di Pra-CAB kesimpulan sudah ada.
-- **Gagal di matriks brief:** #2 (salat Jumat tidak terambil), #7 (bukti tak
-  relevan alih-alih "tidak tahu"); #6 sebagian; #9, #10, #14, #18, #19 belum
-  dibangun di `/api/ask`. Detail: `docs/test-results/README.md`.
+- **Kesimpulan "boleh/tidak" di tanya-jawab** hanya dari aturan register
+  (jembatan ke Pra-CAB, tanpa LLM); pertanyaan yang tidak menyebut aset dan
+  jenis perubahan tetap hanya mendapat bukti (S4 belum ada).
+- **Gagal di matriks brief:** #7 (bukti tak relevan alih-alih "tidak tahu",
+  butuh ambang relevansi). 19 dari 20 lulus. Detail: `docs/test-results/README.md`.
 - Tiga aturan sistem belum tertulis di SOP dan perlu disahkan owner
   (pemisahan tugas, CAB setelah rapat, jam kerja Senin–Jumat) — ADR 0003.
 
 Verifikasi sendiri:
-`python -m unittest discover -s backend/tests` (187 tes) ·
+`python -m unittest discover -s backend/tests` (201 tes) ·
 `python backend/tests/verify_matrix.py` (46 kasus) ·
 `python backend/scripts/audit_chain.py --verify backend/logs/audit.jsonl`
