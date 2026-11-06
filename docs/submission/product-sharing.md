@@ -1,7 +1,13 @@
 # Product Sharing — SecuritySahabat × WorkBuddy
 
-*Draf 27 Okt 2026. Handbook §7: "Where WorkBuddy added value in your build,
-plus your key insights and learnings."*
+*Disusun 27 Okt 2026, difinalkan 6 Nov 2026. Handbook §7: "Where WorkBuddy
+added value in your build, plus your key insights and learnings."*
+
+> **Catatan finalisasi 6 Nov.** Tiga catatan draf telah diputuskan: (1) angka
+> uji online tetap memakai hasil 27 Okt dari `docs/workbuddy.md` §2 — sesi tidak
+> direkam ulang, jadi tidak ada angka baru yang bisa diklaim; (2) transparansi
+> alat ditambahkan di bawah; (3) ringkasan bahasa Inggris untuk formulir
+> disediakan di bagian akhir, teks utama tetap bahasa Indonesia.
 
 ## Ringkasan
 
@@ -103,10 +109,33 @@ Disusun dari hambatan nyata selama membangun; semoga berguna untuk tim produk.
 
 ---
 
-<!-- Catatan untuk tim sebelum submit (hapus bagian ini):
-- Angka uji online diambil dari docs/workbuddy.md §2 (akun anggota tim lain). Bila
-  sesi /security-sahabat direkam ulang di akun Izzat, perbarui tabel hasil uji.
-- Draf tidak menyebut alat lain yang dipakai setelah kredit habis; putuskan apakah
-  perlu disebut demi transparansi.
-- Formulir mungkin lebih cocok berbahasa Inggris; terjemahkan bila perlu.
--->
+## Transparansi alat (ditambahkan 6 Nov)
+
+Inti sistem — dataset mock, KB berkutipan, permission gate, deteksi injection,
+penyamaran PII, dan skill `security-sahabat` — lahir dari tugas Skill Creator
+WorkBuddy dan masih dapat dilacak lewat
+[workbuddy-provenance.md](workbuddy-provenance.md) (48 artifact, 35 identik).
+Setelah kuota kredit habis pada 27 Okt, pengembangan lanjutan dikerjakan di repo
+lokal: Pra-CAB, policy register, UI Svelte, dan API Python. Keduanya memakai
+engine yang sama, tetapi jalur lanjutan itu **berjalan dari `source/`, bukan
+sebagai skill WorkBuddy** — kami tidak mengklaim bagian itu dibuat di WorkBuddy.
+Untuk demo 6 Nov, jalur yang ditampilkan kembali ke yang paling awal: **risk dari
+KB lewat input chat WorkBuddy / panel WorkBuddy**.
+
+## English summary (for the submission form)
+
+WorkBuddy took us from a written brief to a usable skill in one session: Skill
+Creator generated the mock dataset, the citation-ready knowledge base, and the
+first four security guards, then tested them in the same task (47 artifacts; 35
+of 48 files are still byte-identical in our repository — see
+`workbuddy-provenance.md`). Our key learning: a permission-aware agent must not
+rely on model compliance. Keyword-based silence passed 13/13 of its own tests
+yet still leaked a restricted project through an English paraphrase, so we
+replaced it with *non-interference* — unreadable documents are skipped before
+scoring — and enforced permissions, risk, and approvals in deterministic code.
+The LLM only copies free text into fields and proposes rules that a human
+document owner must approve. Practical lessons: invoke the skill explicitly for
+important questions, request the answer language in the prompt, and treat
+credit limits as a design constraint. We also ask for task export/share,
+account-bound identity, script-only skill files, and approval nodes in
+Automation.

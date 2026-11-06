@@ -20,6 +20,12 @@ file: `SHA256SUMS.txt`.
 | `submission/` | Accountability sheet, deskripsi proyek, *Product sharing*, diagram arsitektur, catatan teknis WorkBuddy |
 | `source/` | Seluruh source code repo: engine, API, UI Svelte, Pra-CAB, policy register, tes |
 
+> **Catatan:** `source/docs/submission/SecuritySahabat-Submission-Template.docx`
+> dan `.md` adalah **template kerja internal tim** yang masih memuat field
+> `[ISI: …]`. Keduanya ikut serta semata-mata karena `source/` adalah salinan
+> utuh repo, dan bukan artefak yang dinilai. Artefak yang dinilai ada di folder
+> `submission/` dalam zip ini.
+
 ## Menjalankan workflow di WorkBuddy
 
 1. **Impor skill:** Experts · Skills · Connectors → Skills → *Add Skill* →

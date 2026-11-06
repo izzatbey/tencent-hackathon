@@ -395,10 +395,46 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
   footer `docs/architecture-diagram.svg` (masih 12 lulus / 153 unit test).
   Acuan yang berlaku: file ini, `docs/architecture.md`, `docs/pracab-api.md`,
   `docs/vision-v2.md`, dan ADR 0001–0004.
-- Tabel status di `README.md` §"Status terhadap brief" masih menandai S5, S6,
-  dan klarifikasi "dua Budi" sebagai 🟡 padahal sudah ✅ lewat Pra-CAB dan
-  `ask_bridge.py`. `docs/testing.md` juga masih menyebut `test_brief_pending.py`
-  penuh `expectedFailure`. Keduanya perlu dirapikan sebelum Demo Day.
+- Tabel status di `README.md` §"Status terhadap brief" dan `docs/testing.md`
+  **sudah dirapikan** pada commit `d8d9511` (S5, S6, klarifikasi dua Budi jadi ✅;
+  klaim `test_brief_pending.py` dibetulkan). Footer `architecture-diagram.svg`
+  juga sudah diselaraskan ke 19 lulus / 1 gagal, 201 tes, 1 `expectedFailure`.
+  Catatan "perlu dirapikan" di versi sebelumnya sudah tidak berlaku.
+
+## Finalisasi dokumen submission 6 Nov 2026 (malam)
+
+- **Keputusan Izzat:** demo video **dikerjakan paling akhir**; semua dokumen
+  lain diselesaikan dulu dan disatukan ke **satu template .docx**.
+- **Dokumen yang diselesaikan:**
+  - `docs/submission/product-sharing.md` — status draf → final. Tiga catatan
+    draf diputuskan: angka uji online tetap hasil 27 Okt (tidak ada sesi ulang),
+    transparansi alat ditambahkan (Pra-CAB/policy register/UI dibuat di repo
+    lokal setelah kredit habis, bukan diklaim dari WorkBuddy), dan ringkasan
+    bahasa Inggris untuk formulir ditambahkan.
+  - `docs/submission/README.md` — checklist status diperbarui: test results ✅,
+    product sharing ✅, source code ✅, diagram ✅; demo video ⚠️ (terakhir);
+    cover image / project link tetap ➖. Empat item "memperkuat bukti pemakaian"
+    kini berupa **tabel isian di Lampiran A template**, bukan file baru
+    `request-ids.md` (jangan membuat file kosong di folder evidence).
+  - `docs/submission/export-readme.md` — ditambahkan catatan bahwa template
+    `.docx`/`.md` di dalam `source/` adalah dokumen kerja internal, bukan
+    artefak yang dinilai.
+- **Template terpadu:** `docs/submission/SecuritySahabat-Submission-Template.docx`
+  (sumber Markdown: `.md` dengan nama sama). 15 bagian, 17 tabel, 40 placeholder
+  `[ISI: …]`: identitas & isian formulir, daftar isian kosong, 9 item wajib
+  handbook, Lampiran A Request ID, Lampiran B checklist + paraf, Lampiran C
+  keterbatasan, indeks sumber. Dibuat lewat `editor_sdk` (`create_doc` →
+  `doc_insert_markdown` dari file → `doc_insert_footer` → `save_file`); outline
+  kosong karena style kustom, jadi **jangan** menyisipkan TOC otomatis.
+- **Yang masih harus diisi tim (tidak bisa dari repo):** link video demo, link
+  Google Drive zip, tanggal rekam, Request ID, screenshot dialog izin, nama
+  lengkap/email anggota, paraf tim; opsional cover image 16:9 dan WorkBuddy Sites.
+- Urutan yang benar: commit → push → **baru** jalankan
+  `python tools/export_submission.py` (skrip menolak working tree kotor), supaya
+  `VERSION.txt` cocok dengan `HEAD`. Zip masuk `dist/` yang di-gitignore.
+- Verifikasi: `verify_matrix.py` **46/46**, `unittest discover` **201 OK**
+  (1 `expectedFailure`, kasus #7). Tidak ada perubahan kode, jadi
+  `pack_skill.py --project` tidak diperlukan.
 
 ## Catatan / jebakan
 
