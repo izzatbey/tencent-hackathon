@@ -2,7 +2,7 @@
 <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#37474f"/></marker></defs>
 <rect width="1820" height="1700" fill="#ffffff"/>
 <text x="24" y="40" font-size="22" font-weight="bold" fill="#1a1a1a" text-anchor="start" >SecuritySahabat — Arsitektur Sistem &amp; Batas Kepercayaan</text>
-<text x="24" y="63" font-size="12" font-weight="normal" fill="#555" text-anchor="start" >Challenge A · The Workplace Brain · Tencent Cloud Hackathon Indonesia 2026 · dua jalur backend (tanya-jawab + Pra-CAB) + policy register v0 · status main, 27 Okt 2026</text>
+<text x="24" y="63" font-size="12" font-weight="normal" fill="#555" text-anchor="start" >Challenge A · The Workplace Brain · Tencent Cloud Hackathon Indonesia 2026 · dua jalur backend (tanya-jawab + Pra-CAB) + policy register v0 · status main, 6 Nov 2026</text>
 <rect x="1110" y="24" width="26" height="16" rx="3" fill="#ffffff" stroke="#2e7d32" stroke-width="1.5" />
 <text x="1142" y="36" font-size="11" font-weight="normal" fill="#222" text-anchor="start" >sudah ada</text>
 <rect x="1240" y="24" width="26" height="16" rx="3" fill="#fff8e1" stroke="#e0a100" stroke-width="1.5" stroke-dasharray="6 4"/>
@@ -334,36 +334,36 @@
 <text x="1044" y="1264" font-size="13" font-weight="bold" fill="#1a1a1a" text-anchor="start" >Celah yang diketahui (diungkap)</text>
 <text x="1044" y="1292" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• Tes #7: pertanyaan di luar data masih dapat</text>
 <text x="1044" y="1311" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >   bukti tak relevan (butuh ambang relevansi/S4)</text>
-<text x="1044" y="1330" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• Tes #2: shalat Jumat tidak terambil di /api/ask</text>
-<text x="1044" y="1349" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >   (Pra-CAB sudah mengeceknya)</text>
-<text x="1044" y="1368" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• Belum: S4 web, dua Budi (#9), WIB/WITA (#10),</text>
-<text x="1044" y="1387" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >   "server yang itu" (#14), UI Pra-CAB &amp; register</text>
+<text x="1044" y="1330" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• #2, #6, #9, #10, #14, #18 lulus lewat ask_bridge</text>
+<text x="1044" y="1349" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >   (klarifikasi + pratinjau aturan, tanpa LLM)</text>
+<text x="1044" y="1368" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• Belum: S4 web, UI Pra-CAB &amp; register, SSO,</text>
+<text x="1044" y="1387" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >   autentikasi, dan data hari libur nasional</text>
 <text x="1044" y="1406" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• WorkBuddy stub · ekstraksi belum dicoba Claude asli</text>
-<text x="1044" y="1425" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• Persona tanpa login · data libur nasional belum ada</text>
+<text x="1044" y="1425" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• Persona tanpa login · screenshot bukti ikut memotret composer</text>
 <text x="1044" y="1444" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >• Konflik data: SOP-7 vs direktori soal Hendra</text>
 <text x="1044" y="1463" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >   Wijaya → ditampilkan sebagai warning</text>
 <rect x="1422" y="1240" width="382" height="410" rx="10" fill="#fafafa" stroke="#bdbdbd" stroke-width="1.2"/>
-<text x="1436" y="1264" font-size="13" font-weight="bold" fill="#1a1a1a" text-anchor="start" >Tes (27 Okt, main)</text>
+<text x="1436" y="1264" font-size="13" font-weight="bold" fill="#1a1a1a" text-anchor="start" >Tes (6 Nov, main)</text>
 <text x="1436" y="1290" font-size="10.5" font-weight="bold" fill="#333" text-anchor="start" >Matriks brief 20 kasus — docs/testing.md</text>
-<rect x="1436.0" y="1300" width="212.4" height="18" fill="#2e7d32"/>
-<rect x="1648.4" y="1300" width="17.7" height="18" fill="#e0a100"/>
-<rect x="1666.1" y="1300" width="35.4" height="18" fill="#c62828"/>
-<rect x="1701.5" y="1300" width="88.5" height="18" fill="#9e9e9e"/>
+<rect x="1436.0" y="1300" width="336.3" height="18" fill="#2e7d32"/>
+<rect x="1772.3" y="1300" width="0" height="18" fill="#e0a100"/>
+<rect x="1772.3" y="1300" width="17.7" height="18" fill="#c62828"/>
+<rect x="1790.0" y="1300" width="0" height="18" fill="#9e9e9e"/>
 <rect x="1436" y="1329" width="10" height="10" fill="#2e7d32"/>
-<text x="1451" y="1338" font-size="10.5" font-weight="normal" fill="#222" text-anchor="start" >Lulus: 12</text>
+<text x="1451" y="1338" font-size="10.5" font-weight="normal" fill="#222" text-anchor="start" >Lulus: 19</text>
 <rect x="1616" y="1329" width="10" height="10" fill="#e0a100"/>
-<text x="1631" y="1338" font-size="10.5" font-weight="normal" fill="#222" text-anchor="start" >Sebagian: 1</text>
+<text x="1631" y="1338" font-size="10.5" font-weight="normal" fill="#222" text-anchor="start" >Sebagian: 0</text>
 <rect x="1436" y="1346" width="10" height="10" fill="#c62828"/>
-<text x="1451" y="1355" font-size="10.5" font-weight="normal" fill="#222" text-anchor="start" >Gagal: 2</text>
+<text x="1451" y="1355" font-size="10.5" font-weight="normal" fill="#222" text-anchor="start" >Gagal: 1</text>
 <rect x="1616" y="1346" width="10" height="10" fill="#9e9e9e"/>
-<text x="1631" y="1355" font-size="10.5" font-weight="normal" fill="#222" text-anchor="start" >Belum: 5</text>
+<text x="1631" y="1355" font-size="10.5" font-weight="normal" fill="#222" text-anchor="start" >Belum: 0</text>
 <text x="1436" y="1396" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >Regresi verify_matrix: 46 kasus, 0 gagal</text>
-<text x="1436" y="1414" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >Unit test: 153 lulus, 8 expectedFailure</text>
+<text x="1436" y="1414" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >Unit test: 201, 1 expectedFailure</text>
 <text x="1436" y="1432" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >   (kegagalan yang diketahui, sengaja tetap tercatat)</text>
 <text x="1436" y="1450" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >Pra-CAB 44 tes · policy register 24 tes</text>
 <text x="1436" y="1468" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >#18/#19 di matriks = jalur /api/ask; versi Pra-CAB</text>
 <text x="1436" y="1486" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >   (dispatch ditolak sebelum approval, undo 60 dtk)</text>
 <text x="1436" y="1504" font-size="10.5" font-weight="normal" fill="#333" text-anchor="start" >   diuji di test_pracab.py</text>
-<text x="24" y="1676" font-size="10.5" font-weight="normal" fill="#666" text-anchor="start" >Sumber: adjusted_brief.md, docs/architecture.md, docs/testing.md, docs/pracab-api.md, ADR 0001–0004, MEMORY.md — repo izzatbey/tencent-hackathon, main 27 Okt 2026.</text>
+<text x="24" y="1676" font-size="10.5" font-weight="normal" fill="#666" text-anchor="start" >Sumber: adjusted_brief.md, docs/architecture.md, docs/testing.md, docs/pracab-api.md, ADR 0001–0004, MEMORY.md — repo izzatbey/tencent-hackathon, main 6 Nov 2026.</text>
 <text x="24" y="1692" font-size="10.5" font-weight="normal" fill="#666" text-anchor="start" >Handbook: 5 aturan akuntabilitas &amp; syarat diagram (komponen, batas kepercayaan, trade-off). Kotak "usulan" belum disepakati tim.</text>
 </svg>

@@ -4,6 +4,13 @@ Status: draf 27 Okt 2026 (Izzat). Melengkapi `adjusted_brief.md` (Challenge A)
 dan ADR 0003 (Pra-CAB). Dipakai untuk bagian *solution design* dan
 *feasibility* di submission, dan sebagai rencana setelah 1 Nov.
 
+> **Catatan 6 Nov 2026 (hari terakhir):** dokumen ini adalah **visi jangka
+> panjang**, bukan target demo hari ini. Izzat memutuskan demo tetap berada di
+> inti Challenge A — dari **input chat WorkBuddy**, hasilkan **risk** beserta
+> kutipan dari knowledge base; CAB/Pra-CAB tidak didemokan. Naskah demo:
+> [submission/demo-script.md](submission/demo-script.md), keputusan lengkap di
+> `MEMORY.md`. Roadmap di bawah tetap berlaku untuk setelah hackathon.
+
 ## 1. Tujuan akhir
 
 Bukan chatbot. Sebuah sistem pendukung keputusan untuk Change Advisory Board:

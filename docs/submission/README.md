@@ -12,7 +12,7 @@ repo GitHub tetap privat.
 | Accountability sheet | ya | ✅ | [accountability-sheet.md](accountability-sheet.md) |
 | Test results + screenshot | ya | ⚠️ | Challenge A: [../test-results/README.md](../test-results/README.md) (screenshot per kasus). Pra-CAB: [../test-results/pracab.md](../test-results/pracab.md) baru transkrip terminal; tambahkan screenshot setelah UI Pra-CAB jadi |
 | Architecture diagram | ya | ✅ | [../architecture-diagram.svg](../architecture-diagram.svg) + [../architecture.md](../architecture.md) |
-| Demo video 5-8 menit | ya | ❌ | Tim. Wajib memperlihatkan menolak / minta klarifikasi / menunggu approval: Garuda Sari vs Andini, injection Q-006, Pra-CAB langkah 3-4. Rekam demo Pra-CAB dari audit log kosong |
+| Demo video 5-8 menit | ya | ⚠️ | **Naskah siap rekam:** [demo-script.md](demo-script.md) — 6 adegan, output diverifikasi dari run sungguhan, mencakup menolak / minta klarifikasi / menunggu approval. Video belum direkam. Scope 6 Nov: risk dari KB lewat chat WorkBuddy, bukan demo CAB |
 | Product sharing | ya | ⚠️ | Draf: [product-sharing.md](product-sharing.md). Tim perlu meninjau catatan di akhir file (bahasa formulir, perlu tidaknya menyebut alat lain, angka uji bila sesi direkam ulang) |
 | Source code | ya | ⚠️ | Paket ekspor siap dirakit (di bawah); bukti pemakaian masih bisa diperkuat |
 | Cover image 16:9 | tidak | ❌ | 380×216 px |

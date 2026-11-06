@@ -39,9 +39,16 @@ Dua jalur di atas satu inti penjaga yang sama:
 
 | Jalur | Untuk apa | Keluaran |
 | --- | --- | --- |
-| **Tanya-jawab** (`/api/ask`) | "Boleh atau tidak?" | Kutipan verbatim + flag konflik + "tidak tahu" + SME untuk eskalasi |
+| **Tanya-jawab** (`/api/ask`) | "Boleh atau tidak?" | **Level risiko dari KB** (`risk_level`, `CTRL-09`/`SOP-14`) + kutipan verbatim + verdict dari aturan register + flag konflik + "tidak tahu" + SME |
 | **Pra-CAB** (`/api/requests`) | Change request & permintaan akses | Risiko + allowance (boleh / tidak / dengan syarat) + approver + kutipan + `basis`, lalu ditahan sampai disetujui |
 | **Policy register** (`/api/policies`) | Aturan baru dari memo | Aturan diusulkan (manual atau LLM) → disahkan **pemilik dokumen** → keputusan berikutnya berubah |
+
+Untuk demo, jalur yang dipakai adalah **tanya-jawab dari WorkBuddy** — lewat
+chat dengan skill `security-sahabat`, atau lewat UI di panel browser WorkBuddy.
+Input berupa pertanyaan karyawan; keluaran berupa risk yang bersumber dari KB
+dengan kutipan verbatim, tanpa LLM yang memutus. Pra-CAB dan policy register
+tersedia di backend sebagai lapisan lanjutan. Naskah rekaman:
+[demo-script.md](demo-script.md).
 
 Inti penjaga, urutannya tetap: deteksi prompt injection (termasuk varian
 Unicode) → penyamaran PII → identitas dari persona terdaftar → permission

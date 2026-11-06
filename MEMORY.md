@@ -362,6 +362,20 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
   (`.codebuddy/skills/` dan `.workbuddy-ai/skills/`, salinan runtime **di luar
   repo**, bukan perubahan source); frontend di-build lalu disajikan lokal untuk
   panel WorkBuddy. Tidak ada perubahan kode engine.
+- **Naskah demo baru:** `docs/submission/demo-script.md` — 6 adegan 5–8 menit,
+  seluruh jawaban diambil dari run sungguhan `POST /api/ask` (bukan karangan):
+  Q-001 → verdict tidak boleh + CTRL-09/POL-x001; Garuda Sari vs Falcon identik
+  vs Andini (RESTRICTED-01); injection Q-006 → rc 4; dua Budi → CLARIFY +
+  `approval_state=pending`; perintah aksi → ACTION_REQUEST/POLICY_BLOCK +
+  `approval_state=blocked`. Menutup tiga momen wajib handbook dan menyebut #7
+  apa adanya. Status video di `docs/submission/README.md` naik ❌ → ⚠️.
+- **Doc cleanup 6 Nov:** tabel status `README.md` (S5/S6/#9 dan baris CMDB
+  tadinya masih 🟡), `docs/testing.md` (klaim `test_brief_pending.py` penuh
+  `expectedFailure`), angka footer `docs/architecture-diagram.svg` (12 lulus /
+  153 unit test → 19 lulus, 1 gagal / 201 tes, 1 expectedFailure), catatan scope
+  di `docs/vision-v2.md`, dan baris risk + jalur demo di
+  `docs/submission/project-description.md`. SVG tetap XML valid; 46/46 regresi
+  dan 201 unit test tetap hijau.
 
 ## Handoff 6 Nov 2026 — sesi WorkBuddy
 

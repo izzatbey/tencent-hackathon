@@ -5,7 +5,7 @@ Empat lapis, dari yang paling murah:
 | Suite | Perintah | Isi |
 | --- | --- | --- |
 | Regresi CLI | `python backend/tests/verify_matrix.py` | 46 kasus (wajib 0 gagal) |
-| Core + API | `python -m unittest discover -s backend/tests -v` | `test_accountability.py` (5 aturan, non-interference, edge case), `test_api.py` (DTO, identitas, log, replay, validasi, HTTP), `test_skill_sync.py` (project skill WorkBuddy sama dengan sumber dan bisa dijalankan), `test_brief_pending.py` (spesifikasi untuk fitur yang belum ada). Sekitar 100 detik karena hypertest. |
+| Core + API | `python -m unittest discover -s backend/tests -v` | `test_accountability.py` (5 aturan, non-interference, edge case), `test_api.py` (DTO, identitas, log, replay, validasi, HTTP), `test_skill_sync.py` (project skill WorkBuddy sama dengan sumber dan bisa dijalankan), `test_brief_pending.py` (kontrak Given/When/Then kasus brief; semuanya lulus sejak 28 Okt). Sekitar 100 detik karena hypertest. |
 | Komponen UI | `cd frontend && npm test` | Vitest + Testing Library, jsdom |
 | End-to-end | `cd frontend && npm run e2e` | Playwright, build produksi + API Python asli, desktop dan Pixel 7, axe WCAG 2.2 AA |
 | Bukti submission | `cd frontend && npm run evidence` | Screenshot per test case brief, dinilai otomatis, tabel di [test-results/](test-results/README.md) |
@@ -80,14 +80,16 @@ Kolom "Lapis" menyebut di mana kasus itu diuji otomatis.
 | 20 | Dokumen baru, jawaban berubah | Lulus | core |
 
 "spesifikasi" = tes di `backend/tests/test_brief_pending.py`: kontrak
-Given/When/Then dengan oracle dari `knowledge-base/source/`, ditandai
-`expectedFailure` sampai fiturnya dibangun. Setiap tes itu dipastikan gagal
-karena asersi, bukan karena error (dicek dengan menjalankannya tanpa dekorator).
+Given/When/Then dengan oracle dari `knowledge-base/source/`. Sejak 28 Okt
+(`ask_bridge.py`) **semua kasus di modul itu lulus** dan tidak ada lagi
+dekorator `expectedFailure`, meski nama kelas `PendingBriefTest` masih tertulis
+demikian untuk menjaga riwayat.
 
-Kegagalan ditulis sebagai `@unittest.expectedFailure` dengan alasan di
-docstring, supaya suite tetap hijau tapi kegagalannya tidak hilang dari laporan.
-Begitu diperbaiki, Python melaporkan "unexpected success" dan dekoratornya harus
-dicabut.
+Satu-satunya `@unittest.expectedFailure` yang tersisa ada di
+`test_accountability.py` (kasus #7, SLA crane Jayapura: butuh ambang relevansi).
+Dekorator itu sengaja dipertahankan supaya suite tetap hijau tapi kegagalannya
+tidak hilang dari laporan. Begitu diperbaiki, Python melaporkan "unexpected
+success" dan dekoratornya harus dicabut.
 
 ## Sumber (diakses 2026-10-27)
 

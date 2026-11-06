@@ -125,6 +125,12 @@ python tools/pack_skill.py --project  # perbarui .codebuddy/skills/security-saha
 
 ## Status terhadap brief (S1–S6)
 
+> **Catatan 6 Nov 2026 (hari terakhir):** target demo bukan menjadikan produk ini
+> CAB. Fokusnya **risk dari knowledge base lewat input chat WorkBuddy** (atau UI
+> di panel WorkBuddy), sesuai rencana awal Challenge A. Naskah demo:
+> [docs/submission/demo-script.md](docs/submission/demo-script.md). Pra-CAB dan
+> policy register tetap ada sebagai bukti desain, tidak didemokan hari ini.
+
 | Tahap brief | Status | Catatan |
 | --- | --- | --- |
 | Mock dataset (§4) | ✅ | `knowledge-base/source/` |
@@ -132,14 +138,14 @@ python tools/pack_skill.py --project  # perbarui .codebuddy/skills/security-saha
 | S2 Permission gate | ✅ | Zona + risiko + anti existence-leak; 9 persona brief |
 | Garuda untuk persona berwenang (test #3) | ✅ | Lewat `allowed_projects`; selain itu identik dengan proyek fiktif |
 | S3 Retrieval — controls, sops, topology | ✅ | `kb/` terpecah per dokumen |
-| S3 Retrieval — `cmdb.csv`, `chat_exports.jsonl` | 🟡 | Belum di-index backend |
+| S3 Retrieval — `cmdb.csv`, `chat_exports.jsonl` | 🟡 | Tidak diindeks sebagai teks; dipakai lewat `kb_facts.py`, `cab_rules.py`, `ask_bridge.py` (CMDB) dan kutipan memo 1 Okt (chat) |
 | Conflict flagging (SOP-7, SOP-9) | ✅ | Dari catatan di KB, belum dari chat export |
 | Injection guard (query + evidence) & PII masking | ✅ | |
 | S4 Answer synthesizer (LLM) | 🟡 | Jalan di mode Claude Skill; belum ada untuk web app |
-| Klarifikasi dua Budi (test #9) | 🟡 | `contacts.csv` belum dipakai |
-| S5 Approval gate | 🟡 | |
-| S6 Audit log | 🟡 | |
-| HTTP API (`POST /api/ask`) | ✅ | `backend/api/server.py`, stdlib; `answer` null sampai S4 |
+| Klarifikasi dua Budi (test #9) | ✅ | `ask_bridge.py` memakai `kb/directory.csv`, tanpa LLM |
+| S5 Approval gate | ✅ | Perintah aksi dari chat tidak dijalankan; `approval_state` pending/blocked di audit. State penuh ada di Pra-CAB |
+| S6 Audit log | ✅ | Rantai hash `audit_chain.py`, `--replay`, `GET /api/audit/verify` |
+| HTTP API (`POST /api/ask`) | ✅ | `backend/api/server.py`, stdlib; `answer` null sampai S4, kecuali klarifikasi/verdict dari `ask_bridge.py` |
 | Audit log per pertanyaan | ✅ | JSONL ber-`q_id` dari API, `--replay <q_id>` |
 | Frontend chat UI | ✅ | Svelte, `frontend/` |
 | Pra-CAB: rule engine SOP-14, state machine, approval, mock dispatch + undo | ✅ | Backend; [kontrak API](docs/pracab-api.md), [ADR 0003](docs/decisions/0003-pracab-fondasi-backend.md) |
