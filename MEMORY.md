@@ -337,6 +337,32 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
   (`contacts.csv`, brief test #9).
 - Autentikasi: API mempercayai `user` dari request (pemilih persona demo).
 
+## Keputusan scope 6 Nov 2026 (Izzat) — hari terakhir
+
+- **Target hari ini BUKAN menjadikan produk ini CAB**, dan bukan mengejar UI
+  Pra-CAB / register / roadmap v2. Ini kembali ke inti **Challenge A**: dari
+  pertanyaan karyawan, hasilkan **risk** (level + alasan + landasan) berdasarkan
+  data knowledge base dengan kutipan verbatim.
+- **Input dari WorkBuddy dulu.** Dua permukaan yang diterima, keduanya di dalam
+  WorkBuddy:
+  1. **Chat WorkBuddy** lewat project skill `security-sahabat` (skill memanggil
+     `scripts/search_kb.py`, lalu menjawab sesuai `answer-playbook.md`).
+  2. **UI web ditampilkan di side browser / panel WorkBuddy** (server lokal
+     `--static frontend/dist`), bukan deploy publik.
+  Ini **sesuai rencana semula**: `adjusted_brief.md` §1–§2 dan
+  `docs/workbuddy.md` §2–§3. Pra-CAB (ADR 0003) dan policy register (ADR 0004)
+  tetap ada di repo sebagai bukti desain, tapi tidak dikejar hari ini.
+- **Risk sudah bisa dihasilkan tanpa CAB**, jadi tidak perlu fitur baru:
+  - Tiap dokumen KB punya metadata `risk_level`; kutipan `CTRL-09` memuat
+    klasifikasi eksplisit *"classified as CRITICAL risk"*.
+  - `cab_rules.classify_risk()` menyusun level + alasan + kutipan + `basis`
+    secara deterministik (dipakai Pra-CAB, bisa dipanggil terpisah).
+  - `ask_bridge.py` memberi verdict "tidak boleh" dari aturan register, tanpa LLM.
+- Yang dilakukan sesi WorkBuddy 6 Nov: skill dipasang ke folder kerja sesi
+  (`.codebuddy/skills/` dan `.workbuddy-ai/skills/`, salinan runtime **di luar
+  repo**, bukan perubahan source); frontend di-build lalu disajikan lokal untuk
+  panel WorkBuddy. Tidak ada perubahan kode engine.
+
 ## Handoff 6 Nov 2026 — sesi WorkBuddy
 
 - Repo di-clone ke `C:/Users/izzat/WorkBuddy AI/2026-10-25-20-19-32/tencent-hackathon`
