@@ -21,7 +21,8 @@ tanggal) ditandai `[ISI: …]` di dalamnya.
 | Demo video 5-8 menit | ya | ⚠️ | **Dikerjakan paling akhir** sesuai keputusan 6 Nov. Naskah siap rekam: [demo-script.md](demo-script.md) — 6 adegan, output diverifikasi dari run sungguhan, mencakup menolak / minta klarifikasi / menunggu approval. Link video diisi di template |
 | Product sharing | ya | ✅ | Final 6 Nov: [product-sharing.md](product-sharing.md). Tiga catatan draf diputuskan (angka uji 27 Okt tetap, transparansi alat ditambahkan, ringkasan bahasa Inggris untuk formulir tersedia) |
 | Source code | ya | ✅ | Paket ekspor dirakit dari commit bersih (di bawah); link Google Drive diisi di template |
-| Template dokumen terpadu (.docx) | bantu | ✅ | [SecuritySahabat-Submission-Template.docx](SecuritySahabat-Submission-Template.docx) — semua item di atas dalam satu dokumen, dengan `[ISI: …]` untuk field tim. Sumber Markdown: [SecuritySahabat-Submission-Template.md](SecuritySahabat-Submission-Template.md) |
+| Dokumen submission final (.docx + .pdf) | bantu | ✅ | [SecuritySahabat-Submission.docx](SecuritySahabat-Submission.docx) / [.pdf](SecuritySahabat-Submission.pdf), 20 halaman: sampul, daftar isi, sembilan bagian sesuai butir handbook, empat lampiran. Field yang hanya tim yang tahu ditandai "diisi oleh tim sebelum submit". Dibangun oleh `tools/build_submission_docx.js` (butuh `npm install docx`); diagram dirender dari SVG |
+| Template dokumen terpadu (.docx) | bantu | ✅ | [SecuritySahabat-Submission-Template.docx](SecuritySahabat-Submission-Template.docx) — versi kerja sebelumnya dengan `[ISI: …]`. Sumber Markdown: [SecuritySahabat-Submission-Template.md](SecuritySahabat-Submission-Template.md) |
 | Cover image 16:9 | tidak | ❌ | 380×216 px; opsional, placeholder tersedia di template |
 | Project link | bonus | ❌ | WorkBuddy Sites ([../workbuddy.md](../workbuddy.md) §3), keputusan tim; placeholder tersedia di template |
 
