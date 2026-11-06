@@ -1,7 +1,7 @@
 # Project Memory — SecuritySahabat
 
 Konteks kerja untuk sesi Claude Code berikutnya. Dibuat 26 Okt 2026, terakhir
-diperbarui 4 Nov 2026 (handoff frontend jembatan selesai). Perbarui file ini bila ada
+diperbarui 6 Nov 2026 (clone WorkBuddy, konvensi push). Perbarui file ini bila ada
 keputusan baru atau item "belum dikerjakan" selesai.
 
 ## Ringkas
@@ -336,6 +336,29 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
 - Indexing `cmdb.csv`, `chat_exports.jsonl`; klarifikasi "dua Budi"
   (`contacts.csv`, brief test #9).
 - Autentikasi: API mempercayai `user` dari request (pemilih persona demo).
+
+## Handoff 6 Nov 2026 — sesi WorkBuddy
+
+- Repo di-clone ke `C:/Users/izzat/WorkBuddy AI/2026-10-25-20-19-32/tencent-hackathon`
+  (main `308ea2b`, working tree bersih). Konteks sesi WorkBuddy disimpan terpisah di
+  `.workbuddy-ai/memory/` satu tingkat di atas folder repo; file ini tetap memori
+  kanonik proyek.
+- **Konvensi baru (diminta Izzat):** setiap perubahan → commit → **push ke
+  `origin`** → perbarui memori (file ini dan catatan harian sesi). Jangan
+  meninggalkan perubahan hanya di working tree lokal.
+- Verifikasi awal sesi ini: `verify_matrix.py` 46/46 lulus; `unittest discover`
+  201 tes OK (1 `expectedFailure` = kasus #7 SLA crane); bukti UI 23 lulus,
+  1 gagal (#7). Belum ada perubahan kode.
+- **Dokumen yang sudah usang, jangan dipakai sebagai acuan arsitektur:**
+  `adjusted_brief.md` (arsitektur S1–S6 versi WorkBuddy; hanya §6 20 kasus uji
+  yang masih hidup), `docs/specs/*`, `docs/workbuddy-memory/*`, dan angka di
+  footer `docs/architecture-diagram.svg` (masih 12 lulus / 153 unit test).
+  Acuan yang berlaku: file ini, `docs/architecture.md`, `docs/pracab-api.md`,
+  `docs/vision-v2.md`, dan ADR 0001–0004.
+- Tabel status di `README.md` §"Status terhadap brief" masih menandai S5, S6,
+  dan klarifikasi "dua Budi" sebagai 🟡 padahal sudah ✅ lewat Pra-CAB dan
+  `ask_bridge.py`. `docs/testing.md` juga masih menyebut `test_brief_pending.py`
+  penuh `expectedFailure`. Keduanya perlu dirapikan sebelum Demo Day.
 
 ## Catatan / jebakan
 
