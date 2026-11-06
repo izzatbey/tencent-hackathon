@@ -436,6 +436,28 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
   (1 `expectedFailure`, kasus #7). Tidak ada perubahan kode, jadi
   `pack_skill.py --project` tidak diperlukan.
 
+## Update 21:15 — dokumen submission final (commit 7acec2f)
+
+- Sesi lain (co-author Claude Fable 5.1) menambahkan
+  `docs/submission/SecuritySahabat-Submission.docx` dan `.pdf`: **dokumen resmi
+  20 halaman** — sampul, daftar isi, sembilan bagian mengikuti butir *Project
+  Submission Requirements* handbook, empat lampiran, header/footer bernomor
+  halaman, tanpa ikon/emoji. Penanda `[ISI]` diganti "diisi oleh tim sebelum
+  submit". Accountability sheet dipadatkan jadi tepat satu halaman, diagram
+  arsitektur dirender dari SVG di halaman lanskap, tiga screenshot bukti
+  (04a, 04b, 08) disertakan. Angka uji mengikuti template 6 Nov.
+- Pembangunnya `tools/build_submission_docx.js` (docx-js, perlu
+  `npm install docx`); PDF diekspor lewat Word. `docs/submission/README.md`
+  kini menunjuk dokumen final ini dan menandai
+  `SecuritySahabat-Submission-Template.docx` sebagai **versi kerja sebelumnya**.
+- **Urutan dokumen:** template `.docx`/`.md` = working document tim;
+  `SecuritySahabat-Submission.docx`/`.pdf` = yang dipakai untuk submit. Jangan
+  mengedit template sambil mengira itu dokumen final.
+- **Zip ekspor wajib dirakit ulang setelah tiap commit**: versi 20:50 masih
+  memuat `VERSION.txt` commit `8406b82` dan belum berisi DOCX/PDF final.
+  Perubahan pada `tools/export_submission.py` harus tetap lolos
+  `backend/tests/test_export.py`.
+
 ## Catatan / jebakan
 
 - Karena tidak ada lagi pembungkaman, "Siapa owner Proyek Garuda?" dari Sari
