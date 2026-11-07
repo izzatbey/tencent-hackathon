@@ -458,6 +458,37 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
   Perubahan pada `tools/export_submission.py` harus tetap lolos
   `backend/tests/test_export.py`.
 
+## Deploy WorkBuddy Sites 7 Nov 2026 (link live)
+
+- **Link publik:** <https://securitysahabat.apps.workbuddy.host/?sharecode=V6WLZ2I6QY>
+  — `http-service` Python satu port, domainPrefix `securitysahabat`, appName
+  "SecuritySahabat". Marker app: `.wbapp_GRwc2uAhIQmhNC4shn5rQ4.genie` di root
+  workspace (bukan di dalam repo).
+- **Percobaan pertama gagal** (`SITES_START_FAILED`): `frontend/dist` dikecualikan
+  sebagai *build output* dari unggahan, jadi `/` → `FileNotFoundError
+  /workspace/frontend/dist/index.html` padahal server sudah listen 0.0.0.0:3000.
+  **Perbaikan:** hasil build disalin ke `webui/` dan **di-commit** (42 file,
+  commit `3928598`) — bukan nama build output sehingga ikut terunggah, dan repo
+  kini bisa menjalankan UI tanpa Node: `python backend/api/server.py --static webui`.
+  Bila frontend berubah: build ulang lalu salin ke `webui/` (lihat
+  `docs/workbuddy.md` §3).
+- **Parameter deploy yang berhasil:** `language: python`, `installCmd` kosong
+  (stdlib saja), `startCmd: python3 backend/api/server.py --static webui`,
+  **tanpa** `--demo` (flag itu membuka `POST /api/demo/clock` yang mengubah jam
+  bersama — jangan pernah aktif di link publik).
+- Audit log: `audit_chain.py` otomatis `mkdir` parent-nya, jadi
+  `backend/logs/audit.jsonl` dibuat sendiri di sandbox. Fail-closed tidak kena.
+- Verifikasi pasca-deploy: `/` memuat UI (title SecuritySahabat), `/api/health`
+  `{"ok": true}` — dicek dari luar lewat WebFetch, bukan cuma klaim tool.
+- Tercatat di `docs/submission/README.md` (baris *Project link* ✅) dan template
+  `.md`. **Dokumen final DOCX/PDF masih menulis "diisi oleh tim sebelum submit"
+  untuk tautan live** — isi manual di Word, atau rebuild lewat
+  `tools/build_submission_docx.js` (butuh `npm install --no-save docx@9.5.1` +
+  render SVG ke `dist/submission-assets/architecture.png` 3640x3400; keduanya
+  sudah terhapus dari disk).
+- Ingat: publish berikutnya **menimpa** app dan link yang sama; minta persetujuan
+  Izzat dulu setiap kali.
+
 ## Catatan / jebakan
 
 - Karena tidak ada lagi pembungkaman, "Siapa owner Proyek Garuda?" dari Sari

@@ -51,7 +51,7 @@ Isi tabel ini dulu sebelum submit. Semua field di bawah **tidak bisa diisi dari 
 | 5 | Screenshot dialog izin `scripts/search_kb.py` | `[ISI: nama file]` | `[ISI: nama]` | ⏳ |
 | 6 | Nama lengkap & email 3 anggota tim | `[ISI: data tim]` | `[ISI: nama]` | ⏳ |
 | 7 | Cover image 16:9 (380×216 px) | `[ISI: nama file / URL]` | `[ISI: nama]` | ➖ |
-| 8 | Link live WorkBuddy Sites | `[ISI: URL]` | `[ISI: nama]` | ➖ |
+| 8 | Link live WorkBuddy Sites | https://securitysahabat.apps.workbuddy.host/?sharecode=V6WLZ2I6QY (live 7 Nov 2026) | WorkBuddy Sites | ✅ |
 | 9 | Konfirmasi tanda tangan tim (Lampiran B) | `[ISI: paraf / tanggal]` | `[ISI: nama]` | ⏳ |
 
 ---
@@ -309,7 +309,7 @@ Batasan yang ditulis apa adanya: WorkBuddy web belum punya ekspor/share tugas se
 | Item | Spesifikasi | Nilai | Status |
 | --- | --- | --- | --- |
 | Cover image | 16:9, 380×216 px | `[ISI: nama file / URL]` | ➖ |
-| Project link live | WorkBuddy Sites, keputusan tim | `[ISI: URL]` | ➖ |
+| Project link live | WorkBuddy Sites; live sejak 7 Nov 2026 | https://securitysahabat.apps.workbuddy.host/?sharecode=V6WLZ2I6QY | ✅ |
 
 Keduanya **opsional / bonus** dan tidak boleh menunda pengisian 8 item wajib. Rujukan: `docs/workbuddy.md` §3.
 

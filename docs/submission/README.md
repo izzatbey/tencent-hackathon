@@ -24,7 +24,7 @@ tanggal) ditandai `[ISI: …]` di dalamnya.
 | Dokumen submission final (.docx + .pdf) | bantu | ✅ | [SecuritySahabat-Submission.docx](SecuritySahabat-Submission.docx) / [.pdf](SecuritySahabat-Submission.pdf), 20 halaman: sampul, daftar isi, sembilan bagian sesuai butir handbook, empat lampiran. Field yang hanya tim yang tahu ditandai "diisi oleh tim sebelum submit". Dibangun oleh `tools/build_submission_docx.js` (butuh `npm install docx`); diagram dirender dari SVG |
 | Template dokumen terpadu (.docx) | bantu | ✅ | [SecuritySahabat-Submission-Template.docx](SecuritySahabat-Submission-Template.docx) — versi kerja sebelumnya dengan `[ISI: …]`. Sumber Markdown: [SecuritySahabat-Submission-Template.md](SecuritySahabat-Submission-Template.md) |
 | Cover image 16:9 | tidak | ❌ | 380×216 px; opsional, placeholder tersedia di template |
-| Project link | bonus | ❌ | WorkBuddy Sites ([../workbuddy.md](../workbuddy.md) §3), keputusan tim; placeholder tersedia di template |
+| Project link | bonus | ✅ | **Live 7 Nov 2026:** <https://securitysahabat.apps.workbuddy.host/?sharecode=V6WLZ2I6QY> — WorkBuddy Sites, layanan HTTP Python satu port dari `main 3928598`, UI dari bundle `webui/`. Audit log di sandbox Sites; tanpa `--demo`. Catatan: pemilih persona = pengganti login (belum SSO), data fiktif |
 
 ## Source code: paket ekspor WorkBuddy
 
@@ -70,8 +70,8 @@ tabel isian di Lampiran A template .docx, dan tidak perlu membuat file baru:
 
 Selain itu, field yang hanya tim yang tahu: link video demo, link Google Drive
 paket zip, tanggal & jam submit, nama lengkap/email anggota, dan — bila jadi
-dibuat — cover image serta link WorkBuddy Sites. Semua ada di bagian
-"Daftar isian" pada template.
+dibuat — cover image. Semua ada di bagian "Daftar isian" pada template. Link
+live WorkBuddy Sites sudah terisi (baris *Project link* di atas).
 
 Batasan yang ditulis apa adanya di paket: WorkBuddy web belum punya fitur
 ekspor/share tugas (dicek 27 Okt), jadi transkrip lengkap tidak bisa diambil;
