@@ -52,10 +52,16 @@ Python 3.10+, tanpa dependensi. Dari folder `source/`:
 python backend/tests/verify_matrix.py                         # 46 kasus regresi
 python -m unittest discover -s backend/tests                  # unit test
 python backend/scripts/search_kb.py -q "Boleh buka port 22 ke db-hr-jkt-01?" --user "Andini Pratama"
+python backend/api/server.py --static webui                   # UI langsung, tanpa Node
 cd frontend && npm ci --ignore-scripts && npm run build && cd ..
 python backend/api/server.py --static frontend/dist --demo    # UI + Pra-CAB di http://127.0.0.1:8787
 python tools/demo_pracab.py                                   # demo Pra-CAB 16 langkah (terminal kedua)
 ```
+
+> `webui/` adalah build UI ter-commit (salinan `frontend/dist`) — dipakai juga
+> oleh link live WorkBuddy Sites karena `frontend/dist` dikecualikan sebagai
+> build output saat unggah. Bangun ulang `frontend/dist` lalu salin ke `webui/`
+> bila frontend berubah.
 
 ## Bukti pemakaian WorkBuddy
 

@@ -120,11 +120,22 @@ internet dan memakai kredit):
 
 ```bash
 cd frontend && npm ci --ignore-scripts && npm run build && cd ..
+# lalu perbarui bundle ter-commit:
+rm -rf webui && mkdir webui && cp -r frontend/dist/* webui/
+git add webui && git commit -m "Perbarui bundle webui" && git push
 ```
 
 Lalu di WorkBuddy, dengan folder kerja repo ini: minta "publish folder ini
-sebagai app" dengan `language: python` dan
-`startCmd: python backend/api/server.py --static frontend/dist`.
+sebagai app" dengan `language: python`, `installCmd` kosong (stdlib saja), dan
+`startCmd: python3 backend/api/server.py --static webui`.
+
+> **Penting: pakai `webui/`, bukan `frontend/dist`.** Sites mengecualikan
+> build output dari unggahan, jadi `frontend/dist` tidak sampai ke sandbox dan
+> `/` gagal dengan `FileNotFoundError` (terjadi pada percobaan pertama 7 Nov:
+> `SITES_START_FAILED`, padahal server sudah listen di 0.0.0.0:3000). Karena itu
+> hasil build disalin ke `webui/` **dan di-commit** — bukan nama build output,
+> jadi ikut terunggah; sekaligus membuat repo bisa menjalankan UI tanpa Node:
+> `python backend/api/server.py --static webui`.
 
 Sebelum publish, sadari:
 
@@ -133,6 +144,8 @@ Sebelum publish, sadari:
   pemilih persona adalah pengganti login.
 - Audit log tersimpan di sandbox Sites, bukan di laptop.
 - Publish selalu menimpa app yang sama; link lama ikut berubah isinya.
+- Jalankan **tanpa** `--demo` di link publik: flag itu membuka
+  `POST /api/demo/clock` yang mengubah jam bersama Pra-CAB.
 
 ## 4. Bukti pemakaian untuk submission
 
