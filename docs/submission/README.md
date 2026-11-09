@@ -18,7 +18,7 @@ tanggal) ditandai `[ISI: …]` di dalamnya.
 | Accountability sheet | ya | ✅ | [accountability-sheet.md](accountability-sheet.md) |
 | Test results + screenshot | ya | ✅ | Challenge A: [../test-results/README.md](../test-results/README.md) — 23 lulus / 1 gagal (#7) dengan screenshot per kasus; kegagalan ditulis apa adanya. Pra-CAB: [../test-results/pracab.md](../test-results/pracab.md) + [pracab-demo.txt](../test-results/pracab-demo.txt) (transkrip terminal). Screenshot UI Pra-CAB tidak dibuat karena alur CAB di luar scope demo 6 Nov |
 | Architecture diagram | ya | ✅ | [../architecture-diagram.svg](../architecture-diagram.svg) + [../architecture.md](../architecture.md); footer angka uji diselaraskan 6 Nov |
-| Demo video 5-8 menit | ya | ⚠️ | **Dikerjakan paling akhir** sesuai keputusan 6 Nov. Naskah siap rekam: [demo-script.md](demo-script.md) — 6 adegan, output diverifikasi dari run sungguhan, mencakup menolak / minta klarifikasi / menunggu approval. Link video diisi di template |
+| Demo video 5-8 menit | ya | ✅ | **Dibuat 9 Nov 2026**, setelah formulir dikirim dengan link folder Drive yang masih kosong. `SecuritySahabat-Demo.mp4` (4:03, 1080p) + SRT `id`/`en` di [folder Drive video demo](https://drive.google.com/drive/folders/18MGpCFHncxj4CUyhLR508TX3Q-tB2m5J). Lima adegan dari [demo-script.md](demo-script.md) direkam dari UI web lokal (`server.py --static webui`, log audit kosong), bukan dari chat WorkBuddy. Angka di video diukur hari itu: 201 unit test OK (1 expectedFailure #7), regresi 46/46, brief 19/20, `audit_chain --verify` ok 7/7. Durasi di bawah 5 menit karena jeda menunggu dipercepat. Alat: rig Playwright, narasi Gemini TTS, klip pembuka/penutup Google Flow, dirakit di Remotion |
 | Product sharing | ya | ✅ | Final 6 Nov: [product-sharing.md](product-sharing.md). Tiga catatan draf diputuskan (angka uji 27 Okt tetap, transparansi alat ditambahkan, ringkasan bahasa Inggris untuk formulir tersedia) |
 | Source code | ya | ✅ | Paket ekspor dirakit dari commit bersih (di bawah); link Google Drive diisi di template |
 | Dokumen submission final (.docx + .pdf) | bantu | ✅ | [SecuritySahabat-Submission.docx](SecuritySahabat-Submission.docx) / [.pdf](SecuritySahabat-Submission.pdf), 20 halaman: sampul, daftar isi, sembilan bagian sesuai butir handbook, empat lampiran. Field yang hanya tim yang tahu ditandai "diisi oleh tim sebelum submit". Dibangun oleh `tools/build_submission_docx.js` (butuh `npm install docx`); diagram dirender dari SVG |
@@ -68,8 +68,7 @@ tabel isian di Lampiran A template .docx, dan tidak perlu membuat file baru:
 4. Simpan screenshot baru di `docs/test-results/workbuddy/`, commit, lalu rakit
    ulang zip. Folder itu otomatis ikut ke `evidence/workbuddy-screenshots/`.
 
-Selain itu, field yang hanya tim yang tahu: link video demo, link Google Drive
-paket zip, tanggal & jam submit, nama lengkap/email anggota, dan — bila jadi
+Selain itu, field yang hanya tim yang tahu: link Google Drive paket zip, tanggal & jam submit, nama lengkap/email anggota, dan — bila jadi
 dibuat — cover image. Semua ada di bagian "Daftar isian" pada template. Link
 live WorkBuddy Sites sudah terisi (baris *Project link* di atas).
 
