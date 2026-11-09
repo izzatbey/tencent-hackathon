@@ -489,6 +489,19 @@ Di Windows jangan jalankan skrip repo dengan `python -I`: flag itu mengabaikan
 - Ingat: publish berikutnya **menimpa** app dan link yang sama; minta persetujuan
   Izzat dulu setiap kali.
 
+## Demo video 9 Nov 2026 (Farrez)
+
+- Formulir sudah dikirim 8 Nov dengan link folder Drive yang masih kosong; video
+  dibuat sesudahnya dan ditaruh di folder itu: `SecuritySahabat-Demo.mp4` (4:03)
+  + SRT `id`/`en`. Status di `docs/submission/README.md` kini ✅.
+- Isinya pembuka dan diagram cara kerja, lima adegan `demo-script.md` direkam dari
+  UI web lokal (bukan chat WorkBuddy), layar bukti audit + angka uji, penutup.
+- Bahan kerja di luar repo (`D:\downloads\claude\2026-11-09-video-demo-securitysahabat`):
+  rig Playwright `walkthrough-video`, narasi Gemini TTS, klip Google Flow,
+  komposisi Remotion. Narasi memuat kasus #7 yang gagal dan "belum ada SSO".
+- Untuk merekam ulang: server dengan log audit kosong, lalu satu take saja; angka
+  di layar bukti diketik dari hasil run hari itu, jadi perbarui bila tes berubah.
+
 ## Catatan / jebakan
 
 - Karena tidak ada lagi pembungkaman, "Siapa owner Proyek Garuda?" dari Sari
